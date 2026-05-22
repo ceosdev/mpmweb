@@ -120,3 +120,10 @@ export interface DashboardStats {
   roles: number
   permissions: number
 }
+
+export interface PaymentType {
+  id: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}

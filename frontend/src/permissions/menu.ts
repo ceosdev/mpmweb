@@ -1,4 +1,11 @@
-import { Building2, LayoutDashboard, ShieldCheck, Users, type LucideIcon } from 'lucide-react'
+import {
+  Building2,
+  LayoutDashboard,
+  ShieldCheck,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react'
 
 /**
  * Navigation item. `permission` is the slug required to see it — the sidebar
@@ -17,4 +24,5 @@ export const MENU: MenuItem[] = [
   { label: 'Usuários', to: '/users', icon: Users, permission: 'users.view' },
   { label: 'Empresas', to: '/companies', icon: Building2, permission: 'companies.view' },
   { label: 'Permissões', to: '/permissions', icon: ShieldCheck, permission: 'permissions.view' },
+  { label: 'Tipos de pagamento', to: '/payment-types', icon: Wallet, permission: 'payment_types.view' },
 ]

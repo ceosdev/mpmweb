@@ -44,6 +44,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   // Permissions / administration
   { slug: 'permissions.view', name: 'Visualizar permissões', module: 'permissions', action: 'view', description: 'Consultar perfis e permissões.' },
   { slug: 'permissions.manage', name: 'Administrar permissões', module: 'permissions', action: 'manage', description: 'Definir as permissões extras dos usuários.' },
+
+  // Payment types
+  { slug: 'payment_types.view', name: 'Visualizar tipos de pagamento', module: 'payment_types', action: 'view', description: 'Listar e consultar tipos de pagamento da empresa.' },
+  { slug: 'payment_types.create', name: 'Criar tipos de pagamento', module: 'payment_types', action: 'create', description: 'Cadastrar novos tipos de pagamento.' },
+  { slug: 'payment_types.edit', name: 'Editar tipos de pagamento', module: 'payment_types', action: 'edit', description: 'Alterar tipos de pagamento existentes.' },
+  { slug: 'payment_types.delete', name: 'Excluir tipos de pagamento', module: 'payment_types', action: 'delete', description: 'Remover tipos de pagamento.' },
 ]
 
 export type RoleSlug = 'root' | 'admin' | 'operator'

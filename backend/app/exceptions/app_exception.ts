@@ -28,6 +28,12 @@ export class NotFoundException extends AppException {
   static code = 'E_NOT_FOUND'
 }
 
+/** 409 — request conflicts with the current state (e.g. FK constraint). */
+export class ConflictException extends AppException {
+  static status = 409
+  static code = 'E_CONFLICT'
+}
+
 /** 422 — a business rule rejected the request. */
 export class BusinessException extends AppException {
   static status = 422

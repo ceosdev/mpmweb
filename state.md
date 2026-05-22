@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-05-21
+**Snapshot**: 2026-05-22
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (7 tabelas)
+## Esquema do banco (8 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -32,6 +32,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `memberships` | Vínculo `user × company` com `role` + `extra_permissions`. Soft delete. |
 | `role_permissions` | Permissões padrão por role. |
 | `membership_permissions` | Permissões extras por vínculo. |
+| `payment_types` | Tipos de pagamento por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. |
 
 Colunas atuais de `companies` (após migration `1779413112478`):
 `id, legal_name, trade_name, tax_id, state_registration, municipal_registration,
@@ -47,6 +48,7 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Users (CRUD)** — listagem paginada, modal de form, papel + permissões extras.
 - **Companies (CRUD)** — listagem paginada com avatar de logo; formulário em **rota dedicada** (`/companies/new` e `/companies/:id/edit`) com seções Identificação, Endereço, Contato, Logomarca. Upload de logo via multipart único, atomicidade no create (rollback se upload falhar).
 - **Permissions** — visualização do catálogo e edição por role.
+- **Payment Types (CRUD)** — primeiro CRUD do padrão "simples" (descrição + status, multitenant, hard delete, modal). Aplicação canônica da rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 
 ## Rotas
 
@@ -60,6 +62,7 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /users`, `GET|PUT|DELETE /users/:id`
 - `GET|POST /companies`, `GET|PUT|DELETE /companies/:id` *(POST/PUT aceitam multipart com `logo` + `removeLogo`)*
 - `GET /roles`, `GET /permissions`
+- `GET|POST /payment-types`, `GET|PUT|DELETE /payment-types/:id`
 
 Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 `backend/storage/uploads/`).
@@ -69,7 +72,7 @@ Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 Públicas: `/login`, `/forgot-password`, `/reset-password`.
 Autenticadas: `/select-company`.
 Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
-`/companies/new`, `/companies/:id/edit`, `/permissions`.
+`/companies/new`, `/companies/:id/edit`, `/permissions`, `/payment-types`.
 
 ## Convenções importantes
 

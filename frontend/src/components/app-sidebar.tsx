@@ -31,10 +31,6 @@ export function AppSidebar({ collapsed }: AppSidebarProps) {
         {!collapsed && <span className="text-sm font-semibold tracking-tight">MPM Web</span>}
       </div>
 
-      <div className="px-3 pb-2 pt-1">
-        <CompanySwitcher collapsed={collapsed} />
-      </div>
-
       <nav className="flex-1 space-y-1 px-3 py-2">
         {items.map((item) => (
           <NavLink
@@ -58,9 +54,9 @@ export function AppSidebar({ collapsed }: AppSidebarProps) {
         ))}
       </nav>
 
-      {!collapsed && (
-        <p className="px-4 py-3 text-xs text-muted-foreground">Plataforma corporativa</p>
-      )}
+      <div className="border-t px-3 py-3">
+        <CompanySwitcher collapsed={collapsed} />
+      </div>
     </aside>
   )
 }

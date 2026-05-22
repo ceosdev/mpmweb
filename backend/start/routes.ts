@@ -23,6 +23,7 @@ const CatalogController = () => import('#controllers/catalog_controller')
 const DashboardController = () => import('#controllers/dashboard_controller')
 const UsersController = () => import('#controllers/users_controller')
 const CompaniesController = () => import('#controllers/companies_controller')
+const PaymentTypesController = () => import('#controllers/payment_types_controller')
 
 /**
  * Health check.
@@ -98,6 +99,23 @@ router
     router
       .get('/permissions', [CatalogController, 'permissions'])
       .use(middleware.permission('permissions.view'))
+
+    // Payment types
+    router
+      .get('/payment-types', [PaymentTypesController, 'index'])
+      .use(middleware.permission('payment_types.view'))
+    router
+      .post('/payment-types', [PaymentTypesController, 'store'])
+      .use(middleware.permission('payment_types.create'))
+    router
+      .get('/payment-types/:id', [PaymentTypesController, 'show'])
+      .use(middleware.permission('payment_types.view'))
+    router
+      .put('/payment-types/:id', [PaymentTypesController, 'update'])
+      .use(middleware.permission('payment_types.edit'))
+    router
+      .delete('/payment-types/:id', [PaymentTypesController, 'destroy'])
+      .use(middleware.permission('payment_types.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

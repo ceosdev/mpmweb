@@ -36,6 +36,11 @@ const CompanyFormPage = lazy(() =>
 const PermissionsPage = lazy(() =>
   import('@/modules/permissions/permissions-page').then((m) => ({ default: m.PermissionsPage }))
 )
+const PaymentTypesPage = lazy(() =>
+  import('@/modules/payment-types/payment-types-page').then((m) => ({
+    default: m.PaymentTypesPage,
+  }))
+)
 const NotFoundPage = lazy(() =>
   import('@/modules/misc/not-found-page').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -92,6 +97,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="permissions.view" />,
             children: [{ path: 'permissions', element: <PermissionsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="payment_types.view" />,
+            children: [{ path: 'payment-types', element: <PaymentTypesPage /> }],
           },
         ],
       },

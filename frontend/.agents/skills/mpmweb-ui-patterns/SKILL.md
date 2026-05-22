@@ -1,6 +1,6 @@
 ---
 name: mpmweb-ui-patterns
-description: Padrões de UI/UX para as telas de CRUD do MPM Web. Use sempre que for construir ou modificar uma tela de listagem, formulário, dialog ou tabela no frontend. Cobre paginação, ordenação no servidor, apresentação de formulário (rota vs modal), responsividade padrão, reuso de componentes, dialogs de confirmação e campos com máscara (CPF/CNPJ/CEP).
+description: Padrões de UI/UX para as telas de CRUD do MPM Web. Use sempre que for construir ou modificar uma tela de listagem, formulário, dialog ou tabela no frontend. Cobre paginação, ordenação no servidor, apresentação de formulário (rota vs modal), responsividade padrão, reuso de componentes, dialogs de confirmação, campos com máscara (CPF/CNPJ/CEP) e o padrão de CRUD simples (descrição + status, multitenant) que atravessa backend e frontend.
 tags: [crud, ui, forms, mpmweb]
 ---
 
@@ -32,6 +32,7 @@ Aplique estas regras quando for:
 | `ui-responsive-desktop-first` | Layout desktop-first, mas sempre utilizável no mobile. |
 | `ui-component-reuse` | Prefira extrair um componente compartilhado a duplicar UI. |
 | `form-masked-fields` | Armazene o valor cru no banco; renderize com máscara na UI. |
+| `simple-crud-pattern` | **Full-stack.** Padrão único para cadastros simples (descrição + status, multitenant, hard delete). |
 
 ## Lembrete da stack
 
