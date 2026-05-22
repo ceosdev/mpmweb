@@ -62,6 +62,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'units_of_measure.create', name: 'Criar unidades de medida', module: 'units_of_measure', action: 'create', description: 'Cadastrar unidades de medida.' },
   { slug: 'units_of_measure.edit', name: 'Editar unidades de medida', module: 'units_of_measure', action: 'edit', description: 'Alterar unidades de medida existentes.' },
   { slug: 'units_of_measure.delete', name: 'Excluir unidades de medida', module: 'units_of_measure', action: 'delete', description: 'Remover unidades de medida.' },
+
+  // Grupos de serviço
+  { slug: 'service_groups.view', name: 'Visualizar grupos de serviço', module: 'service_groups', action: 'view', description: 'Listar e consultar grupos de serviço da empresa.' },
+  { slug: 'service_groups.create', name: 'Criar grupos de serviço', module: 'service_groups', action: 'create', description: 'Cadastrar grupos de serviço.' },
+  { slug: 'service_groups.edit', name: 'Editar grupos de serviço', module: 'service_groups', action: 'edit', description: 'Alterar grupos de serviço existentes.' },
+  { slug: 'service_groups.delete', name: 'Excluir grupos de serviço', module: 'service_groups', action: 'delete', description: 'Remover grupos de serviço.' },
 ]
 
 export type RoleSlug = 'root' | 'admin' | 'operator'

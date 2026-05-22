@@ -141,3 +141,10 @@ export interface UnitOfMeasure {
   isActive: boolean
   createdAt: string | null
 }
+
+export interface ServiceGroup {
+  id: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}

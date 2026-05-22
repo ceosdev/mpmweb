@@ -51,6 +51,11 @@ const UnitsOfMeasurePage = lazy(() =>
     default: m.UnitsOfMeasurePage,
   }))
 )
+const ServiceGroupsPage = lazy(() =>
+  import('@/modules/service-groups/service-groups-page').then((m) => ({
+    default: m.ServiceGroupsPage,
+  }))
+)
 const NotFoundPage = lazy(() =>
   import('@/modules/misc/not-found-page').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -119,6 +124,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="units_of_measure.view" />,
             children: [{ path: 'units-of-measure', element: <UnitsOfMeasurePage /> }],
+          },
+          {
+            element: <PermissionRoute permission="service_groups.view" />,
+            children: [{ path: 'service-groups', element: <ServiceGroupsPage /> }],
           },
         ],
       },

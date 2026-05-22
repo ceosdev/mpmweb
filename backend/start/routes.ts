@@ -26,6 +26,7 @@ const CompaniesController = () => import('#controllers/companies_controller')
 const PaymentTypesController = () => import('#controllers/payment_types_controller')
 const DocumentTypesController = () => import('#controllers/document_types_controller')
 const UnitsOfMeasureController = () => import('#controllers/units_of_measure_controller')
+const ServiceGroupsController = () => import('#controllers/service_groups_controller')
 
 /**
  * Health check.
@@ -152,6 +153,23 @@ router
     router
       .delete('/units-of-measure/:id', [UnitsOfMeasureController, 'destroy'])
       .use(middleware.permission('units_of_measure.delete'))
+
+    // Grupos de serviço
+    router
+      .get('/service-groups', [ServiceGroupsController, 'index'])
+      .use(middleware.permission('service_groups.view'))
+    router
+      .post('/service-groups', [ServiceGroupsController, 'store'])
+      .use(middleware.permission('service_groups.create'))
+    router
+      .get('/service-groups/:id', [ServiceGroupsController, 'show'])
+      .use(middleware.permission('service_groups.view'))
+    router
+      .put('/service-groups/:id', [ServiceGroupsController, 'update'])
+      .use(middleware.permission('service_groups.edit'))
+    router
+      .delete('/service-groups/:id', [ServiceGroupsController, 'destroy'])
+      .use(middleware.permission('service_groups.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

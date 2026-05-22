@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   Users,
   Wallet,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -29,4 +30,5 @@ export const MENU: MenuItem[] = [
   { label: 'Tipos de pagamento', to: '/payment-types', icon: Wallet, permission: 'payment_types.view' },
   { label: 'Tipos de documento', to: '/document-types', icon: FileText, permission: 'document_types.view' },
   { label: 'Unidades de medida', to: '/units-of-measure', icon: Ruler, permission: 'units_of_measure.view' },
+  { label: 'Grupos de serviço', to: '/service-groups', icon: Wrench, permission: 'service_groups.view' },
 ]

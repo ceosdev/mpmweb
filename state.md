@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (10 tabelas)
+## Esquema do banco (11 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -35,6 +35,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `payment_types` | Tipos de pagamento por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. |
 | `document_types` | Tipos de documento por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 | `units_of_measure` | Unidades de medida por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
+| `service_groups` | Grupos de serviço por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 
 Colunas atuais de `companies` (após migration `1779413112478`):
 `id, legal_name, trade_name, tax_id, state_registration, municipal_registration,
@@ -53,6 +54,7 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Payment Types (CRUD)** — primeiro CRUD do padrão "simples" (descrição + status, multitenant, hard delete, modal). Aplicação canônica da rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 - **Tipos de documento (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 - **Unidades de medida (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
+- **Grupos de serviço (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 
 ## Rotas
 
@@ -69,6 +71,7 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /payment-types`, `GET|PUT|DELETE /payment-types/:id`
 - `GET|POST /document-types`, `GET|PUT|DELETE /document-types/:id`
 - `GET|POST /units-of-measure`, `GET|PUT|DELETE /units-of-measure/:id`
+- `GET|POST /service-groups`, `GET|PUT|DELETE /service-groups/:id`
 
 Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 `backend/storage/uploads/`).
@@ -79,7 +82,7 @@ Públicas: `/login`, `/forgot-password`, `/reset-password`.
 Autenticadas: `/select-company`.
 Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 `/companies/new`, `/companies/:id/edit`, `/permissions`, `/payment-types`,
-`/document-types`, `/units-of-measure`.
+`/document-types`, `/units-of-measure`, `/service-groups`.
 
 ## Convenções importantes
 
