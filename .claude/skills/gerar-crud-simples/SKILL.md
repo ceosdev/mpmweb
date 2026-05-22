@@ -90,7 +90,7 @@ Crie/atualize, **nesta ordem**:
 2. `frontend/src/services/<URL>-api.ts` — ver template **api-client**.
 3. `frontend/src/permissions/menu.ts` — adicione import do `<ICON>` (no agrupado lucide-react) e item de menu. Ver template **menu**.
 4. `frontend/src/routes/router.tsx` — adicione import lazy + bloco `PermissionRoute` com `path: '<URL>'`. Ver template **router**.
-5. `frontend/src/modules/<MODULE_FOLDER>/<MODULE_FOLDER>-page.tsx` — listagem. Ver template **page**.
+5. `frontend/src/modules/<MODULE_FOLDER>/<MODULE_FOLDER>-page.tsx` — listagem com busca por descrição (debounced) + paginação + ordenação. Ver template **page**.
 6. `frontend/src/modules/<MODULE_FOLDER>/<MODEL_VAR_KEBAB>-form-dialog.tsx` — modal. (`MODEL_VAR_KEBAB` = singular do `MODULE_FOLDER`, ex.: `document-type`.) Ver template **dialog**.
 
 ### Etapa 6 — Validar e migrar
@@ -593,11 +593,12 @@ const {{MODEL_CLASS_PLURAL}}Page = lazy(() =>
 ```tsx
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Trash2, {{ICON}} } from 'lucide-react'
+import { Pencil, Plus, Search, Trash2, {{ICON}} } from 'lucide-react'
 import { toast } from 'sonner'
 import { {{MODEL_VAR_PLURAL}}Api } from '@/services/{{URL}}-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getErrorMessage } from '@/lib/errors'
 import type { {{MODEL_CLASS}} } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -611,6 +612,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { {{MODEL_CLASS}}FormDialog } from '@/modules/{{MODULE_FOLDER}}/{{MODEL_VAR_KEBAB}}-form-dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
@@ -630,8 +632,10 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
+  const debouncedSearch = useDebouncedValue(search)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<{{MODEL_CLASS}} | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -642,9 +646,10 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
   }
 
   const listQuery = useQuery({
-    queryKey: ['{{URL}}', companyId, page, sort],
+    queryKey: ['{{URL}}', companyId, debouncedSearch, page, sort],
     queryFn: () =>
       {{MODEL_VAR_PLURAL}}Api.list({
+        search: debouncedSearch || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -674,6 +679,7 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
+  const hasSearch = debouncedSearch.length > 0
 
   return (
     <div className="space-y-6">
@@ -689,6 +695,19 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
         </Can>
       </PageHeader>
 
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por descrição"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value)
+            setPage(1)
+          }}
+          className="pl-9"
+        />
+      </div>
+
       <Card>
         {listQuery.isLoading ? (
           <div className="space-y-3 p-4">
@@ -699,8 +718,16 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={ {{ICON}} }
-            title="Nenhum{{GENDER_SUFFIX_E}} {{LABEL_PT}} cadastrad{{GENDER_SUFFIX}}"
-            description="Cadastre {{ARTICLE_DEF}} primeir{{GENDER_SUFFIX}} {{LABEL_PT}} desta empresa."
+            title={
+              hasSearch
+                ? 'Nenhum{{GENDER_SUFFIX_E}} {{LABEL_PT}} encontrad{{GENDER_SUFFIX}}'
+                : 'Nenhum{{GENDER_SUFFIX_E}} {{LABEL_PT}} cadastrad{{GENDER_SUFFIX}}'
+            }
+            description={
+              hasSearch
+                ? 'Tente ajustar os termos da busca.'
+                : 'Cadastre {{ARTICLE_DEF}} primeir{{GENDER_SUFFIX}} {{LABEL_PT}} desta empresa.'
+            }
           />
         ) : (
           <Table>

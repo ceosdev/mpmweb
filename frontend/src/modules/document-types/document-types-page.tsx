@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileText, Pencil, Plus, Trash2 } from 'lucide-react'
+import { FileText, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { documentTypesApi } from '@/services/document-types-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getErrorMessage } from '@/lib/errors'
 import type { DocumentType } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -18,6 +19,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { DocumentTypeFormDialog } from '@/modules/document-types/document-type-form-dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
@@ -37,8 +39,10 @@ export function DocumentTypesPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
+  const debouncedSearch = useDebouncedValue(search)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<DocumentType | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -49,9 +53,10 @@ export function DocumentTypesPage() {
   }
 
   const listQuery = useQuery({
-    queryKey: ['document-types', companyId, page, sort],
+    queryKey: ['document-types', companyId, debouncedSearch, page, sort],
     queryFn: () =>
       documentTypesApi.list({
+        search: debouncedSearch || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -81,6 +86,7 @@ export function DocumentTypesPage() {
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
+  const hasSearch = debouncedSearch.length > 0
 
   return (
     <div className="space-y-6">
@@ -96,6 +102,19 @@ export function DocumentTypesPage() {
         </Can>
       </PageHeader>
 
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por descrição"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value)
+            setPage(1)
+          }}
+          className="pl-9"
+        />
+      </div>
+
       <Card>
         {listQuery.isLoading ? (
           <div className="space-y-3 p-4">
@@ -106,8 +125,14 @@ export function DocumentTypesPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="Nenhum tipo de documento cadastrado"
-            description="Cadastre o primeiro tipo de documento desta empresa."
+            title={
+              hasSearch ? 'Nenhum tipo de documento encontrado' : 'Nenhum tipo de documento cadastrado'
+            }
+            description={
+              hasSearch
+                ? 'Tente ajustar os termos da busca.'
+                : 'Cadastre o primeiro tipo de documento desta empresa.'
+            }
           />
         ) : (
           <Table>

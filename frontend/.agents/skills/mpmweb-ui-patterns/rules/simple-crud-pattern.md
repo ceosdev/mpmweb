@@ -77,7 +77,9 @@ Migration → Model → Repository → Service → Validator → Controller → 
 - Formulário em **modal** (regra [[crud-form-presentation]] — 2 campos → modal): `<entity>-form-dialog.tsx`.
 - Listagem paginada 20/página (regra [[crud-pagination]]), cabeçalhos ordenáveis (regra [[crud-sortable-columns]]).
 - Inativos visíveis na listagem com badge "Inativa" — o usuário precisa ver para reativar.
-- Sem filtro de status, sem busca por padrão (a menos que entre gratuitamente via componente compartilhado).
+- **Busca por descrição** por padrão: `Input` com ícone `Search` (lucide-react), `max-w-sm`, posicionado entre o `PageHeader` e o `Card`. Estado local + `useDebouncedValue` (350 ms, hook em `@/hooks/use-debounced-value`). Toda mudança de texto reseta `page` para 1. O termo debounced entra na `queryKey` e no parâmetro `search` do API client; backend já filtra com `lower(description) like ?`.
+- **Empty state contextual**: título e descrição mudam conforme há busca ativa ou não — `"Nenhum X encontrad{o,a}"` + `"Tente ajustar os termos da busca."` quando há `debouncedSearch`; `"Nenhum X cadastrad{o,a}"` + `"Cadastre o/a primeiro/a X desta empresa."` caso contrário.
+- Sem filtro de status por padrão (a menos que entre gratuitamente via componente compartilhado).
 - `ConfirmDialog` na exclusão (regra [[crud-confirmation-dialogs]]).
 - Toast (`sonner`) + `getErrorMessage()` para feedback.
 - `queryKey` inclui `tenant.companyId` para invalidar cache ao trocar de empresa.
@@ -96,7 +98,8 @@ Migration → Model → Repository → Service → Validator → Controller → 
 ## Anti-padrões a evitar
 
 - **Soft delete** neste tipo de entidade — sempre hard delete.
-- **Filtro de status ou busca** antes de haver pedido real do usuário.
+- **Filtro de status** antes de haver pedido real do usuário.
+- **Remover a busca por descrição** sob alegação de "ninguém vai usar" — ela faz parte do padrão e custa quase nada.
 - **Form em rota** — sempre modal (são 2 campos).
 - **Restrição de unicidade** sem requisito explícito.
 - **Tipos pré-cadastrados no seed** — cada empresa decide.

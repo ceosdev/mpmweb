@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Trash2, Wallet } from 'lucide-react'
+import { Pencil, Plus, Search, Trash2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { paymentTypesApi } from '@/services/payment-types-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getErrorMessage } from '@/lib/errors'
 import type { PaymentType } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -18,6 +19,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { PaymentTypeFormDialog } from '@/modules/payment-types/payment-type-form-dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card } from '@/components/ui/card'
@@ -41,8 +43,10 @@ export function PaymentTypesPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
+  const debouncedSearch = useDebouncedValue(search)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<PaymentType | null>(null)
@@ -54,9 +58,10 @@ export function PaymentTypesPage() {
   }
 
   const listQuery = useQuery({
-    queryKey: ['payment-types', companyId, page, sort],
+    queryKey: ['payment-types', companyId, debouncedSearch, page, sort],
     queryFn: () =>
       paymentTypesApi.list({
+        search: debouncedSearch || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -87,6 +92,7 @@ export function PaymentTypesPage() {
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
+  const hasSearch = debouncedSearch.length > 0
 
   return (
     <div className="space-y-6">
@@ -102,6 +108,19 @@ export function PaymentTypesPage() {
         </Can>
       </PageHeader>
 
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por descrição"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value)
+            setPage(1)
+          }}
+          className="pl-9"
+        />
+      </div>
+
       <Card>
         {listQuery.isLoading ? (
           <div className="space-y-3 p-4">
@@ -112,8 +131,14 @@ export function PaymentTypesPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={Wallet}
-            title="Nenhum tipo de pagamento cadastrado"
-            description="Cadastre o primeiro tipo de pagamento desta empresa."
+            title={
+              hasSearch ? 'Nenhum tipo de pagamento encontrado' : 'Nenhum tipo de pagamento cadastrado'
+            }
+            description={
+              hasSearch
+                ? 'Tente ajustar os termos da busca.'
+                : 'Cadastre o primeiro tipo de pagamento desta empresa.'
+            }
           />
         ) : (
           <Table>
