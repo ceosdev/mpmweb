@@ -1,7 +1,10 @@
 # CLAUDE.md — Visão global da plataforma
 
 Guia raiz do monorepo **MPM Web**. Leia também `backend/CLAUDE.md` e
-`frontend/CLAUDE.md` para detalhes de cada aplicação.
+`frontend/CLAUDE.md` para detalhes de cada aplicação, e `state.md` para
+o estado atual do projeto (módulos entregues, schema atual, próximos
+passos). Mantenha o `state.md` atualizado quando uma feature for entregue,
+o schema mudar ou novos endpoints forem expostos.
 
 ## O que é
 
