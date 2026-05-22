@@ -56,6 +56,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'document_types.create', name: 'Criar tipos de documento', module: 'document_types', action: 'create', description: 'Cadastrar tipos de documento.' },
   { slug: 'document_types.edit', name: 'Editar tipos de documento', module: 'document_types', action: 'edit', description: 'Alterar tipos de documento existentes.' },
   { slug: 'document_types.delete', name: 'Excluir tipos de documento', module: 'document_types', action: 'delete', description: 'Remover tipos de documento.' },
+
+  // Unidades de medida
+  { slug: 'units_of_measure.view', name: 'Visualizar unidades de medida', module: 'units_of_measure', action: 'view', description: 'Listar e consultar unidades de medida da empresa.' },
+  { slug: 'units_of_measure.create', name: 'Criar unidades de medida', module: 'units_of_measure', action: 'create', description: 'Cadastrar unidades de medida.' },
+  { slug: 'units_of_measure.edit', name: 'Editar unidades de medida', module: 'units_of_measure', action: 'edit', description: 'Alterar unidades de medida existentes.' },
+  { slug: 'units_of_measure.delete', name: 'Excluir unidades de medida', module: 'units_of_measure', action: 'delete', description: 'Remover unidades de medida.' },
 ]
 
 export type RoleSlug = 'root' | 'admin' | 'operator'

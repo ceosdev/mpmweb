@@ -46,6 +46,11 @@ const DocumentTypesPage = lazy(() =>
     default: m.DocumentTypesPage,
   }))
 )
+const UnitsOfMeasurePage = lazy(() =>
+  import('@/modules/units-of-measure/units-of-measure-page').then((m) => ({
+    default: m.UnitsOfMeasurePage,
+  }))
+)
 const NotFoundPage = lazy(() =>
   import('@/modules/misc/not-found-page').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -110,6 +115,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="document_types.view" />,
             children: [{ path: 'document-types', element: <DocumentTypesPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="units_of_measure.view" />,
+            children: [{ path: 'units-of-measure', element: <UnitsOfMeasurePage /> }],
           },
         ],
       },

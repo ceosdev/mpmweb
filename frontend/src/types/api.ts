@@ -134,3 +134,10 @@ export interface DocumentType {
   isActive: boolean
   createdAt: string | null
 }
+
+export interface UnitOfMeasure {
+  id: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}

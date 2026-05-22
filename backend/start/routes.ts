@@ -25,6 +25,7 @@ const UsersController = () => import('#controllers/users_controller')
 const CompaniesController = () => import('#controllers/companies_controller')
 const PaymentTypesController = () => import('#controllers/payment_types_controller')
 const DocumentTypesController = () => import('#controllers/document_types_controller')
+const UnitsOfMeasureController = () => import('#controllers/units_of_measure_controller')
 
 /**
  * Health check.
@@ -134,6 +135,23 @@ router
     router
       .delete('/document-types/:id', [DocumentTypesController, 'destroy'])
       .use(middleware.permission('document_types.delete'))
+
+    // Unidades de medida
+    router
+      .get('/units-of-measure', [UnitsOfMeasureController, 'index'])
+      .use(middleware.permission('units_of_measure.view'))
+    router
+      .post('/units-of-measure', [UnitsOfMeasureController, 'store'])
+      .use(middleware.permission('units_of_measure.create'))
+    router
+      .get('/units-of-measure/:id', [UnitsOfMeasureController, 'show'])
+      .use(middleware.permission('units_of_measure.view'))
+    router
+      .put('/units-of-measure/:id', [UnitsOfMeasureController, 'update'])
+      .use(middleware.permission('units_of_measure.edit'))
+    router
+      .delete('/units-of-measure/:id', [UnitsOfMeasureController, 'destroy'])
+      .use(middleware.permission('units_of_measure.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

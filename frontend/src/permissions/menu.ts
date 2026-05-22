@@ -2,6 +2,7 @@ import {
   Building2,
   FileText,
   LayoutDashboard,
+  Ruler,
   ShieldCheck,
   Users,
   Wallet,
@@ -27,4 +28,5 @@ export const MENU: MenuItem[] = [
   { label: 'Permissões', to: '/permissions', icon: ShieldCheck, permission: 'permissions.view' },
   { label: 'Tipos de pagamento', to: '/payment-types', icon: Wallet, permission: 'payment_types.view' },
   { label: 'Tipos de documento', to: '/document-types', icon: FileText, permission: 'document_types.view' },
+  { label: 'Unidades de medida', to: '/units-of-measure', icon: Ruler, permission: 'units_of_measure.view' },
 ]
