@@ -24,6 +24,7 @@ const DashboardController = () => import('#controllers/dashboard_controller')
 const UsersController = () => import('#controllers/users_controller')
 const CompaniesController = () => import('#controllers/companies_controller')
 const PaymentTypesController = () => import('#controllers/payment_types_controller')
+const DocumentTypesController = () => import('#controllers/document_types_controller')
 
 /**
  * Health check.
@@ -116,6 +117,23 @@ router
     router
       .delete('/payment-types/:id', [PaymentTypesController, 'destroy'])
       .use(middleware.permission('payment_types.delete'))
+
+    // Tipos de documento
+    router
+      .get('/document-types', [DocumentTypesController, 'index'])
+      .use(middleware.permission('document_types.view'))
+    router
+      .post('/document-types', [DocumentTypesController, 'store'])
+      .use(middleware.permission('document_types.create'))
+    router
+      .get('/document-types/:id', [DocumentTypesController, 'show'])
+      .use(middleware.permission('document_types.view'))
+    router
+      .put('/document-types/:id', [DocumentTypesController, 'update'])
+      .use(middleware.permission('document_types.edit'))
+    router
+      .delete('/document-types/:id', [DocumentTypesController, 'destroy'])
+      .use(middleware.permission('document_types.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

@@ -50,6 +50,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'payment_types.create', name: 'Criar tipos de pagamento', module: 'payment_types', action: 'create', description: 'Cadastrar novos tipos de pagamento.' },
   { slug: 'payment_types.edit', name: 'Editar tipos de pagamento', module: 'payment_types', action: 'edit', description: 'Alterar tipos de pagamento existentes.' },
   { slug: 'payment_types.delete', name: 'Excluir tipos de pagamento', module: 'payment_types', action: 'delete', description: 'Remover tipos de pagamento.' },
+
+  // Tipos de documento
+  { slug: 'document_types.view', name: 'Visualizar tipos de documento', module: 'document_types', action: 'view', description: 'Listar e consultar tipos de documento da empresa.' },
+  { slug: 'document_types.create', name: 'Criar tipos de documento', module: 'document_types', action: 'create', description: 'Cadastrar tipos de documento.' },
+  { slug: 'document_types.edit', name: 'Editar tipos de documento', module: 'document_types', action: 'edit', description: 'Alterar tipos de documento existentes.' },
+  { slug: 'document_types.delete', name: 'Excluir tipos de documento', module: 'document_types', action: 'delete', description: 'Remover tipos de documento.' },
 ]
 
 export type RoleSlug = 'root' | 'admin' | 'operator'

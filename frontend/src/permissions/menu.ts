@@ -1,5 +1,6 @@
 import {
   Building2,
+  FileText,
   LayoutDashboard,
   ShieldCheck,
   Users,
@@ -25,4 +26,5 @@ export const MENU: MenuItem[] = [
   { label: 'Empresas', to: '/companies', icon: Building2, permission: 'companies.view' },
   { label: 'Permissões', to: '/permissions', icon: ShieldCheck, permission: 'permissions.view' },
   { label: 'Tipos de pagamento', to: '/payment-types', icon: Wallet, permission: 'payment_types.view' },
+  { label: 'Tipos de documento', to: '/document-types', icon: FileText, permission: 'document_types.view' },
 ]

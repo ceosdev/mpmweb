@@ -127,3 +127,10 @@ export interface PaymentType {
   isActive: boolean
   createdAt: string | null
 }
+
+export interface DocumentType {
+  id: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}
