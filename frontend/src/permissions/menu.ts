@@ -2,6 +2,7 @@ import {
   Building2,
   FileText,
   LayoutDashboard,
+  Package,
   Ruler,
   ShieldCheck,
   Users,
@@ -31,4 +32,5 @@ export const MENU: MenuItem[] = [
   { label: 'Tipos de documento', to: '/document-types', icon: FileText, permission: 'document_types.view' },
   { label: 'Unidades de medida', to: '/units-of-measure', icon: Ruler, permission: 'units_of_measure.view' },
   { label: 'Grupos de serviço', to: '/service-groups', icon: Wrench, permission: 'service_groups.view' },
+  { label: 'Grupos de produto', to: '/product-groups', icon: Package, permission: 'product_groups.view' },
 ]

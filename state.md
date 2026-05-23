@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-05-22
+**Snapshot**: 2026-05-23
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (11 tabelas)
+## Esquema do banco (12 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -36,6 +36,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `document_types` | Tipos de documento por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 | `units_of_measure` | Unidades de medida por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 | `service_groups` | Grupos de serviço por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
+| `product_groups` | Grupos de produto por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 
 Colunas atuais de `companies` (após migration `1779413112478`):
 `id, legal_name, trade_name, tax_id, state_registration, municipal_registration,
@@ -55,6 +56,7 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Tipos de documento (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 - **Unidades de medida (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 - **Grupos de serviço (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
+- **Grupos de produto (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 
 ## Rotas
 
@@ -72,6 +74,7 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /document-types`, `GET|PUT|DELETE /document-types/:id`
 - `GET|POST /units-of-measure`, `GET|PUT|DELETE /units-of-measure/:id`
 - `GET|POST /service-groups`, `GET|PUT|DELETE /service-groups/:id`
+- `GET|POST /product-groups`, `GET|PUT|DELETE /product-groups/:id`
 
 Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 `backend/storage/uploads/`).
@@ -82,7 +85,7 @@ Públicas: `/login`, `/forgot-password`, `/reset-password`.
 Autenticadas: `/select-company`.
 Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 `/companies/new`, `/companies/:id/edit`, `/permissions`, `/payment-types`,
-`/document-types`, `/units-of-measure`, `/service-groups`.
+`/document-types`, `/units-of-measure`, `/service-groups`, `/product-groups`.
 
 ## Convenções importantes
 

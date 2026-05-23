@@ -68,6 +68,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'service_groups.create', name: 'Criar grupos de serviço', module: 'service_groups', action: 'create', description: 'Cadastrar grupos de serviço.' },
   { slug: 'service_groups.edit', name: 'Editar grupos de serviço', module: 'service_groups', action: 'edit', description: 'Alterar grupos de serviço existentes.' },
   { slug: 'service_groups.delete', name: 'Excluir grupos de serviço', module: 'service_groups', action: 'delete', description: 'Remover grupos de serviço.' },
+
+  // Grupos de produto
+  { slug: 'product_groups.view', name: 'Visualizar grupos de produto', module: 'product_groups', action: 'view', description: 'Listar e consultar grupos de produto da empresa.' },
+  { slug: 'product_groups.create', name: 'Criar grupos de produto', module: 'product_groups', action: 'create', description: 'Cadastrar grupos de produto.' },
+  { slug: 'product_groups.edit', name: 'Editar grupos de produto', module: 'product_groups', action: 'edit', description: 'Alterar grupos de produto existentes.' },
+  { slug: 'product_groups.delete', name: 'Excluir grupos de produto', module: 'product_groups', action: 'delete', description: 'Remover grupos de produto.' },
 ]
 
 export type RoleSlug = 'root' | 'admin' | 'operator'

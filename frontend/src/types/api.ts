@@ -148,3 +148,10 @@ export interface ServiceGroup {
   isActive: boolean
   createdAt: string | null
 }
+
+export interface ProductGroup {
+  id: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}

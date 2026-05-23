@@ -56,6 +56,11 @@ const ServiceGroupsPage = lazy(() =>
     default: m.ServiceGroupsPage,
   }))
 )
+const ProductGroupsPage = lazy(() =>
+  import('@/modules/product-groups/product-groups-page').then((m) => ({
+    default: m.ProductGroupsPage,
+  }))
+)
 const NotFoundPage = lazy(() =>
   import('@/modules/misc/not-found-page').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -128,6 +133,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="service_groups.view" />,
             children: [{ path: 'service-groups', element: <ServiceGroupsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="product_groups.view" />,
+            children: [{ path: 'product-groups', element: <ProductGroupsPage /> }],
           },
         ],
       },
