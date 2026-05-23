@@ -1,14 +1,15 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Layers, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, Layers, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { productSubgroupsApi } from '@/services/product-subgroups-api'
 import { productGroupsApi } from '@/services/product-groups-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getErrorMessage } from '@/lib/errors'
-import type { ProductGroup } from '@/types/api'
+import type { ProductSubgroup } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -18,7 +19,7 @@ import {
   nextSortState,
   type SortState,
 } from '@/components/data-table/sortable-header'
-import { ProductGroupFormDialog } from '@/modules/product-groups/product-group-form-dialog'
+import { ProductSubgroupFormDialog } from '@/modules/product-subgroups/product-subgroup-form-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -35,9 +36,15 @@ import {
 
 const PER_PAGE = 20
 
-export function ProductGroupsPage() {
+/**
+ * Drill-down page reached from `/product-groups`. The parent group id comes
+ * from the URL path; the page reuses the simple-CRUD shape but is scoped to
+ * that single parent.
+ */
+export function ProductSubgroupsPage() {
+  const { groupId: groupIdParam } = useParams<{ groupId: string }>()
+  const groupId = Number(groupIdParam)
   const { tenant } = useAuth()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
@@ -46,7 +53,7 @@ export function ProductGroupsPage() {
   const [sort, setSort] = useState<SortState | null>(null)
   const debouncedSearch = useDebouncedValue(search)
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<ProductGroup | null>(null)
+  const [editing, setEditing] = useState<ProductSubgroup | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   function toggleSort(column: string) {
@@ -54,24 +61,35 @@ export function ProductGroupsPage() {
     setPage(1)
   }
 
+  const parentQuery = useQuery({
+    queryKey: ['product-groups', companyId, groupId],
+    queryFn: () => productGroupsApi.get(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: false,
+  })
+
+  const parentNotFound =
+    !Number.isFinite(groupId) || groupId <= 0 || parentQuery.isError
+
   const listQuery = useQuery({
-    queryKey: ['product-groups', companyId, debouncedSearch, page, sort],
+    queryKey: ['product-subgroups', companyId, groupId, debouncedSearch, page, sort],
     queryFn: () =>
-      productGroupsApi.list({
+      productSubgroupsApi.list(groupId, {
         search: debouncedSearch || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
         order: sort?.order,
       }),
+    enabled: !!parentQuery.data,
     placeholderData: (prev) => prev,
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => productGroupsApi.remove(id),
+    mutationFn: (id: number) => productSubgroupsApi.remove(groupId, id),
     onSuccess: () => {
-      toast.success('Grupo de produto removido.')
-      queryClient.invalidateQueries({ queryKey: ['product-groups'] })
+      toast.success('Subgrupo de produto removido.')
+      queryClient.invalidateQueries({ queryKey: ['product-subgroups', companyId, groupId] })
       setDeleteId(null)
     },
     onError: (error) => toast.error(getErrorMessage(error)),
@@ -81,28 +99,58 @@ export function ProductGroupsPage() {
     setEditing(null)
     setFormOpen(true)
   }
-  function openEdit(row: ProductGroup) {
+  function openEdit(row: ProductSubgroup) {
     setEditing(row)
     setFormOpen(true)
   }
 
+  const backLink = (
+    <Link
+      to="/product-groups"
+      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <ArrowLeft className="size-3.5" />
+      Grupos de produto
+    </Link>
+  )
+
+  if (parentNotFound) {
+    return (
+      <div className="space-y-6">
+        {backLink}
+        <Card className="py-12">
+          <EmptyState
+            icon={Layers}
+            title="Grupo de produto não encontrado"
+            description="O grupo solicitado não existe ou foi removido."
+          />
+        </Card>
+      </div>
+    )
+  }
+
+  const parentName = parentQuery.data?.description
+  const title = parentName ? `Subgrupos de ${parentName}` : 'Subgrupos de produto'
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
   const hasSearch = debouncedSearch.length > 0
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Grupos de produto"
-        description="Cadastre os grupos de produto aceitos pela empresa ativa."
-      >
-        <Can permission="product_groups.create">
-          <Button onClick={openCreate}>
-            <Plus className="size-4" />
-            Novo grupo de produto
-          </Button>
-        </Can>
-      </PageHeader>
+      <div className="space-y-2">
+        {backLink}
+        <PageHeader
+          title={title}
+          description="Subgrupos vinculados a este grupo de produto."
+        >
+          <Can permission="product_subgroups.create">
+            <Button onClick={openCreate} disabled={!parentQuery.data}>
+              <Plus className="size-4" />
+              Novo subgrupo de produto
+            </Button>
+          </Can>
+        </PageHeader>
+      </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -118,7 +166,7 @@ export function ProductGroupsPage() {
       </div>
 
       <Card>
-        {listQuery.isLoading ? (
+        {parentQuery.isLoading || listQuery.isLoading ? (
           <div className="space-y-3 p-4">
             {Array.from({ length: 5 }).map((_, index) => (
               <Skeleton key={index} className="h-10 w-full" />
@@ -126,14 +174,16 @@ export function ProductGroupsPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
-            icon={Package}
+            icon={Layers}
             title={
-              hasSearch ? 'Nenhum grupo de produto encontrado' : 'Nenhum grupo de produto cadastrado'
+              hasSearch
+                ? 'Nenhum subgrupo de produto encontrado'
+                : 'Nenhum subgrupo de produto cadastrado'
             }
             description={
               hasSearch
                 ? 'Tente ajustar os termos da busca.'
-                : 'Cadastre o primeiro grupo de produto desta empresa.'
+                : 'Cadastre o primeiro subgrupo deste grupo de produto.'
             }
           />
         ) : (
@@ -160,18 +210,7 @@ export function ProductGroupsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
-                      <Can permission="product_subgroups.view">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => navigate(`/product-groups/${row.id}/subgroups`)}
-                          aria-label="Ver subgrupos"
-                          title="Ver subgrupos"
-                        >
-                          <Layers className="size-4" />
-                        </Button>
-                      </Can>
-                      <Can permission="product_groups.edit">
+                      <Can permission="product_subgroups.edit">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -181,7 +220,7 @@ export function ProductGroupsPage() {
                           <Pencil className="size-4" />
                         </Button>
                       </Can>
-                      <Can permission="product_groups.delete">
+                      <Can permission="product_subgroups.delete">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -202,17 +241,18 @@ export function ProductGroupsPage() {
 
       {meta && <Pagination meta={meta} onChange={setPage} />}
 
-      <ProductGroupFormDialog
+      <ProductSubgroupFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
-        productGroup={editing}
+        groupId={groupId}
+        productSubgroup={editing}
       />
 
       <ConfirmDialog
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        title="Excluir grupo de produto"
-        description="Esta ação é permanente. Se o grupo de produto já estiver vinculado a outros registros, a exclusão será bloqueada."
+        title="Excluir subgrupo de produto"
+        description="Esta ação é permanente. Se o subgrupo já estiver vinculado a outros registros, a exclusão será bloqueada."
         confirmLabel="Excluir"
         loading={deleteMutation.isPending}
         onConfirm={() => deleteId !== null && deleteMutation.mutate(deleteId)}

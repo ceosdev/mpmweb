@@ -155,3 +155,11 @@ export interface ProductGroup {
   isActive: boolean
   createdAt: string | null
 }
+
+export interface ProductSubgroup {
+  id: number
+  productGroupId: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}

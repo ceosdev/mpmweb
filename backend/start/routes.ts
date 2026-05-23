@@ -28,6 +28,7 @@ const DocumentTypesController = () => import('#controllers/document_types_contro
 const UnitsOfMeasureController = () => import('#controllers/units_of_measure_controller')
 const ServiceGroupsController = () => import('#controllers/service_groups_controller')
 const ProductGroupsController = () => import('#controllers/product_groups_controller')
+const ProductSubgroupsController = () => import('#controllers/product_subgroups_controller')
 
 /**
  * Health check.
@@ -188,6 +189,23 @@ router
     router
       .delete('/product-groups/:id', [ProductGroupsController, 'destroy'])
       .use(middleware.permission('product_groups.delete'))
+
+    // Subgrupos de produto (filhos de product_groups, escopados pelo path :groupId)
+    router
+      .get('/product-groups/:groupId/subgroups', [ProductSubgroupsController, 'index'])
+      .use(middleware.permission('product_subgroups.view'))
+    router
+      .post('/product-groups/:groupId/subgroups', [ProductSubgroupsController, 'store'])
+      .use(middleware.permission('product_subgroups.create'))
+    router
+      .get('/product-groups/:groupId/subgroups/:id', [ProductSubgroupsController, 'show'])
+      .use(middleware.permission('product_subgroups.view'))
+    router
+      .put('/product-groups/:groupId/subgroups/:id', [ProductSubgroupsController, 'update'])
+      .use(middleware.permission('product_subgroups.edit'))
+    router
+      .delete('/product-groups/:groupId/subgroups/:id', [ProductSubgroupsController, 'destroy'])
+      .use(middleware.permission('product_subgroups.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

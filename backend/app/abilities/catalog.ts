@@ -74,6 +74,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'product_groups.create', name: 'Criar grupos de produto', module: 'product_groups', action: 'create', description: 'Cadastrar grupos de produto.' },
   { slug: 'product_groups.edit', name: 'Editar grupos de produto', module: 'product_groups', action: 'edit', description: 'Alterar grupos de produto existentes.' },
   { slug: 'product_groups.delete', name: 'Excluir grupos de produto', module: 'product_groups', action: 'delete', description: 'Remover grupos de produto.' },
+
+  // Subgrupos de produto (filhos de product_groups, drill-down a partir da listagem de grupos)
+  { slug: 'product_subgroups.view', name: 'Visualizar subgrupos de produto', module: 'product_subgroups', action: 'view', description: 'Listar e consultar subgrupos de um grupo de produto.' },
+  { slug: 'product_subgroups.create', name: 'Criar subgrupos de produto', module: 'product_subgroups', action: 'create', description: 'Cadastrar subgrupos dentro de um grupo de produto.' },
+  { slug: 'product_subgroups.edit', name: 'Editar subgrupos de produto', module: 'product_subgroups', action: 'edit', description: 'Alterar subgrupos de produto existentes.' },
+  { slug: 'product_subgroups.delete', name: 'Excluir subgrupos de produto', module: 'product_subgroups', action: 'delete', description: 'Remover subgrupos de produto.' },
 ]
 
 export type RoleSlug = 'root' | 'admin' | 'operator'
