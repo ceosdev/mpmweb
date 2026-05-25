@@ -1,6 +1,10 @@
 import { HttpContext } from '@adonisjs/core/http'
 import userService from '#services/user_service'
-import { createUserValidator, updateUserValidator } from '#validators/user_validators'
+import {
+  createUserValidator,
+  importUserValidator,
+  updateUserValidator,
+} from '#validators/user_validators'
 
 /**
  * CRUD for users of the active company. Every route is gated by a
@@ -29,13 +33,36 @@ export default class UsersController {
     return response.created(user)
   }
 
-  async update({ tenant, request, params }: HttpContext) {
+  async update({ tenant, request, currentUser, params }: HttpContext) {
     const payload = await request.validateUsing(updateUserValidator)
-    return userService.update(tenant, Number(params.id), payload)
+    return userService.update(tenant, Number(params.id), payload, currentUser.id)
   }
 
   async destroy({ tenant, currentUser, params, response }: HttpContext) {
     await userService.destroy(tenant, Number(params.id), currentUser.id)
     return response.noContent()
+  }
+
+  /**
+   * Lists users from another company that can be imported into the active
+   * one. Requires `users.import` on the active tenant.
+   */
+  async importable({ tenant, request }: HttpContext) {
+    const companyId = Number(request.input('companyId'))
+    if (!Number.isInteger(companyId) || companyId <= 0) {
+      return []
+    }
+    const search = request.input('search') || undefined
+    return userService.listImportable(tenant, companyId, search)
+  }
+
+  /**
+   * Imports an existing platform user into the active company (new membership).
+   * Requires `users.import` on the active tenant.
+   */
+  async import({ tenant, request, response }: HttpContext) {
+    const payload = await request.validateUsing(importUserValidator)
+    const user = await userService.importExisting(tenant, payload)
+    return response.created(user)
   }
 }

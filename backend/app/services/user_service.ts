@@ -1,6 +1,8 @@
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 import User from '#models/user'
+import Company from '#models/company'
+import Role from '#models/role'
 import Membership from '#models/membership'
 import type { TenantContext } from '#services/tenant_context'
 import membershipRepository from '#repositories/membership_repository'
@@ -36,6 +38,13 @@ export interface UpdateUserDTO {
   name?: string
   password?: string
   roleId?: number
+  isActive?: boolean
+  extraPermissions?: number[]
+}
+
+export interface ImportUserDTO {
+  userId: number
+  roleId: number
   isActive?: boolean
   extraPermissions?: number[]
 }
@@ -161,7 +170,12 @@ export class UserService {
     })
   }
 
-  async update(tenant: TenantContext, userId: number, dto: UpdateUserDTO) {
+  async update(
+    tenant: TenantContext,
+    userId: number,
+    dto: UpdateUserDTO,
+    currentUserId: number
+  ) {
     return db.transaction(async (trx) => {
       const membership = await Membership.query({ client: trx })
         .where('company_id', tenant.company.id)
@@ -175,9 +189,20 @@ export class UserService {
       }
 
       const user = membership.user
+      // ROOT só pode ser alterado por ele mesmo, e mesmo assim sem mexer em
+      // perfil/status/extras — esses campos não fazem sentido para o ROOT.
       if (user.isRoot) {
-        throw new BusinessException('Não é permitido alterar dados do usuário ROOT.')
+        if (currentUserId !== user.id) {
+          throw new BusinessException('Não é permitido alterar dados do usuário ROOT.')
+        }
+        if (dto.name !== undefined) user.name = dto.name
+        if (dto.password !== undefined) user.password = dto.password
+        user.useTransaction(trx)
+        await user.save()
+        await membership.load('role')
+        return this.serialize(membership)
       }
+
       if (dto.name !== undefined) user.name = dto.name
       if (dto.password !== undefined) user.password = dto.password
       if (dto.isActive !== undefined) user.isActive = dto.isActive
@@ -195,6 +220,128 @@ export class UserService {
 
       await membership.load('role')
       return this.serialize(membership)
+    })
+  }
+
+  /**
+   * Lists users from another company that can be imported into the active
+   * one. Excludes ROOT, soft-deleted accounts, and users that already have an
+   * active membership in the tenant company.
+   */
+  async listImportable(tenant: TenantContext, sourceCompanyId: number, search?: string) {
+    if (sourceCompanyId === tenant.company.id) {
+      throw new BusinessException('Não é possível importar usuários da empresa logada.')
+    }
+
+    const sourceCompany = await Company.query()
+      .where('id', sourceCompanyId)
+      .where('is_active', true)
+      .whereNull('deleted_at')
+      .first()
+    if (!sourceCompany) {
+      throw new NotFoundException('Empresa de origem não encontrada.')
+    }
+
+    const alreadyHere = db
+      .from('memberships')
+      .where('company_id', tenant.company.id)
+      .whereNull('deleted_at')
+      .select('user_id')
+
+    const query = Membership.query()
+      .where('memberships.company_id', sourceCompanyId)
+      .whereNull('memberships.deleted_at')
+      .whereNotIn('memberships.user_id', alreadyHere)
+      .whereHas('user', (userQuery) => {
+        userQuery.whereNull('users.deleted_at').where('users.is_root', false)
+        if (search) {
+          const term = `%${search.toLowerCase()}%`
+          userQuery.where((sub) => {
+            sub
+              .whereRaw('lower(users.name) like ?', [term])
+              .orWhereRaw('lower(users.email) like ?', [term])
+          })
+        }
+      })
+      .preload('user')
+      .join('users', 'users.id', 'memberships.user_id')
+      .select('memberships.*')
+      .orderBy('users.name', 'asc')
+
+    const rows = await query
+
+    return rows.map((membership) => ({
+      id: membership.user.id,
+      name: membership.user.name,
+      email: membership.user.email,
+    }))
+  }
+
+  /**
+   * Imports an existing platform user into the active company by creating a
+   * new membership. Does NOT touch the user record (name, e-mail, password).
+   */
+  async importExisting(tenant: TenantContext, dto: ImportUserDTO) {
+    return db.transaction(async (trx) => {
+      const user = await User.query({ client: trx })
+        .where('id', dto.userId)
+        .whereNull('deleted_at')
+        .first()
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado.')
+      }
+      if (user.isRoot) {
+        throw new BusinessException('Não é permitido importar o usuário ROOT.')
+      }
+
+      const hasMembershipElsewhere = await Membership.query({ client: trx })
+        .where('user_id', user.id)
+        .whereNot('company_id', tenant.company.id)
+        .whereNull('deleted_at')
+        .first()
+      if (!hasMembershipElsewhere) {
+        throw new BusinessException(
+          'Este usuário não pertence a nenhuma outra empresa e não pode ser importado.'
+        )
+      }
+
+      const existingHere = await Membership.query({ client: trx })
+        .where('user_id', user.id)
+        .where('company_id', tenant.company.id)
+        .whereNull('deleted_at')
+        .first()
+      if (existingHere) {
+        throw new BusinessException('Este usuário já está vinculado a esta empresa.')
+      }
+
+      const role = await Role.query({ client: trx })
+        .where('id', dto.roleId)
+        .where('company_id', tenant.company.id)
+        .where('is_system', false)
+        .first()
+      if (!role) {
+        throw new BusinessException('Perfil inválido para esta empresa.')
+      }
+
+      const membership = await Membership.create(
+        {
+          userId: user.id,
+          companyId: tenant.company.id,
+          roleId: role.id,
+          isActive: dto.isActive ?? true,
+        },
+        { client: trx }
+      )
+
+      membership.useTransaction(trx)
+      if (dto.extraPermissions?.length) {
+        await membership.related('extraPermissions').sync(dto.extraPermissions)
+      }
+
+      await membership.load('user')
+      await membership.load('role')
+      await membership.load('extraPermissions')
+      return this.serialize(membership, true)
     })
   }
 

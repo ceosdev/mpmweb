@@ -40,6 +40,7 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'users.create', name: 'Criar usuários', module: 'users', action: 'create', description: 'Cadastrar usuários e vinculá-los à empresa.' },
   { slug: 'users.edit', name: 'Editar usuários', module: 'users', action: 'edit', description: 'Alterar dados e perfil de usuários.' },
   { slug: 'users.delete', name: 'Excluir usuários', module: 'users', action: 'delete', description: 'Remover usuários da empresa.' },
+  { slug: 'users.import', name: 'Importar usuários', module: 'users', action: 'import', description: 'Reaproveitar usuários já cadastrados em outras empresas.' },
 
   // Permissions / administration
   { slug: 'permissions.view', name: 'Visualizar permissões', module: 'permissions', action: 'view', description: 'Consultar perfis e permissões.' },

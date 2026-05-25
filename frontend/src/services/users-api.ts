@@ -1,5 +1,5 @@
 import { api } from '@/services/api-client'
-import type { Paginated, UserDetail, UserListItem } from '@/types/api'
+import type { ImportableUser, Paginated, UserDetail, UserListItem } from '@/types/api'
 
 export interface UserListParams {
   search?: string
@@ -26,6 +26,13 @@ export interface UpdateUserPayload {
   extraPermissions?: number[]
 }
 
+export interface ImportUserPayload {
+  userId: number
+  roleId: number
+  isActive?: boolean
+  extraPermissions?: number[]
+}
+
 /**
  * Users endpoints — scoped to the active company by the `x-company-id` header.
  */
@@ -42,4 +49,14 @@ export const usersApi = {
     api.put<UserListItem>(`/users/${id}`, payload).then((r) => r.data),
 
   remove: (id: number) => api.delete(`/users/${id}`).then(() => undefined),
+
+  importable: (companyId: number, search?: string) =>
+    api
+      .get<ImportableUser[]>('/users/importable', {
+        params: { companyId, search: search || undefined },
+      })
+      .then((r) => r.data),
+
+  import: (payload: ImportUserPayload) =>
+    api.post<UserDetail>('/users/import', payload).then((r) => r.data),
 }

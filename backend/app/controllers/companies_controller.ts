@@ -77,6 +77,14 @@ export default class CompaniesController {
   }
 
   /**
+   * Lists companies that can be the source of a user import (every active
+   * company except the tenant's own). Gated by `users.import` on the route.
+   */
+  async importSources({ tenant }: HttpContext) {
+    return companyService.listImportSources(tenant)
+  }
+
+  /**
    * Reads and validates the optional `logo` multipart file. Returns the
    * MultipartFile when present, `null` when absent. Throws BusinessException
    * with a user-friendly message when the upload itself is invalid.

@@ -77,6 +77,12 @@ router
     // Users
     router.get('/users', [UsersController, 'index']).use(middleware.permission('users.view'))
     router.post('/users', [UsersController, 'store']).use(middleware.permission('users.create'))
+    router
+      .get('/users/importable', [UsersController, 'importable'])
+      .use(middleware.permission('users.import'))
+    router
+      .post('/users/import', [UsersController, 'import'])
+      .use(middleware.permission('users.import'))
     router.get('/users/:id', [UsersController, 'show']).use(middleware.permission('users.view'))
     router.put('/users/:id', [UsersController, 'update']).use(middleware.permission('users.edit'))
     router
@@ -90,6 +96,9 @@ router
     router
       .post('/companies', [CompaniesController, 'store'])
       .use(middleware.permission('companies.create'))
+    router
+      .get('/companies/import-sources', [CompaniesController, 'importSources'])
+      .use(middleware.permission('users.import'))
     router
       .get('/companies/:id', [CompaniesController, 'show'])
       .use(middleware.permission('companies.view'))

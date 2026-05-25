@@ -24,3 +24,12 @@ export const updateUserValidator = vine.compile(
     extraPermissions: vine.array(vine.number().positive()).optional(),
   })
 )
+
+export const importUserValidator = vine.compile(
+  vine.object({
+    userId: vine.number().positive(),
+    roleId: vine.number().positive(),
+    isActive: vine.boolean().optional(),
+    extraPermissions: vine.array(vine.number().positive()).optional(),
+  })
+)

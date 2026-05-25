@@ -94,6 +94,20 @@ export interface UserDetail extends UserListItem {
   extraPermissions: { id: number; slug: string; name: string }[]
 }
 
+/** Slim representation of a user that can be imported from another company. */
+export interface ImportableUser {
+  id: number
+  name: string
+  email: string
+}
+
+/** Slim representation of a company eligible as the source of an import. */
+export interface ImportSourceCompany {
+  id: number
+  legalName: string
+  tradeName: string | null
+}
+
 export interface Company {
   id: number
   legalName: string

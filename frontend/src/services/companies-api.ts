@@ -1,5 +1,5 @@
 import { api } from '@/services/api-client'
-import type { Company, Paginated } from '@/types/api'
+import type { Company, ImportSourceCompany, Paginated } from '@/types/api'
 
 export interface CompanyListParams {
   search?: string
@@ -77,4 +77,7 @@ export const companiesApi = {
     api.put<Company>(`/companies/${id}`, buildFormData(input)).then((r) => r.data),
 
   remove: (id: number) => api.delete(`/companies/${id}`).then(() => undefined),
+
+  importSources: () =>
+    api.get<ImportSourceCompany[]>('/companies/import-sources').then((r) => r.data),
 }

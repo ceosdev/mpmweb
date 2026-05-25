@@ -2,7 +2,11 @@ import { DateTime } from 'luxon'
 import { MultipartFile } from '@adonisjs/core/bodyparser'
 import drive from '@adonisjs/drive/services/main'
 import logger from '@adonisjs/core/services/logger'
+import db from '@adonisjs/lucid/services/db'
 import Company from '#models/company'
+import User from '#models/user'
+import Role from '#models/role'
+import Membership from '#models/membership'
 import type { TenantContext } from '#services/tenant_context'
 import companyRepository from '#repositories/company_repository'
 import { slugify } from '#utils/slug'
@@ -117,27 +121,56 @@ export class CompanyService {
   }
 
   async create(dto: CreateCompanyDTO) {
+    // ROOT precisa existir como usuário e perfil — a nova empresa nasce com o
+    // ROOT já vinculado, então sem essas duas pré-condições não dá pra criar.
+    const rootRole = await Role.query()
+      .where('slug', 'root')
+      .where('is_system', true)
+      .first()
+    if (!rootRole) {
+      throw new BusinessException(
+        'Não é possível criar uma empresa: o perfil ROOT não está cadastrado.'
+      )
+    }
+    const rootUser = await User.query().where('is_root', true).whereNull('deleted_at').first()
+    if (!rootUser) {
+      throw new BusinessException(
+        'Não é possível criar uma empresa: o usuário ROOT não está cadastrado.'
+      )
+    }
+
     const slug = await this.uniqueSlug(dto.slug || dto.tradeName || dto.legalName)
 
-    const company = await Company.create({
-      legalName: dto.legalName,
-      tradeName: dto.tradeName ?? null,
-      taxId: dto.taxId ?? null,
-      stateRegistration: dto.stateRegistration ?? null,
-      municipalRegistration: dto.municipalRegistration ?? null,
-      address: dto.address ?? null,
-      addressNumber: dto.addressNumber ?? null,
-      neighborhood: dto.neighborhood ?? null,
-      city: dto.city ?? null,
-      zipCode: dto.zipCode ?? null,
-      state: dto.state ?? null,
-      phone: dto.phone ?? null,
-      email: dto.email ?? null,
-      slug,
-      isActive: dto.isActive ?? true,
-    })
+    return db.transaction(async (trx) => {
+      const company = await Company.create(
+        {
+          legalName: dto.legalName,
+          tradeName: dto.tradeName ?? null,
+          taxId: dto.taxId ?? null,
+          stateRegistration: dto.stateRegistration ?? null,
+          municipalRegistration: dto.municipalRegistration ?? null,
+          address: dto.address ?? null,
+          addressNumber: dto.addressNumber ?? null,
+          neighborhood: dto.neighborhood ?? null,
+          city: dto.city ?? null,
+          zipCode: dto.zipCode ?? null,
+          state: dto.state ?? null,
+          phone: dto.phone ?? null,
+          email: dto.email ?? null,
+          slug,
+          isActive: dto.isActive ?? true,
+        },
+        { client: trx }
+      )
 
-    return this.serialize(company)
+      await Membership.updateOrCreate(
+        { userId: rootUser.id, companyId: company.id },
+        { roleId: rootRole.id, isActive: true },
+        { client: trx }
+      )
+
+      return this.serialize(company)
+    })
   }
 
   async update(tenant: TenantContext, id: number, dto: UpdateCompanyDTO) {
@@ -221,6 +254,21 @@ export class CompanyService {
     }
 
     return this.serialize(company)
+  }
+
+  /**
+   * Companies available as the source of a user import — every active
+   * company except the tenant's own. Returned as a slim list (id + names).
+   */
+  async listImportSources(tenant: TenantContext) {
+    const companies = await companyRepository
+      .listActive()
+      .whereNot('id', tenant.company.id)
+    return companies.map((company) => ({
+      id: company.id,
+      legalName: company.legalName,
+      tradeName: company.tradeName,
+    }))
   }
 
   /** Soft-deletes a company. The active company cannot be deleted. */
