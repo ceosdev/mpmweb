@@ -17,6 +17,8 @@ export interface CompanySummary {
   legalName: string
   tradeName: string | null
   slug: string
+  /** Relative path under the API host, e.g. `/uploads/logos/abc.png`. */
+  logoUrl: string | null
   role: string | null
 }
 
@@ -61,7 +63,19 @@ export interface Role {
   slug: string
   description: string | null
   isSystem: boolean
+  isActive: boolean
   permissions?: Permission[]
+}
+
+export interface RoleListItem {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  isSystem: boolean
+  isActive: boolean
+  permissionsCount: number
+  createdAt: string | null
 }
 
 export interface UserListItem {

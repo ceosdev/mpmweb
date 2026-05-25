@@ -45,6 +45,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'permissions.view', name: 'Visualizar permissões', module: 'permissions', action: 'view', description: 'Consultar perfis e permissões.' },
   { slug: 'permissions.manage', name: 'Administrar permissões', module: 'permissions', action: 'manage', description: 'Definir as permissões extras dos usuários.' },
 
+  // Roles (perfis por empresa)
+  { slug: 'roles.view', name: 'Visualizar perfis', module: 'roles', action: 'view', description: 'Listar e consultar perfis da empresa.' },
+  { slug: 'roles.create', name: 'Criar perfis', module: 'roles', action: 'create', description: 'Cadastrar novos perfis na empresa.' },
+  { slug: 'roles.edit', name: 'Editar perfis', module: 'roles', action: 'edit', description: 'Alterar perfis e suas permissões.' },
+  { slug: 'roles.delete', name: 'Excluir perfis', module: 'roles', action: 'delete', description: 'Remover perfis da empresa.' },
+
   // Payment types
   { slug: 'payment_types.view', name: 'Visualizar tipos de pagamento', module: 'payment_types', action: 'view', description: 'Listar e consultar tipos de pagamento da empresa.' },
   { slug: 'payment_types.create', name: 'Criar tipos de pagamento', module: 'payment_types', action: 'create', description: 'Cadastrar novos tipos de pagamento.' },
@@ -82,7 +88,7 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'product_subgroups.delete', name: 'Excluir subgrupos de produto', module: 'product_subgroups', action: 'delete', description: 'Remover subgrupos de produto.' },
 ]
 
-export type RoleSlug = 'root' | 'admin' | 'operator'
+export type RoleSlug = 'root'
 
 export interface RoleDefinition {
   slug: RoleSlug
@@ -93,7 +99,9 @@ export interface RoleDefinition {
 }
 
 /**
- * The three bootstrap roles and the permissions each one receives.
+ * Bootstrap roles. Only ROOT is a platform-level role; every other profile
+ * is created per company by the users themselves via the roles management
+ * screen.
  */
 export const ROLES: Record<RoleSlug, RoleDefinition> = {
   root: {
@@ -101,27 +109,5 @@ export const ROLES: Record<RoleSlug, RoleDefinition> = {
     name: 'ROOT',
     description: 'Usuário master da plataforma, com acesso irrestrito.',
     permissions: WILDCARD,
-  },
-  admin: {
-    slug: 'admin',
-    name: 'ADMIN',
-    description: 'Administrador da empresa.',
-    permissions: [
-      'dashboard.view',
-      'companies.view',
-      'companies.edit',
-      'users.view',
-      'users.create',
-      'users.edit',
-      'users.delete',
-      'permissions.view',
-      'permissions.manage',
-    ],
-  },
-  operator: {
-    slug: 'operator',
-    name: 'OPERADOR',
-    description: 'Usuário operacional, com acesso às funcionalidades permitidas.',
-    permissions: ['dashboard.view', 'companies.view', 'users.view'],
   },
 }

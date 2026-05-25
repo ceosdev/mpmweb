@@ -14,6 +14,8 @@ export interface CompanySummary {
   legalName: string
   tradeName: string | null
   slug: string
+  /** Relative path under the API host (`/uploads/logos/...`) or null. */
+  logoUrl: string | null
   role: string | null
 }
 
@@ -123,6 +125,7 @@ export class AuthService {
         legalName: company.legalName,
         tradeName: company.tradeName,
         slug: company.slug,
+        logoUrl: company.logoPath ?? null,
         role: 'root',
       }))
     }
@@ -135,6 +138,7 @@ export class AuthService {
         legalName: m.company.legalName,
         tradeName: m.company.tradeName,
         slug: m.company.slug,
+        logoUrl: m.company.logoPath ?? null,
         role: m.role?.slug ?? null,
       }))
   }

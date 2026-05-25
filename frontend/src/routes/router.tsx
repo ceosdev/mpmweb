@@ -36,6 +36,12 @@ const CompanyFormPage = lazy(() =>
 const PermissionsPage = lazy(() =>
   import('@/modules/permissions/permissions-page').then((m) => ({ default: m.PermissionsPage }))
 )
+const RolesPage = lazy(() =>
+  import('@/modules/roles/roles-page').then((m) => ({ default: m.RolesPage }))
+)
+const RoleFormPage = lazy(() =>
+  import('@/modules/roles/role-form-page').then((m) => ({ default: m.RoleFormPage }))
+)
 const PaymentTypesPage = lazy(() =>
   import('@/modules/payment-types/payment-types-page').then((m) => ({
     default: m.PaymentTypesPage,
@@ -122,6 +128,18 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="permissions.view" />,
             children: [{ path: 'permissions', element: <PermissionsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="roles.view" />,
+            children: [{ path: 'roles', element: <RolesPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="roles.create" />,
+            children: [{ path: 'roles/new', element: <RoleFormPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="roles.edit" />,
+            children: [{ path: 'roles/:id/edit', element: <RoleFormPage /> }],
           },
           {
             element: <PermissionRoute permission="payment_types.view" />,

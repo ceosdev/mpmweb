@@ -23,6 +23,7 @@ const CatalogController = () => import('#controllers/catalog_controller')
 const DashboardController = () => import('#controllers/dashboard_controller')
 const UsersController = () => import('#controllers/users_controller')
 const CompaniesController = () => import('#controllers/companies_controller')
+const RolesController = () => import('#controllers/roles_controller')
 const PaymentTypesController = () => import('#controllers/payment_types_controller')
 const DocumentTypesController = () => import('#controllers/document_types_controller')
 const UnitsOfMeasureController = () => import('#controllers/units_of_measure_controller')
@@ -100,10 +101,21 @@ router
       .use(middleware.permission('companies.delete'))
 
     // RBAC catalog
-    router.get('/roles', [CatalogController, 'roles']).use(middleware.permission('permissions.view'))
     router
       .get('/permissions', [CatalogController, 'permissions'])
       .use(middleware.permission('permissions.view'))
+
+    // Roles (perfis por empresa)
+    router.get('/roles', [RolesController, 'index']).use(middleware.permission('roles.view'))
+    router
+      .get('/roles/options', [RolesController, 'options'])
+      .use(middleware.permission('permissions.view'))
+    router.post('/roles', [RolesController, 'store']).use(middleware.permission('roles.create'))
+    router.get('/roles/:id', [RolesController, 'show']).use(middleware.permission('roles.view'))
+    router.put('/roles/:id', [RolesController, 'update']).use(middleware.permission('roles.edit'))
+    router
+      .delete('/roles/:id', [RolesController, 'destroy'])
+      .use(middleware.permission('roles.delete'))
 
     // Payment types
     router

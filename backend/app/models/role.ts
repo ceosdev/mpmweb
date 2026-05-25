@@ -25,6 +25,12 @@ export default class Role extends BaseModel {
   @column()
   declare isSystem: boolean
 
+  @column()
+  declare companyId: number | null
+
+  @column()
+  declare isActive: boolean
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

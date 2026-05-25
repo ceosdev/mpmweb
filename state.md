@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-05-23
+**Snapshot**: 2026-05-24
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
@@ -26,7 +26,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | Tabela | Resumo |
 | --- | --- |
 | `companies` | Tenants. Soft delete. Identificação + IE/IM + endereço + contato + logo. |
-| `roles` | Perfis (ROOT, ADMIN, OPERADOR). |
+| `roles` | Perfis. ROOT é o único global (`company_id NULL`, `is_system=true`, inviolável); todos os demais são por empresa, criados pelo cliente. Tem `is_active` para desativar sem excluir. Unique `(company_id, slug)`. |
 | `permissions` | Catálogo de slugs `<module>.<action>`. |
 | `users` | Usuários da plataforma. Senha hasheada. Soft delete. `is_root` libera curinga `*`. |
 | `memberships` | Vínculo `user × company` com `role` + `extra_permissions`. Soft delete. |
@@ -48,11 +48,12 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 
 - **Auth** — login, refresh, logout, forgot/reset password (token JWT stateless de 30 min para reset).
 - **Multitenant** — header `x-company-id` define empresa ativa; `TenantContext` aplica permissões + escopo de dados.
-- **RBAC** — catálogo em `backend/app/abilities/catalog.ts`. Slugs `dashboard.*`, `companies.*`, `users.*`, `permissions.*`. ROOT bypassa tudo.
+- **RBAC** — catálogo em `backend/app/abilities/catalog.ts`. Slugs `dashboard.*`, `companies.*`, `users.*`, `permissions.*`, `roles.*`. ROOT bypassa tudo. ADMIN/OPERADOR não existem mais como perfis seedados — cada empresa cria os seus.
 - **Dashboard** — contagens (usuários, empresas, roles, permissions).
 - **Users (CRUD)** — listagem paginada, modal de form, papel + permissões extras.
 - **Companies (CRUD)** — listagem paginada com avatar de logo; formulário em **rota dedicada** (`/companies/new` e `/companies/:id/edit`) com seções Identificação, Endereço, Contato, Logomarca. Upload de logo via multipart único, atomicidade no create (rollback se upload falhar).
 - **Permissions** — visualização do catálogo e edição por role.
+- **Perfis (CRUD)** — perfis (roles) por empresa, com formulário em **rota dedicada** (`/roles`, `/roles/new`, `/roles/:id/edit`) e seletor de permissões agrupadas por módulo. ROOT é invisível à UI. Ver [spec 007](docs/spec/cadastros/007-criar-tela-perfil.md).
 - **Payment Types (CRUD)** — primeiro CRUD do padrão "simples" (descrição + status, multitenant, hard delete, modal). Aplicação canônica da rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 - **Tipos de documento (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 - **Unidades de medida (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
@@ -71,7 +72,8 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET /dashboard`
 - `GET|POST /users`, `GET|PUT|DELETE /users/:id`
 - `GET|POST /companies`, `GET|PUT|DELETE /companies/:id` *(POST/PUT aceitam multipart com `logo` + `removeLogo`)*
-- `GET /roles`, `GET /permissions`
+- `GET /permissions`
+- `GET|POST /roles`, `GET /roles/options`, `GET|PUT|DELETE /roles/:id`
 - `GET|POST /payment-types`, `GET|PUT|DELETE /payment-types/:id`
 - `GET|POST /document-types`, `GET|PUT|DELETE /document-types/:id`
 - `GET|POST /units-of-measure`, `GET|PUT|DELETE /units-of-measure/:id`
@@ -87,8 +89,9 @@ Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 Públicas: `/login`, `/forgot-password`, `/reset-password`.
 Autenticadas: `/select-company`.
 Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
-`/companies/new`, `/companies/:id/edit`, `/permissions`, `/payment-types`,
-`/document-types`, `/units-of-measure`, `/service-groups`, `/product-groups`,
+`/companies/new`, `/companies/:id/edit`, `/roles`, `/roles/new`,
+`/roles/:id/edit`, `/permissions`, `/payment-types`, `/document-types`,
+`/units-of-measure`, `/service-groups`, `/product-groups`,
 `/product-groups/:groupId/subgroups` *(drill-down — não está no menu)*.
 
 ## Convenções importantes

@@ -19,7 +19,9 @@ export class DashboardService {
       ? await this.count(db.from('companies').where('is_active', true).whereNull('deleted_at'))
       : 1
 
-    const totalRoles = await this.count(db.from('roles'))
+    const totalRoles = await this.count(
+      db.from('roles').where('company_id', tenant.company.id).where('is_system', false)
+    )
     const totalPermissions = await this.count(db.from('permissions'))
 
     return {

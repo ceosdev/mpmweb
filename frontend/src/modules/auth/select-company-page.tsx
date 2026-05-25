@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Boxes, Building2, ChevronRight, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/providers/auth-provider'
+import { resolveAssetUrl } from '@/services/api-client'
 import { getErrorMessage } from '@/lib/errors'
 import { Button } from '@/components/ui/button'
 
@@ -49,32 +50,43 @@ export function SelectCompanyPage() {
           </p>
         ) : (
           <div className="space-y-2">
-            {companies.map((company) => (
-              <button
-                key={company.id}
-                type="button"
-                onClick={() => choose(company.id)}
-                disabled={pendingId !== null}
-                className="flex w-full items-center gap-3 rounded-lg border bg-background p-3 text-left transition-colors hover:bg-accent disabled:opacity-60"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <Building2 className="size-4" />
-                </span>
-                <span className="flex-1 truncate">
-                  <span className="block truncate text-sm font-medium">
-                    {company.tradeName ?? company.legalName}
+            {companies.map((company) => {
+              const logoUrl = resolveAssetUrl(company.logoUrl)
+              return (
+                <button
+                  key={company.id}
+                  type="button"
+                  onClick={() => choose(company.id)}
+                  disabled={pendingId !== null}
+                  className="flex w-full items-center gap-3 rounded-lg border bg-background p-3 text-left transition-colors hover:bg-accent disabled:opacity-60"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background">
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt=""
+                        className="size-full object-contain"
+                      />
+                    ) : (
+                      <Building2 className="size-4 text-muted-foreground" />
+                    )}
                   </span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {company.legalName}
+                  <span className="flex-1 truncate">
+                    <span className="block truncate text-sm font-medium">
+                      {company.tradeName ?? company.legalName}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {company.legalName}
+                    </span>
                   </span>
-                </span>
-                {pendingId === company.id ? (
-                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                )}
-              </button>
-            ))}
+                  {pendingId === company.id ? (
+                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  )}
+                </button>
+              )
+            })}
           </div>
         )}
 
