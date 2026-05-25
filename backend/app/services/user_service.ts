@@ -113,36 +113,32 @@ export class UserService {
   }
 
   /**
-   * Creates a user inside the active company. If a platform account with the
-   * same e-mail already exists, it is reused and only the membership is added.
+   * Creates a user inside the active company. The e-mail is a global
+   * identifier on the platform — duplicates are rejected, even across
+   * companies.
    */
   async create(tenant: TenantContext, dto: CreateUserDTO) {
     return db.transaction(async (trx) => {
-      let user = await User.query({ client: trx })
+      const existing = await User.query({ client: trx })
         .whereRaw('lower(email) = ?', [dto.email.toLowerCase()])
         .whereNull('deleted_at')
         .first()
 
-      if (user) {
-        const alreadyLinked = await Membership.query({ client: trx })
-          .where('user_id', user.id)
-          .where('company_id', tenant.company.id)
-          .whereNull('deleted_at')
-          .first()
-        if (alreadyLinked) {
-          throw new BusinessException('Este usuário já está vinculado a esta empresa.')
-        }
-      } else {
-        user = await User.create(
-          {
-            name: dto.name,
-            email: dto.email,
-            password: dto.password,
-            isActive: dto.isActive ?? true,
-          },
-          { client: trx }
+      if (existing) {
+        throw new BusinessException(
+          'Não é permitido criar um novo usuário com o e-mail de um usuário já existente.'
         )
       }
+
+      const user = await User.create(
+        {
+          name: dto.name,
+          email: dto.email,
+          password: dto.password,
+          isActive: dto.isActive ?? true,
+        },
+        { client: trx }
+      )
 
       const membership = await Membership.create(
         {
@@ -179,6 +175,9 @@ export class UserService {
       }
 
       const user = membership.user
+      if (user.isRoot) {
+        throw new BusinessException('Não é permitido alterar dados do usuário ROOT.')
+      }
       if (dto.name !== undefined) user.name = dto.name
       if (dto.password !== undefined) user.password = dto.password
       if (dto.isActive !== undefined) user.isActive = dto.isActive
@@ -208,6 +207,11 @@ export class UserService {
     const membership = await membershipRepository.findMembership(userId, tenant.company.id)
     if (!membership) {
       throw new NotFoundException('Usuário não encontrado nesta empresa.')
+    }
+
+    await membership.load('user')
+    if (membership.user.isRoot) {
+      throw new BusinessException('Não é permitido remover o usuário ROOT.')
     }
 
     membership.isActive = false

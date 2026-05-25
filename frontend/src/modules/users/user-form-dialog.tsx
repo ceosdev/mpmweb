@@ -3,12 +3,14 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { usersApi, type CreateUserPayload, type UpdateUserPayload } from '@/services/users-api'
 import { getErrorMessage } from '@/lib/errors'
+import { moduleLabel } from '@/permissions/module-labels'
 import type { Permission, Role, UserDetail } from '@/types/api'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,13 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-const MODULE_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard',
-  companies: 'Empresas',
-  users: 'Usuários',
-  permissions: 'Permissões',
-}
 
 const schema = z.object({
   name: z.string().min(2, 'Informe o nome completo.'),
@@ -72,6 +67,7 @@ export function UserFormDialog({
   const isEdit = Boolean(user)
   const queryClient = useQueryClient()
   const [selectedPermissions, setSelectedPermissions] = useState<number[]>([])
+  const [extrasOpen, setExtrasOpen] = useState(false)
 
   const {
     register,
@@ -95,6 +91,7 @@ export function UserFormDialog({
       isActive: user?.isActive ?? true,
     })
     setSelectedPermissions(user?.extraPermissions.map((p) => p.id) ?? [])
+    setExtrasOpen(false)
   }, [open, user, reset])
 
   const mutation = useMutation({
@@ -230,39 +227,64 @@ export function UserFormDialog({
 
           {canManagePermissions && (
             <div className="space-y-2">
-              <Label>Permissões extras</Label>
-              <p className="text-xs text-muted-foreground">
-                Concedidas além das permissões do perfil selecionado.
-              </p>
-              <div className="space-y-3 rounded-lg border p-3">
-                {Object.entries(grouped).map(([module, items]) => (
-                  <div key={module} className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      {MODULE_LABELS[module] ?? module}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {items.map((permission) => {
-                        const selected = selectedPermissions.includes(permission.id)
-                        return (
-                          <button
-                            key={permission.id}
-                            type="button"
-                            onClick={() => togglePermission(permission.id)}
-                            className={cn(
-                              'rounded-md border px-2 py-1 text-xs transition-colors',
-                              selected
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'text-muted-foreground hover:bg-accent'
-                            )}
-                          >
-                            {permission.name}
-                          </button>
-                        )
-                      })}
+              <button
+                type="button"
+                onClick={() => setExtrasOpen((open) => !open)}
+                aria-expanded={extrasOpen}
+                aria-controls="extra-permissions"
+                className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-accent"
+              >
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  {selectedPermissions.length > 0
+                    ? 'Permissões extras'
+                    : 'Adicionar permissões extras'}
+                  {selectedPermissions.length > 0 && (
+                    <Badge variant="secondary">
+                      {selectedPermissions.length}{' '}
+                      {selectedPermissions.length === 1 ? 'extra' : 'extras'}
+                    </Badge>
+                  )}
+                </span>
+                {extrasOpen ? (
+                  <ChevronUp className="size-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="size-4 text-muted-foreground" />
+                )}
+              </button>
+              {extrasOpen && (
+                <div id="extra-permissions" className="space-y-3 rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">
+                    Concedidas além das permissões do perfil selecionado.
+                  </p>
+                  {Object.entries(grouped).map(([module, items]) => (
+                    <div key={module} className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        {moduleLabel(module)}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {items.map((permission) => {
+                          const selected = selectedPermissions.includes(permission.id)
+                          return (
+                            <button
+                              key={permission.id}
+                              type="button"
+                              onClick={() => togglePermission(permission.id)}
+                              className={cn(
+                                'rounded-md border px-2 py-1 text-xs transition-colors',
+                                selected
+                                  ? 'border-primary bg-primary/10 text-primary'
+                                  : 'text-muted-foreground hover:bg-accent'
+                              )}
+                            >
+                              {permission.name}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </form>

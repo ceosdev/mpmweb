@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { catalogApi } from '@/services/catalog-api'
 import { useAuth } from '@/providers/auth-provider'
+import { moduleLabel } from '@/permissions/module-labels'
 import type { Permission } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
 import {
@@ -12,13 +13,6 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-
-const MODULE_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard',
-  companies: 'Empresas',
-  users: 'Usuários',
-  permissions: 'Permissões',
-}
 
 /**
  * Read-only view of the RBAC model: the roles and the permission catalog.
@@ -88,7 +82,7 @@ export function PermissionsPage() {
           ) : (
             Object.entries(grouped).map(([module, items]) => (
               <div key={module} className="space-y-2">
-                <p className="text-sm font-medium">{MODULE_LABELS[module] ?? module}</p>
+                <p className="text-sm font-medium">{moduleLabel(module)}</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {items.map((permission) => (
                     <div key={permission.id} className="rounded-lg border p-3">

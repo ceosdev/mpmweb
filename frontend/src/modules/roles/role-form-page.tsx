@@ -11,6 +11,7 @@ import { catalogApi } from '@/services/catalog-api'
 import { useAuth } from '@/providers/auth-provider'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
+import { moduleLabel } from '@/permissions/module-labels'
 import type { Permission, Role } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
 import { FullPageLoader } from '@/components/full-page-loader'
@@ -21,20 +22,6 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 
 const SLUG_REGEX = /^[a-z][a-z0-9_-]*$/
-
-const MODULE_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard',
-  companies: 'Empresas',
-  users: 'Usuários',
-  permissions: 'Permissões',
-  roles: 'Perfis',
-  payment_types: 'Tipos de pagamento',
-  document_types: 'Tipos de documento',
-  units_of_measure: 'Unidades de medida',
-  service_groups: 'Grupos de serviço',
-  product_groups: 'Grupos de produto',
-  product_subgroups: 'Subgrupos de produto',
-}
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Nome é obrigatório.').max(80, 'Máximo 80 caracteres.'),
@@ -130,9 +117,7 @@ export function RoleFormPage() {
       ;(map[permission.module] ??= []).push(permission)
     }
     return Object.entries(map).sort(([a], [b]) => {
-      const la = MODULE_LABELS[a] ?? a
-      const lb = MODULE_LABELS[b] ?? b
-      return la.localeCompare(lb)
+      return moduleLabel(a).localeCompare(moduleLabel(b))
     })
   }, [permissionsQuery.data])
 
@@ -297,7 +282,7 @@ export function RoleFormPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">
-                          {MODULE_LABELS[module] ?? module}
+                          {moduleLabel(module)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {selectedCount} / {ids.length} selecionadas
