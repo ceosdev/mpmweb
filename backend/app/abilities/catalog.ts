@@ -87,6 +87,18 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'product_subgroups.create', name: 'Criar subgrupos de produto', module: 'product_subgroups', action: 'create', description: 'Cadastrar subgrupos dentro de um grupo de produto.' },
   { slug: 'product_subgroups.edit', name: 'Editar subgrupos de produto', module: 'product_subgroups', action: 'edit', description: 'Alterar subgrupos de produto existentes.' },
   { slug: 'product_subgroups.delete', name: 'Excluir subgrupos de produto', module: 'product_subgroups', action: 'delete', description: 'Remover subgrupos de produto.' },
+
+  // Fornecedores
+  { slug: 'suppliers.view', name: 'Visualizar fornecedores', module: 'suppliers', action: 'view', description: 'Listar e consultar fornecedores da empresa.' },
+  { slug: 'suppliers.create', name: 'Criar fornecedores', module: 'suppliers', action: 'create', description: 'Cadastrar novos fornecedores.' },
+  { slug: 'suppliers.edit', name: 'Editar fornecedores', module: 'suppliers', action: 'edit', description: 'Alterar fornecedores existentes.' },
+  { slug: 'suppliers.delete', name: 'Excluir fornecedores', module: 'suppliers', action: 'delete', description: 'Remover fornecedores.' },
+
+  // Clientes
+  { slug: 'customers.view', name: 'Visualizar clientes', module: 'customers', action: 'view', description: 'Listar e consultar clientes da empresa.' },
+  { slug: 'customers.create', name: 'Criar clientes', module: 'customers', action: 'create', description: 'Cadastrar novos clientes.' },
+  { slug: 'customers.edit', name: 'Editar clientes', module: 'customers', action: 'edit', description: 'Alterar clientes existentes.' },
+  { slug: 'customers.delete', name: 'Excluir clientes', module: 'customers', action: 'delete', description: 'Remover clientes.' },
 ]
 
 export type RoleSlug = 'root'

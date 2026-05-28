@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-05-24
+**Snapshot**: 2026-05-28
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (13 tabelas)
+## Esquema do banco (15 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -38,6 +38,8 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `service_groups` | Grupos de serviço por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 | `product_groups` | Grupos de produto por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 | `product_subgroups` | Subgrupos de produto, filhos de `product_groups`. **Hard delete**. FKs `company_id` e `product_group_id` ambas com `RESTRICT`. Multitenant. |
+| `suppliers` | Fornecedores por empresa. Campos: `tax_id` (CPF/CNPJ cru), `name`, `type` (`goods`/`service`), endereço, telefones, contato, `is_active`. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade de `tax_id`. |
+| `customers` | Clientes por empresa (PF/PJ). Campos: `type` (`individual`/`company`), `legal_name`, `trade_name` (PJ), `tax_id` cru, endereço (com `address_number` e `address_complement`), telefones, `email`, `customer_since`, `contact_name`, `is_active`, `is_internal` (flag de cliente interno da oficina). **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade. |
 
 Colunas atuais de `companies` (após migration `1779413112478`):
 `id, legal_name, trade_name, tax_id, state_registration, municipal_registration,
@@ -60,6 +62,8 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Grupos de serviço (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md).
 - **Grupos de produto (CRUD)** — CRUD simples padrão. Ver rule [`simple-crud-pattern`](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md). Linha do parent tem botão `Layers` que abre os subgrupos.
 - **Subgrupos de produto (CRUD aninhado)** — Filhos de `product_groups`, acesso por drill-down (`/product-groups/:groupId/subgroups`), não entra no menu. Permissões separadas `product_subgroups.*`. Mesma UX da simple-CRUD escopada por pai. Ver [spec 006](docs/spec/cadastros/006-criar-tela-subgrupo-de-produto.md).
+- **Fornecedores (CRUD)** — Cadastro mestre por empresa com 11 campos + status. Formulário em modal `max-w-2xl` em 3 seções (Identificação, Endereço, Contato). Validação de CPF/CNPJ com checksum no backend (`#utils/tax_id`) e mirror no frontend (`lib/tax-id.ts`). Listagem com filtros (nome, CPF/CNPJ, tipo, status), paginação, colunas ordenáveis. Hard delete. Ver [spec 010](docs/spec/cadastros/010-criar-tela-fornecedores.md).
+- **Clientes (CRUD)** — Cadastro mestre PF/PJ por empresa com 17 campos. Formulário em modal `max-w-3xl` em 4 seções (Identificação, Endereço, Contato, Dados do cliente). Validação cruzada tipo↔tax_id (PF=11 dígitos+CPF, PJ=14+CNPJ) com mensagens específicas. Label de "Razão social"/"Nome completo" e visibilidade de "Nome fantasia" reagem ao tipo. Filtros: nome (busca em razão social **e** nome fantasia), CPF/CNPJ, tipo, status (default *Ativos*). Inclui `customer_since` (default = hoje no create) e flag `is_internal`. Hard delete. Ver [spec 011](docs/spec/cadastros/011-criar-tela-clientes.md).
 
 ## Rotas
 
@@ -80,6 +84,8 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /service-groups`, `GET|PUT|DELETE /service-groups/:id`
 - `GET|POST /product-groups`, `GET|PUT|DELETE /product-groups/:id`
 - `GET|POST /product-groups/:groupId/subgroups`, `GET|PUT|DELETE /product-groups/:groupId/subgroups/:id`
+- `GET|POST /suppliers`, `GET|PUT|DELETE /suppliers/:id`
+- `GET|POST /customers`, `GET|PUT|DELETE /customers/:id`
 
 Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 `backend/storage/uploads/`).
@@ -92,7 +98,8 @@ Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 `/companies/new`, `/companies/:id/edit`, `/roles`, `/roles/new`,
 `/roles/:id/edit`, `/permissions`, `/payment-types`, `/document-types`,
 `/units-of-measure`, `/service-groups`, `/product-groups`,
-`/product-groups/:groupId/subgroups` *(drill-down — não está no menu)*.
+`/product-groups/:groupId/subgroups` *(drill-down — não está no menu)*,
+`/suppliers`, `/customers`.
 
 ## Convenções importantes
 

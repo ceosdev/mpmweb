@@ -191,3 +191,46 @@ export interface ProductSubgroup {
   isActive: boolean
   createdAt: string | null
 }
+
+export type SupplierType = 'goods' | 'service'
+
+export interface Supplier {
+  id: number
+  taxId: string
+  name: string
+  type: SupplierType
+  address: string | null
+  neighborhood: string | null
+  city: string | null
+  zipCode: string | null
+  phone: string | null
+  mobile: string | null
+  contactName: string | null
+  isActive: boolean
+  createdAt: string | null
+}
+
+export type CustomerType = 'individual' | 'company'
+
+export interface Customer {
+  id: number
+  type: CustomerType
+  legalName: string
+  tradeName: string | null
+  taxId: string
+  address: string | null
+  addressNumber: string | null
+  addressComplement: string | null
+  neighborhood: string | null
+  city: string | null
+  zipCode: string | null
+  phone: string | null
+  mobile: string | null
+  email: string | null
+  /** ISO date (YYYY-MM-DD). */
+  customerSince: string | null
+  contactName: string | null
+  isActive: boolean
+  isInternal: boolean
+  createdAt: string | null
+}

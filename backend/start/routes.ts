@@ -30,6 +30,8 @@ const UnitsOfMeasureController = () => import('#controllers/units_of_measure_con
 const ServiceGroupsController = () => import('#controllers/service_groups_controller')
 const ProductGroupsController = () => import('#controllers/product_groups_controller')
 const ProductSubgroupsController = () => import('#controllers/product_subgroups_controller')
+const SuppliersController = () => import('#controllers/suppliers_controller')
+const CustomersController = () => import('#controllers/customers_controller')
 
 /**
  * Health check.
@@ -227,6 +229,40 @@ router
     router
       .delete('/product-groups/:groupId/subgroups/:id', [ProductSubgroupsController, 'destroy'])
       .use(middleware.permission('product_subgroups.delete'))
+
+    // Fornecedores
+    router
+      .get('/suppliers', [SuppliersController, 'index'])
+      .use(middleware.permission('suppliers.view'))
+    router
+      .post('/suppliers', [SuppliersController, 'store'])
+      .use(middleware.permission('suppliers.create'))
+    router
+      .get('/suppliers/:id', [SuppliersController, 'show'])
+      .use(middleware.permission('suppliers.view'))
+    router
+      .put('/suppliers/:id', [SuppliersController, 'update'])
+      .use(middleware.permission('suppliers.edit'))
+    router
+      .delete('/suppliers/:id', [SuppliersController, 'destroy'])
+      .use(middleware.permission('suppliers.delete'))
+
+    // Clientes
+    router
+      .get('/customers', [CustomersController, 'index'])
+      .use(middleware.permission('customers.view'))
+    router
+      .post('/customers', [CustomersController, 'store'])
+      .use(middleware.permission('customers.create'))
+    router
+      .get('/customers/:id', [CustomersController, 'show'])
+      .use(middleware.permission('customers.view'))
+    router
+      .put('/customers/:id', [CustomersController, 'update'])
+      .use(middleware.permission('customers.edit'))
+    router
+      .delete('/customers/:id', [CustomersController, 'destroy'])
+      .use(middleware.permission('customers.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

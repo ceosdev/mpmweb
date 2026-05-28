@@ -1,0 +1,52 @@
+/**
+ * CPF / CNPJ validation. Both algorithms use weighted sums and a modulus-11
+ * check digit; sequences with all-equal digits (e.g. "11111111111") are
+ * rejected because they would otherwise pass the math.
+ *
+ * Input must already be digits-only. Use `digitsOnly` to sanitize raw user
+ * input first.
+ */
+
+export function digitsOnly(value: string | null | undefined): string {
+  return (value ?? '').replace(/\D/g, '')
+}
+
+export function isValidCpf(value: string): boolean {
+  const cpf = value
+  if (cpf.length !== 11) return false
+  if (/^(\d)\1+$/.test(cpf)) return false
+
+  const digits = cpf.split('').map(Number)
+  const check = (slice: number[], start: number) => {
+    const sum = slice.reduce((acc, n, i) => acc + n * (start - i), 0)
+    const rest = (sum * 10) % 11
+    return rest === 10 ? 0 : rest
+  }
+
+  return check(digits.slice(0, 9), 10) === digits[9] && check(digits.slice(0, 10), 11) === digits[10]
+}
+
+export function isValidCnpj(value: string): boolean {
+  const cnpj = value
+  if (cnpj.length !== 14) return false
+  if (/^(\d)\1+$/.test(cnpj)) return false
+
+  const digits = cnpj.split('').map(Number)
+  const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+  const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+
+  const calc = (slice: number[], weights: number[]) => {
+    const sum = slice.reduce((acc, n, i) => acc + n * weights[i], 0)
+    const rest = sum % 11
+    return rest < 2 ? 0 : 11 - rest
+  }
+
+  return calc(digits.slice(0, 12), weights1) === digits[12] && calc(digits.slice(0, 13), weights2) === digits[13]
+}
+
+/** Accepts a digits-only string of 11 (CPF) or 14 (CNPJ) chars. */
+export function isValidTaxId(value: string): boolean {
+  if (value.length === 11) return isValidCpf(value)
+  if (value.length === 14) return isValidCnpj(value)
+  return false
+}

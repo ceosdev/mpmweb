@@ -1,6 +1,7 @@
 import {
   Building2,
   ClipboardList,
+  Contact,
   FileText,
   LayoutDashboard,
   Package,
@@ -8,6 +9,7 @@ import {
   Settings,
   Shield,
   ShieldCheck,
+  Truck,
   Users,
   Wallet,
   Wrench,
@@ -47,11 +49,13 @@ export const MENU: MenuEntry[] = [
     icon: ClipboardList,
     children: [
       { label: 'Empresas', to: '/companies', icon: Building2, permission: 'companies.view' },
+      { label: 'Clientes', to: '/customers', icon: Contact, permission: 'customers.view' },
       { label: 'Tipos de pagamento', to: '/payment-types', icon: Wallet, permission: 'payment_types.view' },
       { label: 'Tipos de documento', to: '/document-types', icon: FileText, permission: 'document_types.view' },
       { label: 'Unidades de medida', to: '/units-of-measure', icon: Ruler, permission: 'units_of_measure.view' },
       { label: 'Grupos de serviço', to: '/service-groups', icon: Wrench, permission: 'service_groups.view' },
       { label: 'Grupos de produto', to: '/product-groups', icon: Package, permission: 'product_groups.view' },
+      { label: 'Fornecedores', to: '/suppliers', icon: Truck, permission: 'suppliers.view' },
     ],
   },
   {
