@@ -193,7 +193,7 @@ export function CustomersPage() {
             }}
             mask={maskTaxId}
             maxDigits={14}
-            className="w-48"
+            className="block w-48"
           />
         </div>
 
