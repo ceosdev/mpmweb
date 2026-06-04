@@ -99,6 +99,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'customers.create', name: 'Criar clientes', module: 'customers', action: 'create', description: 'Cadastrar novos clientes.' },
   { slug: 'customers.edit', name: 'Editar clientes', module: 'customers', action: 'edit', description: 'Alterar clientes existentes.' },
   { slug: 'customers.delete', name: 'Excluir clientes', module: 'customers', action: 'delete', description: 'Remover clientes.' },
+
+  // Serviços
+  { slug: 'services.view', name: 'Visualizar serviços', module: 'services', action: 'view', description: 'Listar e consultar serviços da empresa.' },
+  { slug: 'services.create', name: 'Criar serviços', module: 'services', action: 'create', description: 'Cadastrar novos serviços.' },
+  { slug: 'services.edit', name: 'Editar serviços', module: 'services', action: 'edit', description: 'Alterar serviços existentes.' },
+  { slug: 'services.delete', name: 'Excluir serviços', module: 'services', action: 'delete', description: 'Remover serviços.' },
 ]
 
 export type RoleSlug = 'root'

@@ -32,6 +32,7 @@ const ProductGroupsController = () => import('#controllers/product_groups_contro
 const ProductSubgroupsController = () => import('#controllers/product_subgroups_controller')
 const SuppliersController = () => import('#controllers/suppliers_controller')
 const CustomersController = () => import('#controllers/customers_controller')
+const ServicesController = () => import('#controllers/services_controller')
 
 /**
  * Health check.
@@ -263,6 +264,23 @@ router
     router
       .delete('/customers/:id', [CustomersController, 'destroy'])
       .use(middleware.permission('customers.delete'))
+
+    // Serviços
+    router
+      .get('/services', [ServicesController, 'index'])
+      .use(middleware.permission('services.view'))
+    router
+      .post('/services', [ServicesController, 'store'])
+      .use(middleware.permission('services.create'))
+    router
+      .get('/services/:id', [ServicesController, 'show'])
+      .use(middleware.permission('services.view'))
+    router
+      .put('/services/:id', [ServicesController, 'update'])
+      .use(middleware.permission('services.edit'))
+    router
+      .delete('/services/:id', [ServicesController, 'destroy'])
+      .use(middleware.permission('services.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

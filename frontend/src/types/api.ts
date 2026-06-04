@@ -210,6 +210,22 @@ export interface Supplier {
   createdAt: string | null
 }
 
+export type ServiceType = 'internal' | 'third_party'
+
+export interface Service {
+  id: number
+  serviceGroupId: number
+  /** Description of the parent service group, returned by the listing. */
+  groupDescription: string | null
+  description: string
+  /** Reference price in reais. */
+  suggestedValue: number | null
+  type: ServiceType
+  notes: string | null
+  isActive: boolean
+  createdAt: string | null
+}
+
 export type CustomerType = 'individual' | 'company'
 
 export interface Customer {

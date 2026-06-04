@@ -82,6 +82,11 @@ const CustomersPage = lazy(() =>
     default: m.CustomersPage,
   }))
 )
+const ServicesPage = lazy(() =>
+  import('@/modules/services/services-page').then((m) => ({
+    default: m.ServicesPage,
+  }))
+)
 const NotFoundPage = lazy(() =>
   import('@/modules/misc/not-found-page').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -187,6 +192,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="customers.view" />,
             children: [{ path: 'customers', element: <CustomersPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="services.view" />,
+            children: [{ path: 'services', element: <ServicesPage /> }],
           },
         ],
       },
