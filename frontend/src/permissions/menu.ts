@@ -1,4 +1,5 @@
 import {
+  Boxes,
   Building2,
   ClipboardList,
   Contact,
@@ -57,6 +58,7 @@ export const MENU: MenuEntry[] = [
       { label: 'Grupos de serviço', to: '/service-groups', icon: Wrench, permission: 'service_groups.view' },
       { label: 'Serviços', to: '/services', icon: Hammer, permission: 'services.view' },
       { label: 'Grupos de produto', to: '/product-groups', icon: Package, permission: 'product_groups.view' },
+      { label: 'Produtos', to: '/products', icon: Boxes, permission: 'products.view' },
       { label: 'Fornecedores', to: '/suppliers', icon: Truck, permission: 'suppliers.view' },
     ],
   },

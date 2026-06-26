@@ -105,6 +105,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'services.create', name: 'Criar serviços', module: 'services', action: 'create', description: 'Cadastrar novos serviços.' },
   { slug: 'services.edit', name: 'Editar serviços', module: 'services', action: 'edit', description: 'Alterar serviços existentes.' },
   { slug: 'services.delete', name: 'Excluir serviços', module: 'services', action: 'delete', description: 'Remover serviços.' },
+
+  // Produtos (o formulário usa a cascata de subgrupos — conceder também product_subgroups.view)
+  { slug: 'products.view', name: 'Visualizar produtos', module: 'products', action: 'view', description: 'Listar e consultar produtos da empresa.' },
+  { slug: 'products.create', name: 'Criar produtos', module: 'products', action: 'create', description: 'Cadastrar novos produtos.' },
+  { slug: 'products.edit', name: 'Editar produtos', module: 'products', action: 'edit', description: 'Alterar produtos existentes.' },
+  { slug: 'products.delete', name: 'Excluir produtos', module: 'products', action: 'delete', description: 'Remover produtos.' },
 ]
 
 export type RoleSlug = 'root'

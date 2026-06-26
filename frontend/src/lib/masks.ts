@@ -66,3 +66,43 @@ export function maskMoney(raw: string): string {
 export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
+
+/**
+ * Mask for a free decimal input in pt-BR (comma decimal, dot thousands, up to
+ * 3 fraction digits). Unlike `maskMoney`, decimals are NOT slid in from the
+ * right — the user types whole numbers naturally ("200") or adds a comma for
+ * fractions ("2,5"). The form holds this masked string; convert it with
+ * `parseDecimal` before sending to the API.
+ */
+export function maskQuantity(raw: string): string {
+  if (!raw) return ''
+  let s = raw.replace(/[^\d,]/g, '')
+  // Keep only the first comma.
+  const firstComma = s.indexOf(',')
+  if (firstComma !== -1) {
+    s = s.slice(0, firstComma + 1) + s.slice(firstComma + 1).replace(/,/g, '')
+  }
+  const parts = s.split(',')
+  const intPart = parts[0].replace(/^0+(?=\d)/, '')
+  const intFmt = (intPart === '' && parts.length > 1 ? '0' : intPart).replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    '.'
+  )
+  if (parts.length > 1) {
+    return `${intFmt},${parts[1].slice(0, 3)}`
+  }
+  return intFmt
+}
+
+/** pt-BR masked decimal ("1.234,5") → number (1234.5), or null when empty. */
+export function parseDecimal(masked: string): number | null {
+  if (!masked) return null
+  const normalized = masked.replace(/\./g, '').replace(',', '.')
+  const n = Number(normalized)
+  return Number.isFinite(n) ? n : null
+}
+
+/** Formats a numeric quantity in pt-BR (up to 3 fraction digits). */
+export function formatQuantity(value: number): string {
+  return value.toLocaleString('pt-BR', { maximumFractionDigits: 3 })
+}

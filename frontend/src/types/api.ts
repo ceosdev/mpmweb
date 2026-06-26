@@ -226,6 +226,28 @@ export interface Service {
   createdAt: string | null
 }
 
+export type ProductType = 'consumable' | 'fixed_asset'
+
+export interface Product {
+  id: number
+  description: string
+  type: ProductType
+  productGroupId: number | null
+  /** Description of the parent product group, returned by the listing. */
+  groupDescription: string | null
+  productSubgroupId: number | null
+  unitOfMeasureId: number | null
+  /** Description of the unit of measure, returned by the listing. */
+  unitDescription: string | null
+  controlsStock: boolean
+  minimumStock: number | null
+  quantityInStock: number | null
+  /** Cost price in reais. */
+  costPrice: number | null
+  isActive: boolean
+  createdAt: string | null
+}
+
 export type CustomerType = 'individual' | 'company'
 
 export interface Customer {
