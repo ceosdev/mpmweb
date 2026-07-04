@@ -34,6 +34,7 @@ const SuppliersController = () => import('#controllers/suppliers_controller')
 const CustomersController = () => import('#controllers/customers_controller')
 const ServicesController = () => import('#controllers/services_controller')
 const ProductsController = () => import('#controllers/products_controller')
+const BrandsController = () => import('#controllers/brands_controller')
 
 /**
  * Health check.
@@ -299,6 +300,15 @@ router
     router
       .delete('/products/:id', [ProductsController, 'destroy'])
       .use(middleware.permission('products.delete'))
+
+    // Marcas
+    router.get('/brands', [BrandsController, 'index']).use(middleware.permission('brands.view'))
+    router.post('/brands', [BrandsController, 'store']).use(middleware.permission('brands.create'))
+    router.get('/brands/:id', [BrandsController, 'show']).use(middleware.permission('brands.view'))
+    router.put('/brands/:id', [BrandsController, 'update']).use(middleware.permission('brands.edit'))
+    router
+      .delete('/brands/:id', [BrandsController, 'destroy'])
+      .use(middleware.permission('brands.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

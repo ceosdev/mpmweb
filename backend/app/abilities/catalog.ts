@@ -111,6 +111,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'products.create', name: 'Criar produtos', module: 'products', action: 'create', description: 'Cadastrar novos produtos.' },
   { slug: 'products.edit', name: 'Editar produtos', module: 'products', action: 'edit', description: 'Alterar produtos existentes.' },
   { slug: 'products.delete', name: 'Excluir produtos', module: 'products', action: 'delete', description: 'Remover produtos.' },
+
+  // Marcas
+  { slug: 'brands.view', name: 'Visualizar marcas', module: 'brands', action: 'view', description: 'Listar e consultar marcas da empresa.' },
+  { slug: 'brands.create', name: 'Criar marcas', module: 'brands', action: 'create', description: 'Cadastrar marcas.' },
+  { slug: 'brands.edit', name: 'Editar marcas', module: 'brands', action: 'edit', description: 'Alterar marcas existentes.' },
+  { slug: 'brands.delete', name: 'Excluir marcas', module: 'brands', action: 'delete', description: 'Remover marcas.' },
 ]
 
 export type RoleSlug = 'root'

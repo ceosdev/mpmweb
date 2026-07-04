@@ -272,3 +272,10 @@ export interface Customer {
   isInternal: boolean
   createdAt: string | null
 }
+
+export interface Brand {
+  id: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}

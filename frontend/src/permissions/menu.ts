@@ -11,6 +11,7 @@ import {
   Settings,
   Shield,
   ShieldCheck,
+  Tags,
   Truck,
   Users,
   Wallet,
@@ -60,6 +61,7 @@ export const MENU: MenuEntry[] = [
       { label: 'Grupos de produto', to: '/product-groups', icon: Package, permission: 'product_groups.view' },
       { label: 'Produtos', to: '/products', icon: Boxes, permission: 'products.view' },
       { label: 'Fornecedores', to: '/suppliers', icon: Truck, permission: 'suppliers.view' },
+      { label: 'Marcas', to: '/brands', icon: Tags, permission: 'brands.view' },
     ],
   },
   {
