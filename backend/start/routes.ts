@@ -35,6 +35,7 @@ const CustomersController = () => import('#controllers/customers_controller')
 const ServicesController = () => import('#controllers/services_controller')
 const ProductsController = () => import('#controllers/products_controller')
 const BrandsController = () => import('#controllers/brands_controller')
+const BrandModelsController = () => import('#controllers/brand_models_controller')
 
 /**
  * Health check.
@@ -309,6 +310,23 @@ router
     router
       .delete('/brands/:id', [BrandsController, 'destroy'])
       .use(middleware.permission('brands.delete'))
+
+    // Modelos (filhos de brands, escopados pelo path :brandId)
+    router
+      .get('/brands/:brandId/models', [BrandModelsController, 'index'])
+      .use(middleware.permission('brand_models.view'))
+    router
+      .post('/brands/:brandId/models', [BrandModelsController, 'store'])
+      .use(middleware.permission('brand_models.create'))
+    router
+      .get('/brands/:brandId/models/:id', [BrandModelsController, 'show'])
+      .use(middleware.permission('brand_models.view'))
+    router
+      .put('/brands/:brandId/models/:id', [BrandModelsController, 'update'])
+      .use(middleware.permission('brand_models.edit'))
+    router
+      .delete('/brands/:brandId/models/:id', [BrandModelsController, 'destroy'])
+      .use(middleware.permission('brand_models.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

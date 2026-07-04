@@ -279,3 +279,11 @@ export interface Brand {
   isActive: boolean
   createdAt: string | null
 }
+
+export interface BrandModel {
+  id: number
+  brandId: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}

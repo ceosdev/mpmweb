@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (18 tabelas)
+## Esquema do banco (19 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -43,6 +43,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `services` | Serviços por empresa. Campos: `service_group_id` (FK `service_groups`), `description`, `suggested_value` (`decimal(12,2)`, em reais, nullable), `type` (`internal`/`third_party`), `notes` (text), `is_active`. **Hard delete**. FKs `company_id` e `service_group_id` ambas com `RESTRICT`. `company_id` denormalizado. Multitenant. Sem unicidade. |
 | `products` | Produtos por empresa. Campos: `description`, `type` (`consumable`/`fixed_asset`, **NOT NULL**), `product_group_id`/`product_subgroup_id`/`unit_of_measure_id` (FKs **opcionais**), `controls_stock` (bool), `minimum_stock`/`quantity_in_stock` (`decimal(12,3)`, nullable), `cost_price` (`decimal(12,2)`, reais, nullable), `is_active`. Só `description` é obrigatório. **Hard delete** (409 em uso). Todas as FKs com `RESTRICT`. Multitenant. Sem unicidade. `controls_stock` governa os campos de estoque (off → ambos `null`); `quantity_in_stock` imutável após o create. |
 | `brands` | Marcas por empresa. Campos: `description`, `is_active`. **Hard delete** (409 em uso). FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade. |
+| `brand_models` | Modelos por marca (filho de `brands`). Campos: `description`, `is_active`. `company_id` denormalizado + FK `brand_id` (autoridade do pai), ambos `RESTRICT`. **Hard delete** (409 em uso). Multitenant. Sem unicidade. Índice `(brand_id, description)`. |
 
 Colunas atuais de `companies` (após migration `1779413112478`):
 `id, legal_name, trade_name, tax_id, state_registration, municipal_registration,
@@ -70,6 +71,7 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Produtos (CRUD)** — Cadastro mestre por empresa. `description` e `type` obrigatórios; grupo/subgrupo/unidade são FKs opcionais. Subgrupo em **cascata** com o grupo (reusa `GET /product-groups/:groupId/subgroups`, que exige `product_subgroups.view` — decisão "C": roles com `products.*` precisam dessa permissão). `controls_stock` governa estoque mínimo/quantidade (off → ambos `null` e desabilitados no form). Tipo **ativo imobilizado** força `controls_stock=false` (toggle travado, campos de estoque desabilitados) — reforçado no backend. `quantity_in_stock` só no create (imutável no edit, estratégia A — validator de update sem o campo); com controle ligado e sem valor nasce `0`. Filtros: descrição, grupo, tipo, controla estoque, status (default *Ativos*) + checkbox **estoque baixo** (`controls_stock && minimum_stock != null && qty <= min`). Máscaras pt-BR: `maskQuantity`/`parseDecimal`/`formatQuantity` em `lib/masks.ts`; novo primitivo `ui/checkbox.tsx`. Hard delete. Ver [spec 013](docs/spec/cadastros/013-criar-tela-produtos.md).
 - **Serviços (CRUD)** — Cadastro mestre por empresa, vinculado a um grupo de serviço (FK). Formulário em modal `max-w-2xl`: descrição, grupo (`Select` só com grupos ativos; no edit mantém o grupo atual mesmo se inativo), tipo (`internal`/`third_party`), valor sugerido (input de moeda BRL, opcional), observações (`textarea`), status. Valor armazenado em `decimal(12,2)` (reais); helpers `maskMoney`/`formatCurrency` em `lib/masks.ts`; novo primitivo `ui/textarea.tsx`. Filtros: descrição + tipo (sem filtro de status). Coluna "Grupo" exibida (não ordenável). Backend valida que o grupo pertence ao tenant (422 *"Grupo de serviço inválido."*). Hard delete (409 em uso). Ver [spec 012](docs/spec/cadastros/012-criar-tela-servicos.md).
 - **Marcas (CRUD)** — CRUD simples padrão. Ver rule [simple-crud-pattern](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md) e [spec 014](docs/spec/cadastros/014-criar-tela-marca.md).
+- **Modelos (CRUD, filho de marcas)** — Cadastro pai-filho: modelo pertence a uma marca. Espelha `product_subgroups`. Rotas aninhadas `/api/brands/:brandId/models`; `brandId` vem do path, service com `ensureParent` (404 neutro "Marca não encontrada."). Página drill-down `/brands/:brandId/models` (gated `brand_models.view`, **sem menu**), acessada por botão ícone `Shapes` em cada linha de Marcas. Campos descrição + status (masculino: Ativo/Inativo). Hard delete (409 em uso). Ver [spec 015](docs/spec/cadastros/015-criar-tela-modelos.md).
 
 ## Rotas
 
@@ -95,6 +97,7 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /services`, `GET|PUT|DELETE /services/:id`
 - `GET|POST /products`, `GET|PUT|DELETE /products/:id`
 - `GET|POST /brands`, `GET|PUT|DELETE /brands/:id`
+- `GET|POST /brands/:brandId/models`, `GET|PUT|DELETE /brands/:brandId/models/:id`
 
 Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 `backend/storage/uploads/`).
@@ -108,7 +111,8 @@ Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 `/roles/:id/edit`, `/permissions`, `/payment-types`, `/document-types`,
 `/units-of-measure`, `/service-groups`, `/product-groups`,
 `/product-groups/:groupId/subgroups` *(drill-down — não está no menu)*,
-`/suppliers`, `/customers`, `/services`, `/products`, `/brands`.
+`/suppliers`, `/customers`, `/services`, `/products`, `/brands`,
+`/brands/:brandId/models` *(drill-down — não está no menu)*.
 
 ## Convenções importantes
 
