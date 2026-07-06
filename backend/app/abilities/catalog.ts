@@ -112,6 +112,12 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'products.edit', name: 'Editar produtos', module: 'products', action: 'edit', description: 'Alterar produtos existentes.' },
   { slug: 'products.delete', name: 'Excluir produtos', module: 'products', action: 'delete', description: 'Remover produtos.' },
 
+  // Ativos (filhos de produtos fixed_asset; o formulário usa marcas + a cascata de modelos — conceder também brands.view e brand_models.view)
+  { slug: 'product_assets.view', name: 'Visualizar ativos', module: 'product_assets', action: 'view', description: 'Listar e consultar os ativos de um produto imobilizado.' },
+  { slug: 'product_assets.create', name: 'Criar ativos', module: 'product_assets', action: 'create', description: 'Cadastrar ativos em um produto imobilizado.' },
+  { slug: 'product_assets.edit', name: 'Editar ativos', module: 'product_assets', action: 'edit', description: 'Alterar ativos existentes.' },
+  { slug: 'product_assets.delete', name: 'Excluir ativos', module: 'product_assets', action: 'delete', description: 'Remover ativos.' },
+
   // Marcas
   { slug: 'brands.view', name: 'Visualizar marcas', module: 'brands', action: 'view', description: 'Listar e consultar marcas da empresa.' },
   { slug: 'brands.create', name: 'Criar marcas', module: 'brands', action: 'create', description: 'Cadastrar marcas.' },

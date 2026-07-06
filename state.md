@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-07-04
+**Snapshot**: 2026-07-06
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (19 tabelas)
+## Esquema do banco (20 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -44,6 +44,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `products` | Produtos por empresa. Campos: `description`, `type` (`consumable`/`fixed_asset`, **NOT NULL**), `product_group_id`/`product_subgroup_id`/`unit_of_measure_id` (FKs **opcionais**), `controls_stock` (bool), `minimum_stock`/`quantity_in_stock` (`decimal(12,3)`, nullable), `cost_price` (`decimal(12,2)`, reais, nullable), `is_active`. Só `description` é obrigatório. **Hard delete** (409 em uso). Todas as FKs com `RESTRICT`. Multitenant. Sem unicidade. `controls_stock` governa os campos de estoque (off → ambos `null`); `quantity_in_stock` imutável após o create. |
 | `brands` | Marcas por empresa. Campos: `description`, `is_active`. **Hard delete** (409 em uso). FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade. |
 | `brand_models` | Modelos por marca (filho de `brands`). Campos: `description`, `is_active`. `company_id` denormalizado + FK `brand_id` (autoridade do pai), ambos `RESTRICT`. **Hard delete** (409 em uso). Multitenant. Sem unicidade. Índice `(brand_id, description)`. |
+| `product_assets` | Ativos/imobilizado por produto (filho de `products`; só produtos `fixed_asset`). Campos: `description` (**NOT NULL**), `asset_code` (cód. patrimônio, null, **sem unicidade**), `brand_id`/`brand_model_id` (FKs opcionais, modelo em cascata da marca), `manufacture_year` (varchar 4), `btu` (varchar 20), `situation` (`available`/`allocated`/`sold`, **NOT NULL** default `available`), `equipment_exists` (bool, **NOT NULL** default `false`), `notes` (text). `company_id` denormalizado + FK `product_id` (autoridade do pai), ambos `RESTRICT`; `brand_id`/`brand_model_id` também `RESTRICT`. **Hard delete**. Multitenant. Índice `(product_id, description)`. |
 
 Colunas atuais de `companies` (após migration `1779413112478`):
 `id, legal_name, trade_name, tax_id, state_registration, municipal_registration,
@@ -54,7 +55,7 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 
 - **Auth** — login, refresh, logout, forgot/reset password (token JWT stateless de 30 min para reset).
 - **Multitenant** — header `x-company-id` define empresa ativa; `TenantContext` aplica permissões + escopo de dados.
-- **RBAC** — catálogo em `backend/app/abilities/catalog.ts`. Slugs `dashboard.*`, `companies.*`, `users.*`, `permissions.*`, `roles.*`. ROOT bypassa tudo. ADMIN/OPERADOR não existem mais como perfis seedados — cada empresa cria os seus.
+- **RBAC** — catálogo em `backend/app/abilities/catalog.ts`. Slugs `dashboard.*`, `companies.*`, `users.*`, `permissions.*`, `roles.*`, `products.*`, `product_assets.*`, `brands.*`, `brand_models.*`, entre outros. ROOT bypassa tudo. ADMIN/OPERADOR não existem mais como perfis seedados — cada empresa cria os seus.
 - **Dashboard** — contagens (usuários, empresas, roles, permissions).
 - **Users (CRUD)** — listagem paginada, modal de form, papel + permissões extras.
 - **Companies (CRUD)** — listagem paginada com avatar de logo; formulário em **rota dedicada** (`/companies/new` e `/companies/:id/edit`) com seções Identificação, Endereço, Contato, Logomarca. Upload de logo via multipart único, atomicidade no create (rollback se upload falhar).
@@ -72,6 +73,7 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Serviços (CRUD)** — Cadastro mestre por empresa, vinculado a um grupo de serviço (FK). Formulário em modal `max-w-2xl`: descrição, grupo (`Select` só com grupos ativos; no edit mantém o grupo atual mesmo se inativo), tipo (`internal`/`third_party`), valor sugerido (input de moeda BRL, opcional), observações (`textarea`), status. Valor armazenado em `decimal(12,2)` (reais); helpers `maskMoney`/`formatCurrency` em `lib/masks.ts`; novo primitivo `ui/textarea.tsx`. Filtros: descrição + tipo (sem filtro de status). Coluna "Grupo" exibida (não ordenável). Backend valida que o grupo pertence ao tenant (422 *"Grupo de serviço inválido."*). Hard delete (409 em uso). Ver [spec 012](docs/spec/cadastros/012-criar-tela-servicos.md).
 - **Marcas (CRUD)** — CRUD simples padrão. Ver rule [simple-crud-pattern](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md) e [spec 014](docs/spec/cadastros/014-criar-tela-marca.md).
 - **Modelos (CRUD, filho de marcas)** — Cadastro pai-filho: modelo pertence a uma marca. Espelha `product_subgroups`. Rotas aninhadas `/api/brands/:brandId/models`; `brandId` vem do path, service com `ensureParent` (404 neutro "Marca não encontrada."). Página drill-down `/brands/:brandId/models` (gated `brand_models.view`, **sem menu**), acessada por botão ícone `Shapes` em cada linha de Marcas. Campos descrição + status (masculino: Ativo/Inativo). Hard delete (409 em uso). Ver [spec 015](docs/spec/cadastros/015-criar-tela-modelos.md).
+- **Ativos (CRUD, filho de produtos)** — Cadastro pai-filho: um ativo/imobilizado pertence a um produto, e **só produtos `fixed_asset`** permitem ativos. Rotas aninhadas `/api/products/:productId/assets`; `productId` vem do path, service com `ensureParent` (404 neutro "Produto não encontrado."; 422 *"Este produto não permite ativos."* quando o produto é `consumable`). Página drill-down `/products/:productId/assets` (gated `product_assets.view`, **sem menu**), acessada por botão ícone `HardDrive` que **só aparece em linhas de produto `fixed_asset`** na tela de Produtos. Campos: descrição (obrigatória), cód. patrimônio, marca + modelo (FKs opcionais, **modelo em cascata** da marca — reusa `GET /brands/:brandId/models`), ano de fabricação, BTU, situação (Disponível/Alocado/Vendido, default Disponível), equipamento existe (checkbox), observação. Filtros: cód. patrimônio, descrição, situação. Form modal `max-w-2xl`. **Dependência de permissão**: roles com `product_assets.*` precisam também de `brands.view` + `brand_models.view` (mesma decisão de Produtos/subgrupos). Hard delete. Ver [spec 016](docs/spec/cadastros/016-criar-tela-ativos.md).
 
 ## Rotas
 
@@ -96,6 +98,7 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /customers`, `GET|PUT|DELETE /customers/:id`
 - `GET|POST /services`, `GET|PUT|DELETE /services/:id`
 - `GET|POST /products`, `GET|PUT|DELETE /products/:id`
+- `GET|POST /products/:productId/assets`, `GET|PUT|DELETE /products/:productId/assets/:id`
 - `GET|POST /brands`, `GET|PUT|DELETE /brands/:id`
 - `GET|POST /brands/:brandId/models`, `GET|PUT|DELETE /brands/:brandId/models/:id`
 
@@ -111,7 +114,8 @@ Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 `/roles/:id/edit`, `/permissions`, `/payment-types`, `/document-types`,
 `/units-of-measure`, `/service-groups`, `/product-groups`,
 `/product-groups/:groupId/subgroups` *(drill-down — não está no menu)*,
-`/suppliers`, `/customers`, `/services`, `/products`, `/brands`,
+`/suppliers`, `/customers`, `/services`, `/products`,
+`/products/:productId/assets` *(drill-down — não está no menu)*, `/brands`,
 `/brands/:brandId/models` *(drill-down — não está no menu)*.
 
 ## Convenções importantes

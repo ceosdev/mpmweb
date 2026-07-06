@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Package, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { HardDrive, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { productsApi, type ProductListParams } from '@/services/products-api'
 import { productGroupsApi } from '@/services/product-groups-api'
@@ -66,6 +67,7 @@ function isLowStock(row: Product): boolean {
 
 export function ProductsPage() {
   const { tenant } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
@@ -389,6 +391,18 @@ export function ProductsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
+                        {row.type === 'fixed_asset' && (
+                          <Can permission="product_assets.view">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/products/${row.id}/assets`)}
+                              aria-label="Ativos"
+                            >
+                              <HardDrive className="size-4" />
+                            </Button>
+                          </Can>
+                        )}
                         <Can permission="products.edit">
                           <Button
                             variant="ghost"

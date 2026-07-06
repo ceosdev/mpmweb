@@ -287,3 +287,20 @@ export interface BrandModel {
   isActive: boolean
   createdAt: string | null
 }
+
+export type AssetSituation = 'available' | 'allocated' | 'sold'
+
+export interface ProductAsset {
+  id: number
+  productId: number
+  description: string
+  assetCode: string | null
+  brandId: number | null
+  brandModelId: number | null
+  manufactureYear: string | null
+  btu: string | null
+  situation: AssetSituation
+  equipmentExists: boolean
+  notes: string | null
+  createdAt: string | null
+}

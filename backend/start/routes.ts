@@ -34,6 +34,7 @@ const SuppliersController = () => import('#controllers/suppliers_controller')
 const CustomersController = () => import('#controllers/customers_controller')
 const ServicesController = () => import('#controllers/services_controller')
 const ProductsController = () => import('#controllers/products_controller')
+const ProductAssetsController = () => import('#controllers/product_assets_controller')
 const BrandsController = () => import('#controllers/brands_controller')
 const BrandModelsController = () => import('#controllers/brand_models_controller')
 
@@ -301,6 +302,23 @@ router
     router
       .delete('/products/:id', [ProductsController, 'destroy'])
       .use(middleware.permission('products.delete'))
+
+    // Ativos (filhos de products, escopados pelo path :productId — só produtos fixed_asset)
+    router
+      .get('/products/:productId/assets', [ProductAssetsController, 'index'])
+      .use(middleware.permission('product_assets.view'))
+    router
+      .post('/products/:productId/assets', [ProductAssetsController, 'store'])
+      .use(middleware.permission('product_assets.create'))
+    router
+      .get('/products/:productId/assets/:id', [ProductAssetsController, 'show'])
+      .use(middleware.permission('product_assets.view'))
+    router
+      .put('/products/:productId/assets/:id', [ProductAssetsController, 'update'])
+      .use(middleware.permission('product_assets.edit'))
+    router
+      .delete('/products/:productId/assets/:id', [ProductAssetsController, 'destroy'])
+      .use(middleware.permission('product_assets.delete'))
 
     // Marcas
     router.get('/brands', [BrandsController, 'index']).use(middleware.permission('brands.view'))

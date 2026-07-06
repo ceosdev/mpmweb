@@ -92,6 +92,11 @@ const ProductsPage = lazy(() =>
     default: m.ProductsPage,
   }))
 )
+const ProductAssetsPage = lazy(() =>
+  import('@/modules/product-assets/product-assets-page').then((m) => ({
+    default: m.ProductAssetsPage,
+  }))
+)
 const BrandsPage = lazy(() =>
   import('@/modules/brands/brands-page').then((m) => ({
     default: m.BrandsPage,
@@ -215,6 +220,12 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="products.view" />,
             children: [{ path: 'products', element: <ProductsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="product_assets.view" />,
+            children: [
+              { path: 'products/:productId/assets', element: <ProductAssetsPage /> },
+            ],
           },
           {
             element: <PermissionRoute permission="brands.view" />,
