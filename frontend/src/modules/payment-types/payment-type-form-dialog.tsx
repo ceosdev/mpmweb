@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ import {
 const schema = z.object({
   description: z.string().trim().min(1, 'Descrição é obrigatória.'),
   isActive: z.boolean(),
+  autoSettlement: z.boolean(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -58,7 +60,7 @@ export function PaymentTypeFormDialog({
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { description: '', isActive: true },
+    defaultValues: { description: '', isActive: true, autoSettlement: false },
   })
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export function PaymentTypeFormDialog({
     reset({
       description: paymentType?.description ?? '',
       isActive: paymentType?.isActive ?? true,
+      autoSettlement: paymentType?.autoSettlement ?? false,
     })
   }, [open, paymentType, reset])
 
@@ -74,6 +77,7 @@ export function PaymentTypeFormDialog({
       const payload = {
         description: values.description.trim(),
         isActive: values.isActive,
+        autoSettlement: values.autoSettlement,
       }
       if (isEdit && paymentType) {
         return paymentTypesApi.update(paymentType.id, payload satisfies UpdatePaymentTypePayload)
@@ -117,6 +121,23 @@ export function PaymentTypeFormDialog({
               <div className="flex items-center justify-between">
                 <Label htmlFor="isActive">Ativo</Label>
                 <Switch id="isActive" checked={field.value} onCheckedChange={field.onChange} />
+              </div>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="autoSettlement"
+            render={({ field }) => (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="autoSettlement"
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                />
+                <Label htmlFor="autoSettlement" className="text-sm font-normal">
+                  Realiza baixa automática de título
+                </Label>
               </div>
             )}
           />

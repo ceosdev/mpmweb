@@ -23,6 +23,9 @@ export default class PaymentType extends BaseModel {
   @column()
   declare isActive: boolean
 
+  @column({ columnName: 'auto_settlement' })
+  declare autoSettlement: boolean
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

@@ -18,6 +18,7 @@ export const createPaymentTypeValidator = vine.compile(
   vine.object({
     description: vine.string().trim().minLength(1).maxLength(120),
     isActive: vine.boolean().optional(),
+    autoSettlement: vine.boolean().optional(),
   })
 )
 createPaymentTypeValidator.messagesProvider = messages
@@ -26,6 +27,7 @@ export const updatePaymentTypeValidator = vine.compile(
   vine.object({
     description: vine.string().trim().minLength(1).maxLength(120).optional(),
     isActive: vine.boolean().optional(),
+    autoSettlement: vine.boolean().optional(),
   })
 )
 updatePaymentTypeValidator.messagesProvider = messages

@@ -21,11 +21,13 @@ const SORT_COLUMNS: Record<string, string> = {
 export interface CreatePaymentTypeDTO {
   description: string
   isActive?: boolean
+  autoSettlement?: boolean
 }
 
 export interface UpdatePaymentTypeDTO {
   description?: string
   isActive?: boolean
+  autoSettlement?: boolean
 }
 
 /**
@@ -74,6 +76,7 @@ export class PaymentTypeService {
       companyId: tenant.company.id,
       description: dto.description,
       isActive: dto.isActive ?? true,
+      autoSettlement: dto.autoSettlement ?? false,
     })
     return this.serialize(row)
   }
@@ -86,6 +89,7 @@ export class PaymentTypeService {
 
     if (dto.description !== undefined) row.description = dto.description
     if (dto.isActive !== undefined) row.isActive = dto.isActive
+    if (dto.autoSettlement !== undefined) row.autoSettlement = dto.autoSettlement
     await row.save()
 
     return this.serialize(row)
@@ -119,6 +123,7 @@ export class PaymentTypeService {
       id: row.id,
       description: row.description,
       isActive: row.isActive,
+      autoSettlement: row.autoSettlement,
       createdAt: row.createdAt?.toISO() ?? null,
     }
   }

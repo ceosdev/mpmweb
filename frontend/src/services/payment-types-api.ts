@@ -12,11 +12,13 @@ export interface PaymentTypeListParams {
 export interface CreatePaymentTypePayload {
   description: string
   isActive?: boolean
+  autoSettlement?: boolean
 }
 
 export interface UpdatePaymentTypePayload {
   description?: string
   isActive?: boolean
+  autoSettlement?: boolean
 }
 
 /**

@@ -32,7 +32,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `memberships` | Vínculo `user × company` com `role` + `extra_permissions`. Soft delete. |
 | `role_permissions` | Permissões padrão por role. |
 | `membership_permissions` | Permissões extras por vínculo. |
-| `payment_types` | Tipos de pagamento por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. |
+| `payment_types` | Tipos de pagamento por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. `auto_settlement` (bool, **NOT NULL** default `false`) — realiza baixa automática de título. |
 | `document_types` | Tipos de documento por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 | `units_of_measure` | Unidades de medida por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |
 | `service_groups` | Grupos de serviço por empresa. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. |

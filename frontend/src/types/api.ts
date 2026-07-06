@@ -153,6 +153,8 @@ export interface PaymentType {
   id: number
   description: string
   isActive: boolean
+  /** Whether this payment type performs the automatic write-off (baixa) of a title. */
+  autoSettlement: boolean
   createdAt: string | null
 }
 
