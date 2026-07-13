@@ -87,6 +87,21 @@ Fonte única da verdade: `backend/app/abilities/catalog.ts`. Slug no formato
 As permissões controlam páginas, rotas, menus, botões e ações específicas — no
 backend (middleware/policies) e no frontend (componente `Can`, menu dinâmico).
 
+Ao criar um módulo/tela/funcionalidade com permissão própria, são **dois**
+lugares — os dois obrigatórios:
+
+1. `backend/app/abilities/catalog.ts` — slug/module/action em inglês; `name` e
+   `description` em pt-BR (vão para o banco e aparecem na UI).
+2. `frontend/src/permissions/module-labels.ts` — rótulo do módulo em pt-BR. As
+   telas de Permissões, Perfis e Usuários agrupam o catálogo por `module`; sem
+   a entrada aqui, o usuário vê o slug cru em inglês (`brand_models`).
+
+Padrão do rótulo: **pt-BR capitalizado** — só a inicial em maiúscula, plural
+(`Tipos de pagamento`). Nunca Title Case, nunca inglês. Se a tela é **filha** de
+outra (drill-down), o rótulo nomeia o pai: `Ativos do produto`, `Modelos da
+marca`, `Subgrupos de produto` — nunca só `Ativos`/`Modelos`, que ficam ambíguos
+fora do contexto da navegação.
+
 ## Integração frontend ↔ backend
 
 - API REST sob `/api`. JSON em inglês.

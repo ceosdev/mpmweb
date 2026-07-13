@@ -50,9 +50,35 @@ Se algum desses pontos não vale, **veja a seção "Quando NÃO usar"** mais aba
 ### Permissões
 
 - 4 slugs em inglês: `<module>.view`, `<module>.create`, `<module>.edit`, `<module>.delete`.
-- Adicionar em `backend/app/abilities/catalog.ts`.
+- Adicionar em `backend/app/abilities/catalog.ts`, com `name` e `description` em pt-BR (são exibidos na UI).
 - ROOT já cobre via curinga `*`. Atribuição a ADMIN/OPERADOR não é decidida aqui — vem com a tela futura de montagem de perfil.
 - **Nunca** traduzir os slugs (`tipos_pagamento.criar` é errado).
+
+#### Rótulo do módulo em pt-BR (obrigatório)
+
+Toda permissão nova **também** exige o rótulo do seu módulo em
+`frontend/src/permissions/module-labels.ts`:
+
+```ts
+export const MODULE_LABELS: Record<string, string> = {
+  // …
+  brand_models: 'Modelos',
+}
+```
+
+- As telas **Permissões**, **Perfis** e **Usuários** agrupam o catálogo por
+  `module` e exibem esse rótulo. Sem a entrada no mapa, o fallback mostra o
+  **slug cru em inglês** (`brand_models`, `customers`) para o usuário final.
+- Padrão do rótulo: **português, capitalizado** — só a inicial em maiúscula, o
+  resto minúsculo, no plural. Ex.: `Tipos de pagamento`, `Grupos de produto`.
+  Não usar Title Case (`Tipos De Pagamento` é errado) nem o slug em inglês.
+- **Tela filha** (aberta por drill-down a partir de outra, como Ativos dentro de
+  Produtos): o rótulo **nomeia o pai**, para o usuário saber de onde a tela vem.
+  Use `<Filhos> do/da <pai>`: `Ativos do produto`, `Modelos da marca`,
+  `Subgrupos de produto`. Rótulo solto (`Ativos`, `Modelos`) é ambíguo na lista
+  de permissões, onde não há o contexto da navegação.
+- Em dev, `moduleLabel()` emite um `console.warn` quando o rótulo está faltando
+  — se aparecer no console, o mapa não foi atualizado.
 
 ### Backend (camadas)
 

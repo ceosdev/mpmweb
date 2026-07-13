@@ -88,10 +88,11 @@ Crie/atualize, **nesta ordem**:
 
 1. `frontend/src/types/api.ts` — adicione a interface `<MODEL_CLASS>` no final do arquivo. Ver template **type**.
 2. `frontend/src/services/<URL>-api.ts` — ver template **api-client**.
-3. `frontend/src/permissions/menu.ts` — adicione import do `<ICON>` (no agrupado lucide-react) e item de menu. Ver template **menu**.
-4. `frontend/src/routes/router.tsx` — adicione import lazy + bloco `PermissionRoute` com `path: '<URL>'`. Ver template **router**.
-5. `frontend/src/modules/<MODULE_FOLDER>/<MODULE_FOLDER>-page.tsx` — listagem com busca por descrição (debounced) + paginação + ordenação. Ver template **page**.
-6. `frontend/src/modules/<MODULE_FOLDER>/<MODEL_VAR_KEBAB>-form-dialog.tsx` — modal. (`MODEL_VAR_KEBAB` = singular do `MODULE_FOLDER`, ex.: `document-type`.) Ver template **dialog**.
+3. `frontend/src/permissions/module-labels.ts` — **obrigatório**: adicione `<MODULE_SLUG>: '<LABEL_PT_PLURAL_CAP>',` ao mapa `MODULE_LABELS`. Sem isso, as telas de Permissões/Perfis/Usuários exibem o slug cru em inglês (ex.: `brand_models`) para o usuário. Rótulo em pt-BR **capitalizado** (só a inicial maiúscula, plural): `Tipos de pagamento`. Se o cadastro for uma **tela filha** (drill-down a partir de outra), o rótulo nomeia o pai — `Ativos do produto`, `Modelos da marca`, `Subgrupos de produto` — e não só `Ativos`/`Modelos`.
+4. `frontend/src/permissions/menu.ts` — adicione import do `<ICON>` (no agrupado lucide-react) e item de menu. Ver template **menu**.
+5. `frontend/src/routes/router.tsx` — adicione import lazy + bloco `PermissionRoute` com `path: '<URL>'`. Ver template **router**.
+6. `frontend/src/modules/<MODULE_FOLDER>/<MODULE_FOLDER>-page.tsx` — listagem com busca por descrição (debounced) + paginação + ordenação. Ver template **page**.
+7. `frontend/src/modules/<MODULE_FOLDER>/<MODEL_VAR_KEBAB>-form-dialog.tsx` — modal. (`MODEL_VAR_KEBAB` = singular do `MODULE_FOLDER`, ex.: `document-type`.) Ver template **dialog**.
 
 ### Etapa 6 — Validar e migrar
 
