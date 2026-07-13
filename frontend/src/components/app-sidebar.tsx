@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, NavLink } from 'react-router-dom'
 import { Boxes, ChevronDown } from 'lucide-react'
 import {
   MENU,
@@ -24,6 +24,9 @@ interface AppSidebarProps {
  *
  * No modo recolhido, os grupos são "achatados" para uma lista plana de
  * ícones — não há espaço para rótulos de seção nem chevrons.
+ *
+ * Os grupos começam sempre fechados ao entrar na aplicação; expandir é uma
+ * ação explícita do usuário.
  */
 export function AppSidebar({ collapsed }: AppSidebarProps) {
   const { can } = usePermissions()
@@ -91,20 +94,9 @@ function SidebarLeaf({ item, collapsed }: { item: MenuLeaf; collapsed: boolean }
 }
 
 function SidebarGroup({ group }: { group: MenuGroup }) {
-  const location = useLocation()
-  const hasActiveChild = group.children.some((child) =>
-    child.to === '/'
-      ? location.pathname === '/'
-      : location.pathname === child.to || location.pathname.startsWith(child.to + '/')
-  )
-
-  const [expanded, setExpanded] = useState(true)
-
-  // Garante que o grupo abra automaticamente quando a navegação cai num filho
-  // (por exemplo, vindo de um link externo direto para /users).
-  useEffect(() => {
-    if (hasActiveChild) setExpanded(true)
-  }, [hasActiveChild])
+  // Ao entrar na aplicação, todo grupo começa fechado — nada abre sozinho, nem
+  // mesmo o grupo que contém a rota atual. Só o clique do usuário expande.
+  const [expanded, setExpanded] = useState(false)
 
   return (
     <div className="space-y-1">
