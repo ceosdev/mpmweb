@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-07-06
+**Snapshot**: 2026-07-13
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (20 tabelas)
+## Esquema do banco (21 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -45,6 +45,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `brands` | Marcas por empresa. Campos: `description`, `is_active`. **Hard delete** (409 em uso). FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade. |
 | `brand_models` | Modelos por marca (filho de `brands`). Campos: `description`, `is_active`. `company_id` denormalizado + FK `brand_id` (autoridade do pai), ambos `RESTRICT`. **Hard delete** (409 em uso). Multitenant. Sem unicidade. Índice `(brand_id, description)`. |
 | `product_assets` | Ativos/imobilizado por produto (filho de `products`; só produtos `fixed_asset`). Campos: `description` (**NOT NULL**), `asset_code` (cód. patrimônio, null, **sem unicidade**), `brand_id`/`brand_model_id` (FKs opcionais, modelo em cascata da marca), `manufacture_year` (varchar 4), `btu` (varchar 20), `situation` (`available`/`allocated`/`sold`, **NOT NULL** default `available`), `equipment_exists` (bool, **NOT NULL** default `false`), `notes` (text). `company_id` denormalizado + FK `product_id` (autoridade do pai), ambos `RESTRICT`; `brand_id`/`brand_model_id` também `RESTRICT`. **Hard delete**. Multitenant. Índice `(product_id, description)`. |
+| `payables` | Títulos a pagar por empresa (financeiro). Campos: `document_number` (**varchar(20)**, não number — preserva zeros à esquerda e aceita "12345/A"), `installment` (ordem/parcela, 1–999, default 1), `supplier_id` (FK, o "cedente"), `issue_date`/`due_date` (`date`), `amount`/`discount`/`fine`/`interest` (`decimal(12,2)`, reais), `notes`. **Campos de resultado, nunca escritos pelo usuário**: `paid_amount` (`decimal(12,2)` default 0 — quem move é o futuro módulo de baixa) e `status` (`open`/`partially_paid`/`paid`/`cancelled`, default `open`, **derivado** de `paid_amount`). **Sem unicidade** — duplicar título é permitido (decisão explícita). **Hard delete**. FKs `company_id` e `supplier_id` com `RESTRICT`. Multitenant. Índices `(company_id, due_date)`, `(company_id, status)`, `(company_id, supplier_id)`. |
 
 Colunas atuais de `companies` (após migration `1779413112478`):
 `id, legal_name, trade_name, tax_id, state_registration, municipal_registration,
@@ -55,7 +56,8 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 
 - **Auth** — login, refresh, logout, forgot/reset password (token JWT stateless de 30 min para reset).
 - **Multitenant** — header `x-company-id` define empresa ativa; `TenantContext` aplica permissões + escopo de dados.
-- **RBAC** — catálogo em `backend/app/abilities/catalog.ts`. Slugs `dashboard.*`, `companies.*`, `users.*`, `permissions.*`, `roles.*`, `products.*`, `product_assets.*`, `brands.*`, `brand_models.*`, entre outros. ROOT bypassa tudo. ADMIN/OPERADOR não existem mais como perfis seedados — cada empresa cria os seus.
+- **RBAC** — catálogo em `backend/app/abilities/catalog.ts`. Slugs `dashboard.*`, `companies.*`, `users.*`, `permissions.*`, `roles.*`, `products.*`, `product_assets.*`, `brands.*`, `brand_models.*`, `payables.*`, entre outros. ROOT bypassa tudo. ADMIN/OPERADOR não existem mais como perfis seedados — cada empresa cria os seus.
+  - **Toda permissão nova exige DOIS arquivos**: `catalog.ts` (backend) **e** `frontend/src/permissions/module-labels.ts` (rótulo pt-BR do módulo). Sem o segundo, as telas de Permissões/Perfis/Usuários exibem o slug cru em inglês. Tela filha nomeia o pai no rótulo (`Ativos do produto`, `Modelos da marca`).
 - **Dashboard** — contagens (usuários, empresas, roles, permissions).
 - **Users (CRUD)** — listagem paginada, modal de form, papel + permissões extras.
 - **Companies (CRUD)** — listagem paginada com avatar de logo; formulário em **rota dedicada** (`/companies/new` e `/companies/:id/edit`) com seções Identificação, Endereço, Contato, Logomarca. Upload de logo via multipart único, atomicidade no create (rollback se upload falhar).
@@ -73,6 +75,8 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Serviços (CRUD)** — Cadastro mestre por empresa, vinculado a um grupo de serviço (FK). Formulário em modal `max-w-2xl`: descrição, grupo (`Select` só com grupos ativos; no edit mantém o grupo atual mesmo se inativo), tipo (`internal`/`third_party`), valor sugerido (input de moeda BRL, opcional), observações (`textarea`), status. Valor armazenado em `decimal(12,2)` (reais); helpers `maskMoney`/`formatCurrency` em `lib/masks.ts`; novo primitivo `ui/textarea.tsx`. Filtros: descrição + tipo (sem filtro de status). Coluna "Grupo" exibida (não ordenável). Backend valida que o grupo pertence ao tenant (422 *"Grupo de serviço inválido."*). Hard delete (409 em uso). Ver [spec 012](docs/spec/cadastros/012-criar-tela-servicos.md).
 - **Marcas (CRUD)** — CRUD simples padrão. Ver rule [simple-crud-pattern](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md) e [spec 014](docs/spec/cadastros/014-criar-tela-marca.md).
 - **Modelos (CRUD, filho de marcas)** — Cadastro pai-filho: modelo pertence a uma marca. Espelha `product_subgroups`. Rotas aninhadas `/api/brands/:brandId/models`; `brandId` vem do path, service com `ensureParent` (404 neutro "Marca não encontrada."). Página drill-down `/brands/:brandId/models` (gated `brand_models.view`, **sem menu**), acessada por botão ícone `Shapes` em cada linha de Marcas. Campos descrição + status (masculino: Ativo/Inativo). Hard delete (409 em uso). Ver [spec 015](docs/spec/cadastros/015-criar-tela-modelos.md).
+- **EntityPicker (componente compartilhado)** — Campo de busca para entidades com **muitos registros** (fornecedor, cliente, …), onde o `Select` de `perPage: 200` não serve. O usuário digita (debounce 350 ms, mín. 2 caracteres), a busca roda **no servidor** e o item escolhido vira um **chip com ×**. O valor do campo é **sempre a FK**; o componente **hidrata o rótulo sozinho** (`?ids=`), então nenhuma tela precisa preparar preload. Suporta seleção múltipla (opt-in; default single). **Desacoplado**: conhece só o contrato `EntitySource` + registry em `components/common/entity-picker/entity-sources.ts` — hoje `supplier` e `customer`; acrescentar entidade nova é 1 arquivo + 1 linha. Usar `EntityPicker` ou `Select` continua sendo decisão de cada tela. Endpoints `GET /api/<entidade>/lookup` (`q` = busca por nome **ou** CPF/CNPJ; `ids` = hidratação) protegidos por **auth + tenant, sem a permissão do cadastro** — quem alcança a tela precisa buscar mesmo sem `suppliers.view`; por isso o payload é mínimo (id, nome, documento, status). Busca só ativos; a hidratação traz o inativo (sufixo `(inativo)`), para vínculo antigo não sumir. Primitivos novos: `ui/command.tsx` (dep `cmdk`) e `ui/popover.tsx`. Ver [spec comum 001](docs/spec/comum/001-componente-entity-picker.md).
+- **Contas a pagar (CRUD)** — Primeira tela do módulo **Financeiro** (grupo de menu novo) e primeira consumidora do EntityPicker. Título com número (texto), ordem/parcela, cedente (fornecedor via EntityPicker), emissão e vencimento (default hoje), valor + desconto + multa + juros (moeda BRL), observação. **`status` é resultado, não escolha**: derivado de `paid_amount` por `PayableService.recomputeStatus()` — **único ponto de escrita** — e o validator nem aceita o campo (payload com `status` é descartado). Neste CRUD todo título nasce e permanece `open`; *pago*/*parcial* virão da **baixa** e *cancelado* da ação de **cancelar** (ambas em specs seguintes). Editar valores de um título já baixado **recalcula o status** (pago cujo valor sobe volta a parcial); saldo nunca negativo; cancelado é terminal (edição → 422). Derivados devolvidos pela API: `total = amount - discount + fine + interest`, `balance = max(0, total - paid_amount)` (0 se cancelado) e `isOverdue`. **"Vencido" é virtual** (`due_date < hoje` **e** ainda devendo, comparação estrita) — mesma regra no filtro e no **vermelho** da coluna Vencimento; "hoje" é calculado **no backend, no fuso da aplicação** (o servidor roda com `TZ=UTC`, ver `#utils/dates`). Coluna **Valor** exibe o `total` e **ordena pela mesma expressão** (`sort=total`), senão a coluna se contradiria. Filtros: número (contém), cedente (EntityPicker), **2 intervalos de data com checkbox** (vencimento **marcado por default**, do 1º ao último dia do mês corrente; emissão desmarcado) e **status de múltipla escolha** (nenhum = todos; combinam em OR). "Limpar filtros" volta ao **default**, não ao vazio. Hard delete. Ver [spec financeiro 001](docs/spec/financeiro/001-criar-tela-contas-a-pagar.md).
 - **Ativos (CRUD, filho de produtos)** — Cadastro pai-filho: um ativo/imobilizado pertence a um produto, e **só produtos `fixed_asset`** permitem ativos. Rotas aninhadas `/api/products/:productId/assets`; `productId` vem do path, service com `ensureParent` (404 neutro "Produto não encontrado."; 422 *"Este produto não permite ativos."* quando o produto é `consumable`). Página drill-down `/products/:productId/assets` (gated `product_assets.view`, **sem menu**), acessada por botão ícone `HardDrive` que **só aparece em linhas de produto `fixed_asset`** na tela de Produtos. Campos: descrição (obrigatória), cód. patrimônio, marca + modelo (FKs opcionais, **modelo em cascata** da marca — reusa `GET /brands/:brandId/models`), ano de fabricação, BTU, situação (Disponível/Alocado/Vendido, default Disponível), equipamento existe (checkbox), observação. Filtros: cód. patrimônio, descrição, situação. Form modal `max-w-2xl`. **Dependência de permissão**: roles com `product_assets.*` precisam também de `brands.view` + `brand_models.view` (mesma decisão de Produtos/subgrupos). Hard delete. Ver [spec 016](docs/spec/cadastros/016-criar-tela-ativos.md).
 
 ## Rotas
@@ -101,6 +105,12 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /products/:productId/assets`, `GET|PUT|DELETE /products/:productId/assets/:id`
 - `GET|POST /brands`, `GET|PUT|DELETE /brands/:id`
 - `GET|POST /brands/:brandId/models`, `GET|PUT|DELETE /brands/:brandId/models/:id`
+- `GET|POST /payables`, `GET|PUT|DELETE /payables/:id`
+
+**Lookup do EntityPicker** — autenticadas + empresa ativa, mas **sem gate de
+permissão** (basta ter acesso à tela que usa o componente). Devolvem payload
+mínimo. Registradas **antes** de `/:id`, senão o router casaria `lookup` como id:
+- `GET /suppliers/lookup`, `GET /customers/lookup` *(`?q=` busca por nome ou documento; `?ids=` hidrata)*
 
 Estáticas: `GET /uploads/*` (servidas pelo `@adonisjs/drive`, disk `fs` em
 `backend/storage/uploads/`).
@@ -116,7 +126,11 @@ Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 `/product-groups/:groupId/subgroups` *(drill-down — não está no menu)*,
 `/suppliers`, `/customers`, `/services`, `/products`,
 `/products/:productId/assets` *(drill-down — não está no menu)*, `/brands`,
-`/brands/:brandId/models` *(drill-down — não está no menu)*.
+`/brands/:brandId/models` *(drill-down — não está no menu)*, `/payables`.
+
+Menu lateral: grupos **Cadastros**, **Financeiro** e **Configurações**. Os grupos
+**começam fechados** ao entrar na aplicação (nada abre sozinho, nem o grupo da
+rota atual); expandir é ação explícita do usuário.
 
 ## Convenções importantes
 
@@ -125,6 +139,11 @@ Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 - **Máscaras**: CPF/CNPJ/CEP/telefone armazenados crus no banco; mascarados só na UI (`frontend/src/lib/masks.ts` + `MaskedInput`).
 - **Soft delete**: setar `deleted_at`; repositories filtram com `whereNull`.
 - **Camadas backend**: HTTP → Middleware → Controller → Service → Repository → Model. Controllers finos, services com a lógica.
+- **Cores só por token** (`bg-primary`, `text-destructive`, …), nunca fixas — é o que faz o dark mode funcionar. Tokens de estado disponíveis: `destructive` (vermelho), `success` (verde), `info` (azul), `secondary` (cinza), com variantes correspondentes no `Badge`.
+- **Datas date-only**: usar `formatIsoDate` (`lib/format.ts`), **não** `formatDate`. `new Date('2026-07-13')` é meia-noite **UTC** e, no fuso do Brasil, exibe **um dia a menos**. (⚠️ `formatDate` ainda é usado em telas antigas e tem esse defeito.)
+- **"Hoje" no backend**: `#utils/dates` (`todayIso`), que converte para `America/Sao_Paulo` — o servidor roda com `TZ=UTC` e o dia viraria às 21h de Brasília.
+- **Query string**: o parser do Adonis **quebra vírgula em array** e o axios **manda a vírgula crua**. Params de lista (`?ids=1,2`, `?status=open,paid`) devem aceitar **string e array** — foi bug real no lookup.
+- **`PageHeader`** aceita `icon`: toda tela exibe, ao lado do título, **o mesmo ícone do seu item de menu**.
 
 ## Storage de arquivos
 
@@ -147,5 +166,9 @@ no uso inicial.
 ## Onde encontrar mais
 
 - Arquitetura geral: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-- Specs de features: [`docs/superpowers/specs/`](docs/superpowers/specs/) e [`docs/spec/`](docs/spec/).
+- Specs de features, organizadas por contexto:
+  - [`docs/spec/cadastros/`](docs/spec/cadastros/) — telas de cadastro (001–016).
+  - [`docs/spec/financeiro/`](docs/spec/financeiro/) — telas do financeiro (001 = contas a pagar).
+  - [`docs/spec/comum/`](docs/spec/comum/) — **componentes e capacidades transversais**, que servem a vários contextos (001 = EntityPicker).
+  - [`docs/superpowers/specs/`](docs/superpowers/specs/) — specs de design mais antigas.
 - Regras de UI do projeto: [`frontend/.agents/skills/mpmweb-ui-patterns/`](frontend/.agents/skills/mpmweb-ui-patterns/).
