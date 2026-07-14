@@ -129,6 +129,13 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'brand_models.create', name: 'Criar modelos', module: 'brand_models', action: 'create', description: 'Cadastrar modelos em uma marca.' },
   { slug: 'brand_models.edit', name: 'Editar modelos', module: 'brand_models', action: 'edit', description: 'Alterar modelos existentes.' },
   { slug: 'brand_models.delete', name: 'Excluir modelos', module: 'brand_models', action: 'delete', description: 'Remover modelos.' },
+
+  // Contas a pagar (financeiro). O fornecedor é escolhido pelo EntityPicker, que
+  // usa o lookup — sem exigir suppliers.view.
+  { slug: 'payables.view', name: 'Visualizar contas a pagar', module: 'payables', action: 'view', description: 'Listar e consultar os títulos a pagar da empresa.' },
+  { slug: 'payables.create', name: 'Criar contas a pagar', module: 'payables', action: 'create', description: 'Lançar novos títulos a pagar.' },
+  { slug: 'payables.edit', name: 'Editar contas a pagar', module: 'payables', action: 'edit', description: 'Alterar títulos a pagar existentes.' },
+  { slug: 'payables.delete', name: 'Excluir contas a pagar', module: 'payables', action: 'delete', description: 'Remover títulos a pagar.' },
 ]
 
 export type RoleSlug = 'root'

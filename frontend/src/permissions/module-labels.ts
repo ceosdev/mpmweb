@@ -29,6 +29,7 @@ export const MODULE_LABELS: Record<string, string> = {
   product_assets: 'Ativos do produto',
   brands: 'Marcas',
   brand_models: 'Modelos da marca',
+  payables: 'Contas a pagar',
 }
 
 export function moduleLabel(module: string): string {

@@ -37,6 +37,7 @@ const ProductsController = () => import('#controllers/products_controller')
 const ProductAssetsController = () => import('#controllers/product_assets_controller')
 const BrandsController = () => import('#controllers/brands_controller')
 const BrandModelsController = () => import('#controllers/brand_models_controller')
+const PayablesController = () => import('#controllers/payables_controller')
 
 /**
  * Health check.
@@ -242,6 +243,10 @@ router
     router
       .post('/suppliers', [SuppliersController, 'store'])
       .use(middleware.permission('suppliers.create'))
+    // Lookup do EntityPicker: sem middleware.permission (basta ter acesso à tela
+    // que usa o componente). DEVE vir antes de '/suppliers/:id', senão o router
+    // casa 'lookup' como um id.
+    router.get('/suppliers/lookup', [SuppliersController, 'lookup'])
     router
       .get('/suppliers/:id', [SuppliersController, 'show'])
       .use(middleware.permission('suppliers.view'))
@@ -259,6 +264,8 @@ router
     router
       .post('/customers', [CustomersController, 'store'])
       .use(middleware.permission('customers.create'))
+    // Lookup do EntityPicker — ver a nota em '/suppliers/lookup'.
+    router.get('/customers/lookup', [CustomersController, 'lookup'])
     router
       .get('/customers/:id', [CustomersController, 'show'])
       .use(middleware.permission('customers.view'))
@@ -345,6 +352,23 @@ router
     router
       .delete('/brands/:brandId/models/:id', [BrandModelsController, 'destroy'])
       .use(middleware.permission('brand_models.delete'))
+
+    // Contas a pagar (financeiro)
+    router
+      .get('/payables', [PayablesController, 'index'])
+      .use(middleware.permission('payables.view'))
+    router
+      .post('/payables', [PayablesController, 'store'])
+      .use(middleware.permission('payables.create'))
+    router
+      .get('/payables/:id', [PayablesController, 'show'])
+      .use(middleware.permission('payables.view'))
+    router
+      .put('/payables/:id', [PayablesController, 'update'])
+      .use(middleware.permission('payables.edit'))
+    router
+      .delete('/payables/:id', [PayablesController, 'destroy'])
+      .use(middleware.permission('payables.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

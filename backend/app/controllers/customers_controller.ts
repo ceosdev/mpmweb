@@ -5,6 +5,8 @@ import {
   createCustomerValidator,
   updateCustomerValidator,
 } from '#validators/customer_validators'
+import { lookupValidator } from '#validators/lookup_validators'
+import { parseLookupIds } from '#utils/lookup'
 
 function parseType(raw: unknown): CustomerType | undefined {
   if (raw === 'individual' || raw === 'company') return raw
@@ -28,6 +30,21 @@ export default class CustomersController {
       perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
       sort: request.input('sort') || undefined,
       order,
+    })
+  }
+
+  /**
+   * Feeds the EntityPicker. Unlike the other actions, this one is **not** gated
+   * by `customers.view`: whoever can reach a screen that picks a customer must
+   * be able to search, even without access to the customer registry itself.
+   * The payload is minimal (see `CustomerService.serializeLookup`).
+   */
+  async lookup({ tenant, request }: HttpContext) {
+    const payload = await request.validateUsing(lookupValidator)
+    return customerService.lookup(tenant, {
+      q: payload.q,
+      ids: parseLookupIds(payload.ids),
+      limit: payload.limit,
     })
   }
 

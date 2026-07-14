@@ -306,3 +306,64 @@ export interface ProductAsset {
   notes: string | null
   createdAt: string | null
 }
+
+/**
+ * Lookup — projeções mínimas consumidas pelo EntityPicker
+ * (`GET /api/<entidade>/lookup`). Só o suficiente para identificar o registro:
+ * o endpoint é acessível a qualquer usuário do tenant, sem a permissão do
+ * cadastro. Ver `docs/spec/comum/001-componente-entity-picker.md`.
+ */
+export interface LookupResponse<T> {
+  data: T[]
+  /** Havia mais resultados além do limite — a UI pede para refinar a busca. */
+  hasMore: boolean
+}
+
+export interface SupplierLookup {
+  id: number
+  name: string
+  taxId: string
+  isActive: boolean
+}
+
+export interface CustomerLookup {
+  id: number
+  legalName: string
+  tradeName: string | null
+  taxId: string
+  isActive: boolean
+}
+
+/**
+ * Título a pagar. `status`, `total`, `balance` e `isOverdue` vêm **resolvidos
+ * pelo backend** — o cliente não recalcula nenhum deles (em especial `isOverdue`,
+ * que depende de "hoje" no fuso da aplicação; o servidor roda em UTC).
+ * Ver `docs/spec/financeiro/001-criar-tela-contas-a-pagar.md`.
+ */
+export type PayableStatus = 'open' | 'partially_paid' | 'paid' | 'cancelled'
+
+/** `overdue` é virtual: não é status gravado, é comparação de data. */
+export type PayableStatusFilter = PayableStatus | 'overdue'
+
+export interface Payable {
+  id: number
+  supplierId: number
+  supplierName: string | null
+  documentNumber: string
+  installment: number
+  issueDate: string
+  dueDate: string
+  amount: number
+  discount: number
+  fine: number
+  interest: number
+  paidAmount: number
+  status: PayableStatus
+  notes: string | null
+  /** amount - discount + fine + interest. É o que a coluna "Valor" exibe. */
+  total: number
+  /** max(0, total - paidAmount); 0 quando cancelado. */
+  balance: number
+  isOverdue: boolean
+  createdAt: string | null
+}

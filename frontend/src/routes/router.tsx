@@ -107,6 +107,11 @@ const BrandModelsPage = lazy(() =>
     default: m.BrandModelsPage,
   }))
 )
+const PayablesPage = lazy(() =>
+  import('@/modules/payables/payables-page').then((m) => ({
+    default: m.PayablesPage,
+  }))
+)
 const NotFoundPage = lazy(() =>
   import('@/modules/misc/not-found-page').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -234,6 +239,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="brand_models.view" />,
             children: [{ path: 'brands/:brandId/models', element: <BrandModelsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="payables.view" />,
+            children: [{ path: 'payables', element: <PayablesPage /> }],
           },
         ],
       },

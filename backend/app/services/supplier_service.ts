@@ -3,6 +3,7 @@ import type { TenantContext } from '#services/tenant_context'
 import supplierRepository from '#repositories/supplier_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 import { isValidTaxId } from '#utils/tax_id'
+import { LOOKUP_DEFAULT_LIMIT, lookupTaxIdDigits, type LookupParams } from '#utils/lookup'
 
 export interface ListParams {
   name?: string
@@ -105,6 +106,52 @@ export class SupplierService {
     return this.serialize(row)
   }
 
+  /**
+   * Feeds the EntityPicker. Two modes:
+   *
+   * - `ids` — hydration. Resolves ids into labels **regardless of `is_active`**,
+   *   so a supplier that was deactivated after being linked to an old record
+   *   still shows up in the form. Unknown ids (or ids from another company) are
+   *   silently dropped — we do not leak their existence.
+   * - `q` — search. Active suppliers only.
+   */
+  async lookup(tenant: TenantContext, params: LookupParams) {
+    if (params.ids && params.ids.length > 0) {
+      const rows = await supplierRepository
+        .query(tenant.company.id)
+        .whereIn('id', params.ids)
+        .orderBy('name', 'asc')
+
+      return { data: rows.map((row) => this.serializeLookup(row)), hasMore: false }
+    }
+
+    const term = params.q?.trim()
+    if (!term) {
+      throw new BusinessException('Informe um termo de busca ou uma lista de códigos.')
+    }
+
+    const limit = params.limit ?? LOOKUP_DEFAULT_LIMIT
+    const like = `%${term.toLowerCase()}%`
+    const digits = lookupTaxIdDigits(term)
+
+    // Fetch one extra row: if it comes back, there is more to find and the UI
+    // asks the user to refine the search — cheaper than a count(*).
+    const rows = await supplierRepository
+      .query(tenant.company.id)
+      .where('is_active', true)
+      .where((sub) => {
+        sub.whereRaw('lower(name) like ?', [like])
+        if (digits) sub.orWhere('tax_id', 'like', `%${digits}%`)
+      })
+      .orderBy('name', 'asc')
+      .limit(limit + 1)
+
+    return {
+      data: rows.slice(0, limit).map((row) => this.serializeLookup(row)),
+      hasMore: rows.length > limit,
+    }
+  }
+
   async create(tenant: TenantContext, dto: CreateSupplierDTO) {
     this.assertValidTaxId(dto.taxId)
 
@@ -166,6 +213,20 @@ export class SupplierService {
   private assertValidTaxId(taxId: string) {
     if (!isValidTaxId(taxId)) {
       throw new BusinessException('CPF/CNPJ inválido.')
+    }
+  }
+
+  /**
+   * Minimal projection for the lookup endpoint: just enough to identify the
+   * supplier. No address, e-mail or phone — this endpoint is reachable by any
+   * user of the tenant, without `suppliers.view`.
+   */
+  private serializeLookup(row: Supplier) {
+    return {
+      id: row.id,
+      name: row.name,
+      taxId: row.taxId,
+      isActive: row.isActive,
     }
   }
 
