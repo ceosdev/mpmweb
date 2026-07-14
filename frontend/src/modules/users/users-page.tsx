@@ -117,7 +117,7 @@ export function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Usuários" description="Gerencie os usuários vinculados à empresa ativa.">
+      <PageHeader icon={Users} title="Usuários" description="Gerencie os usuários vinculados à empresa ativa.">
         <Can permission="users.create">
           <Button onClick={openCreate}>
             <Plus className="size-4" />

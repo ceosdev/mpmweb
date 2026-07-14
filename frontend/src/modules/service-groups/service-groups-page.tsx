@@ -91,6 +91,7 @@ export function ServiceGroupsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Wrench}
         title="Grupos de serviço"
         description="Cadastre os grupos de serviço aceitos pela empresa ativa."
       >

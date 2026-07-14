@@ -201,7 +201,7 @@ export function ProductAssetsPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         {backLink}
-        <PageHeader title={title} description="Ativos vinculados a este produto imobilizado.">
+        <PageHeader icon={HardDrive} title={title} description="Ativos vinculados a este produto imobilizado.">
           <Can permission="product_assets.create">
             <Button onClick={openCreate} disabled={!parentQuery.data}>
               <Plus className="size-4" />

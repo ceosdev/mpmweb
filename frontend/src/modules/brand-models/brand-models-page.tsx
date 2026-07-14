@@ -138,7 +138,7 @@ export function BrandModelsPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         {backLink}
-        <PageHeader title={title} description="Modelos vinculados a esta marca.">
+        <PageHeader icon={Shapes} title={title} description="Modelos vinculados a esta marca.">
           <Can permission="brand_models.create">
             <Button onClick={openCreate} disabled={!parentQuery.data}>
               <Plus className="size-4" />

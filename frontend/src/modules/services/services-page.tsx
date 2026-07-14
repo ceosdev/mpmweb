@@ -124,6 +124,7 @@ export function ServicesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Hammer}
         title="Serviços"
         description="Cadastre os serviços oferecidos pela empresa ativa."
       >

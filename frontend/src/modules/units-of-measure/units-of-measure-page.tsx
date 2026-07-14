@@ -91,6 +91,7 @@ export function UnitsOfMeasurePage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Ruler}
         title="Unidades de medida"
         description="Cadastre as unidades de medida aceitas pela empresa ativa."
       >

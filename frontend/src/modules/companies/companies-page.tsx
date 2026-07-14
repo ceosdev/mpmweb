@@ -86,7 +86,7 @@ export function CompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Empresas" description="Gerencie as empresas da plataforma.">
+      <PageHeader icon={Building2} title="Empresas" description="Gerencie as empresas da plataforma.">
         <Can permission="companies.create">
           <Button asChild>
             <Link to="/companies/new">

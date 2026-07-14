@@ -97,6 +97,7 @@ export function PaymentTypesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Wallet}
         title="Tipos de pagamento"
         description="Cadastre as formas de pagamento aceitas pela empresa ativa."
       >

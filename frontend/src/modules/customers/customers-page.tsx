@@ -154,6 +154,7 @@ export function CustomersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Contact}
         title="Clientes"
         description="Cadastre os clientes (pessoa física e jurídica) da empresa ativa."
       >

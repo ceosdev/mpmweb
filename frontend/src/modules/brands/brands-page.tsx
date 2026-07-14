@@ -93,6 +93,7 @@ export function BrandsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Tags}
         title="Marcas"
         description="Cadastre as marcas aceitas pela empresa ativa."
       >

@@ -140,6 +140,7 @@ export function ProductSubgroupsPage() {
       <div className="space-y-2">
         {backLink}
         <PageHeader
+          icon={Layers}
           title={title}
           description="Subgrupos vinculados a este grupo de produto."
         >

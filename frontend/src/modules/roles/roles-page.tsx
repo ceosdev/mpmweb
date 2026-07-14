@@ -88,6 +88,7 @@ export function RolesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Shield}
         title="Perfis"
         description="Cadastre os perfis (roles) da empresa ativa e defina as permissões de cada um."
       >

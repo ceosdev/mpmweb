@@ -93,6 +93,7 @@ export function ProductGroupsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Package}
         title="Grupos de produto"
         description="Cadastre os grupos de produto aceitos pela empresa ativa."
       >

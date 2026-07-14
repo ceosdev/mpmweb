@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { ShieldCheck } from 'lucide-react'
 import { catalogApi } from '@/services/catalog-api'
 import { useAuth } from '@/providers/auth-provider'
 import { moduleLabel } from '@/permissions/module-labels'
@@ -42,6 +43,7 @@ export function PermissionsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={ShieldCheck}
         title="Permissões"
         description="Perfis de acesso e catálogo de permissões da plataforma."
       />

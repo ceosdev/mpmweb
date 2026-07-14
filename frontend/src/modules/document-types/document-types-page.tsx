@@ -91,6 +91,7 @@ export function DocumentTypesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={FileText}
         title="Tipos de documento"
         description="Cadastre os tipos de documento aceitos pela empresa ativa."
       >

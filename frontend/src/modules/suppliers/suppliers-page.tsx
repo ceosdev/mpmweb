@@ -152,6 +152,7 @@ export function SuppliersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Truck}
         title="Fornecedores"
         description="Cadastre os fornecedores de mercadorias e serviços da empresa ativa."
       >

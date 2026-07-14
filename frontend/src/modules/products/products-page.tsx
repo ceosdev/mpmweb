@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HardDrive, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Boxes, HardDrive, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { productsApi, type ProductListParams } from '@/services/products-api'
 import { productGroupsApi } from '@/services/product-groups-api'
@@ -179,6 +179,7 @@ export function ProductsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Boxes}
         title="Produtos"
         description="Cadastre os produtos da empresa ativa."
       >
