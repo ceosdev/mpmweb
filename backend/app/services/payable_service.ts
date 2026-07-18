@@ -223,6 +223,34 @@ export class PayableService {
   }
 
   /**
+   * Applies the settlements of a payable: sets `paidAmount` to
+   * `othersPaid + thisAmount`, validates the sum does not exceed the total, then
+   * recomputes the status. **Does not save** — the caller (the settlement module)
+   * owns the transaction.
+   *
+   * `othersPaid` is the sum of the **other** settlements of the title (the whole
+   * remaining sum on delete; all but the edited one on edit; the current
+   * `paidAmount` on create). `thisAmount` is the settlement being created/edited
+   * (`0` on delete). Throws **422** with the available balance for THIS
+   * settlement when it would overpay.
+   */
+  applySettlement(row: Payable, othersPaidReais: number, thisAmountReais: number) {
+    const totalCents = this.totalCents(row)
+    const othersCents = this.cents(othersPaidReais)
+    const thisCents = this.cents(thisAmountReais)
+
+    if (othersCents + thisCents > totalCents) {
+      const availableCents = Math.max(0, totalCents - othersCents)
+      throw new BusinessException(
+        `O valor da baixa excede o saldo do título. Saldo disponível: ${formatBRL(availableCents)}.`
+      )
+    }
+
+    row.paidAmount = (othersCents + thisCents) / 100
+    this.recomputeStatus(row)
+  }
+
+  /**
    * Filtro de status de **múltipla escolha**. Nenhum selecionado = todos (não
    * filtra nada).
    *
@@ -339,6 +367,11 @@ export class PayableService {
 
 function isForeignKeyViolation(error: unknown): boolean {
   return typeof error === 'object' && error !== null && (error as { code?: string }).code === '23503'
+}
+
+/** `1234` cents → "R$ 12,34" (pt-BR), for user-facing balance messages. */
+function formatBRL(cents: number): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100)
 }
 
 export default new PayableService()

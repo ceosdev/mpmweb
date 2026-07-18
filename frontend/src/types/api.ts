@@ -367,3 +367,16 @@ export interface Payable {
   isOverdue: boolean
   createdAt: string | null
 }
+
+/** Baixa (pagamento) de um título a pagar. Ver `docs/spec/financeiro/002`. */
+export interface PayableSettlement {
+  id: number
+  payableId: number
+  paymentTypeId: number
+  paymentTypeName: string | null
+  settlementDate: string
+  amount: number
+  documentNumber: string | null
+  notes: string | null
+  createdAt: string | null
+}

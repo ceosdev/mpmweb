@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Receipt, Search, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Pencil, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { payablesApi, type PayableListParams } from '@/services/payables-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
+import { usePermissions } from '@/permissions/use-permissions'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
@@ -23,8 +24,15 @@ import {
 import { EntityPicker } from '@/components/common/entity-picker'
 import { MultiSelect, type MultiSelectOption } from '@/components/form/multi-select'
 import { PayableFormDialog } from '@/modules/payables/payable-form-dialog'
+import { PayableSettlementsDialog } from '@/modules/payables/payable-settlements-dialog'
 import { PayableStatusBadge } from '@/modules/payables/payable-status-badge'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -52,8 +60,15 @@ const STATUS_OPTIONS: MultiSelectOption<PayableStatusFilter>[] = [
 
 export function PayablesPage() {
   const { tenant } = useAuth()
+  const { canAny } = usePermissions()
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
+  // A coluna "Ações" só aparece se o usuário tem ao menos uma das ações do menu.
+  const canActOnRow = canAny([
+    'payables.edit',
+    'payables.delete',
+    'payable_settlements.view',
+  ])
 
   // Calculado uma vez, na montagem: o recorte default é o mês corrente.
   const [defaultRange] = useState(currentMonthRange)
@@ -79,6 +94,7 @@ export function PayablesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Payable | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [settlementsFor, setSettlementsFor] = useState<Payable | null>(null)
 
   function toggleSort(column: string) {
     setSort((current) => nextSortState(current, column))
@@ -325,7 +341,7 @@ export function PayablesPage() {
                 <SortableHeader column="status" sort={sort} onSort={toggleSort}>
                   Status
                 </SortableHeader>
-                <TableHead className="w-0" />
+                <TableHead className="w-0 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -353,27 +369,39 @@ export function PayablesPage() {
                     <PayableStatusBadge status={row.status} />
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center justify-end gap-1">
-                      <Can permission="payables.edit">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(row)}
-                          aria-label="Editar"
-                        >
-                          <Pencil className="size-4" />
-                        </Button>
-                      </Can>
-                      <Can permission="payables.delete">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteId(row.id)}
-                          aria-label="Excluir"
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
-                      </Can>
+                    <div className="flex items-center justify-end">
+                      {canActOnRow && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Ações">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <Can permission="payables.edit">
+                              <DropdownMenuItem onClick={() => openEdit(row)}>
+                                <Pencil className="size-4" />
+                                Editar
+                              </DropdownMenuItem>
+                            </Can>
+                            <Can permission="payable_settlements.view">
+                              <DropdownMenuItem onClick={() => setSettlementsFor(row)}>
+                                <Wallet className="size-4" />
+                                Pagamentos
+                              </DropdownMenuItem>
+                            </Can>
+                            <Can permission="payables.delete">
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(row.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="size-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </Can>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -386,6 +414,12 @@ export function PayablesPage() {
       {meta && <Pagination meta={meta} onChange={setPage} />}
 
       <PayableFormDialog open={formOpen} onOpenChange={setFormOpen} payable={editing} />
+
+      <PayableSettlementsDialog
+        open={settlementsFor !== null}
+        onOpenChange={(open) => !open && setSettlementsFor(null)}
+        payable={settlementsFor}
+      />
 
       <ConfirmDialog
         open={deleteId !== null}

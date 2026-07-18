@@ -1,0 +1,232 @@
+import { DateTime } from 'luxon'
+import db from '@adonisjs/lucid/services/db'
+import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
+import PayableSettlement from '#models/payable_settlement'
+import Payable from '#models/payable'
+import type { TenantContext } from '#services/tenant_context'
+import payableSettlementRepository from '#repositories/payable_settlement_repository'
+import payableRepository from '#repositories/payable_repository'
+import paymentTypeRepository from '#repositories/payment_type_repository'
+import payableService from '#services/payable_service'
+import { BusinessException, NotFoundException } from '#exceptions/app_exception'
+
+export interface CreatePayableSettlementDTO {
+  /** VineJS parses `YYYY-MM-DD` into a `Date`; the model wants a luxon DateTime. */
+  settlementDate: Date
+  paymentTypeId: number
+  amount: number
+  documentNumber?: string
+  notes?: string
+}
+
+export type UpdatePayableSettlementDTO = Partial<CreatePayableSettlementDTO>
+
+/**
+ * Baixas (settlements) of a payable. **Every write is multi-table** — it touches
+ * `payable_settlements` and recomputes the parent `payables` row — so it all runs
+ * inside a transaction, with the title row locked (`forUpdate`) to serialise
+ * concurrent settlements and keep the balance check honest.
+ *
+ * The parent's `paid_amount`/`status` are always derived through
+ * `PayableService.applySettlement()` — the single owner of the title status.
+ *
+ * See `docs/spec/financeiro/002-baixa-de-titulo.md`.
+ */
+export class PayableSettlementService {
+  async list(tenant: TenantContext, payableId: number) {
+    await this.ensurePayable(tenant, payableId)
+
+    const rows = await payableSettlementRepository
+      .query(tenant.company.id, payableId)
+      .preload('paymentType')
+      .orderBy('settlement_date', 'desc')
+      .orderBy('id', 'desc')
+
+    return rows.map((row) => this.serialize(row))
+  }
+
+  async create(tenant: TenantContext, payableId: number, dto: CreatePayableSettlementDTO) {
+    return db.transaction(async (trx) => {
+      const payable = await this.lockPayable(tenant, payableId, trx)
+      this.assertNotCancelled(payable)
+      await this.assertPaymentType(tenant, dto.paymentTypeId)
+
+      const othersPaid = await this.sumSettlements(tenant, payableId, trx)
+
+      // Validates (Σ ≤ total) and mutates the title in memory. Throws **before**
+      // any insert, so an overpay never leaves a rolled-back row behind.
+      payableService.applySettlement(payable, othersPaid, dto.amount)
+
+      const settlement = await PayableSettlement.create(
+        {
+          companyId: tenant.company.id,
+          payableId,
+          paymentTypeId: dto.paymentTypeId,
+          settlementDate: this.toDate(dto.settlementDate),
+          amount: dto.amount,
+          documentNumber: dto.documentNumber || null,
+          notes: dto.notes || null,
+        },
+        { client: trx }
+      )
+
+      payable.useTransaction(trx)
+      await payable.save()
+
+      await settlement.load('paymentType')
+      return this.serialize(settlement)
+    })
+  }
+
+  async update(
+    tenant: TenantContext,
+    payableId: number,
+    id: number,
+    dto: UpdatePayableSettlementDTO
+  ) {
+    return db.transaction(async (trx) => {
+      const payable = await this.lockPayable(tenant, payableId, trx)
+      this.assertNotCancelled(payable)
+
+      const settlement = await PayableSettlement.query({ client: trx })
+        .where('company_id', tenant.company.id)
+        .where('payable_id', payableId)
+        .where('id', id)
+        .forUpdate()
+        .first()
+      if (!settlement) throw new NotFoundException('Baixa não encontrada.')
+
+      if (dto.paymentTypeId !== undefined) {
+        // Keeps the currently-linked type usable even if it went inactive.
+        await this.assertPaymentType(tenant, dto.paymentTypeId, settlement.paymentTypeId)
+        settlement.paymentTypeId = dto.paymentTypeId
+      }
+      if (dto.settlementDate !== undefined) settlement.settlementDate = this.toDate(dto.settlementDate)
+      if (dto.amount !== undefined) settlement.amount = dto.amount
+      if (dto.documentNumber !== undefined) settlement.documentNumber = dto.documentNumber || null
+      if (dto.notes !== undefined) settlement.notes = dto.notes || null
+
+      const others = await this.sumSettlements(tenant, payableId, trx, id)
+      payableService.applySettlement(payable, others, Number(settlement.amount))
+
+      settlement.useTransaction(trx)
+      await settlement.save()
+      payable.useTransaction(trx)
+      await payable.save()
+
+      await settlement.load('paymentType')
+      return this.serialize(settlement)
+    })
+  }
+
+  async destroy(tenant: TenantContext, payableId: number, id: number) {
+    return db.transaction(async (trx) => {
+      const payable = await this.lockPayable(tenant, payableId, trx)
+
+      const settlement = await PayableSettlement.query({ client: trx })
+        .where('company_id', tenant.company.id)
+        .where('payable_id', payableId)
+        .where('id', id)
+        .first()
+      if (!settlement) throw new NotFoundException('Baixa não encontrada.')
+
+      settlement.useTransaction(trx)
+      await settlement.delete()
+
+      // Recompute from what remains — removing a baixa only lowers the paid sum,
+      // so it never overpays (thisAmount = 0).
+      const remaining = await this.sumSettlements(tenant, payableId, trx)
+      payableService.applySettlement(payable, remaining, 0)
+      payable.useTransaction(trx)
+      await payable.save()
+    })
+  }
+
+  /** 404 if the title does not exist in the active tenant. */
+  private async ensurePayable(tenant: TenantContext, payableId: number) {
+    const payable = await payableRepository.findById(tenant.company.id, payableId)
+    if (!payable) throw new NotFoundException('Título não encontrado.')
+    return payable
+  }
+
+  /** Loads and **locks** the title inside the transaction (serialises baixas). */
+  private async lockPayable(
+    tenant: TenantContext,
+    payableId: number,
+    trx: TransactionClientContract
+  ) {
+    const payable = await Payable.query({ client: trx })
+      .where('company_id', tenant.company.id)
+      .where('id', payableId)
+      .forUpdate()
+      .first()
+    if (!payable) throw new NotFoundException('Título não encontrado.')
+    return payable
+  }
+
+  private assertNotCancelled(payable: Payable) {
+    if (payable.status === 'cancelled') {
+      throw new BusinessException('Não é possível baixar um título cancelado.')
+    }
+  }
+
+  /**
+   * Payment type must exist in the tenant. For a **new** baixa it must be active;
+   * `allowInactiveId` keeps an already-linked type usable on edit even if it went
+   * inactive. Same neutral message for every failure — does not leak another
+   * tenant's data.
+   */
+  private async assertPaymentType(
+    tenant: TenantContext,
+    paymentTypeId: number,
+    allowInactiveId?: number
+  ) {
+    const paymentType = await paymentTypeRepository.findById(tenant.company.id, paymentTypeId)
+    if (!paymentType) throw new BusinessException('Tipo de pagamento inválido.')
+    if (!paymentType.isActive && paymentType.id !== allowInactiveId) {
+      throw new BusinessException('Tipo de pagamento inválido.')
+    }
+  }
+
+  /**
+   * Sum (in reais) of the title's settlements, computed in **cents** to stay
+   * exact. `excludeId` drops the settlement being edited, yielding the sum of the
+   * *others*.
+   */
+  private async sumSettlements(
+    tenant: TenantContext,
+    payableId: number,
+    trx: TransactionClientContract,
+    excludeId?: number
+  ) {
+    const query = PayableSettlement.query({ client: trx })
+      .where('company_id', tenant.company.id)
+      .where('payable_id', payableId)
+    if (excludeId !== undefined) query.whereNot('id', excludeId)
+
+    const rows = await query.select('amount')
+    const cents = rows.reduce((acc, row) => acc + Math.round(Number(row.amount) * 100), 0)
+    return cents / 100
+  }
+
+  /** VineJS `Date` → luxon DateTime, for the `@column.date` column. */
+  private toDate(value: Date) {
+    return DateTime.fromJSDate(value)
+  }
+
+  private serialize(row: PayableSettlement) {
+    return {
+      id: row.id,
+      payableId: row.payableId,
+      paymentTypeId: row.paymentTypeId,
+      paymentTypeName: row.paymentType?.description ?? null,
+      settlementDate: row.settlementDate.toISODate(),
+      amount: Number(row.amount),
+      documentNumber: row.documentNumber,
+      notes: row.notes,
+      createdAt: row.createdAt?.toISO() ?? null,
+    }
+  }
+}
+
+export default new PayableSettlementService()

@@ -38,6 +38,8 @@ const ProductAssetsController = () => import('#controllers/product_assets_contro
 const BrandsController = () => import('#controllers/brands_controller')
 const BrandModelsController = () => import('#controllers/brand_models_controller')
 const PayablesController = () => import('#controllers/payables_controller')
+const PayableSettlementsController = () =>
+  import('#controllers/payable_settlements_controller')
 
 /**
  * Health check.
@@ -369,6 +371,20 @@ router
     router
       .delete('/payables/:id', [PayablesController, 'destroy'])
       .use(middleware.permission('payables.delete'))
+
+    // Baixas (pagamentos) de um título — drill-down aninhado no título.
+    router
+      .get('/payables/:payableId/settlements', [PayableSettlementsController, 'index'])
+      .use(middleware.permission('payable_settlements.view'))
+    router
+      .post('/payables/:payableId/settlements', [PayableSettlementsController, 'store'])
+      .use(middleware.permission('payable_settlements.create'))
+    router
+      .put('/payables/:payableId/settlements/:id', [PayableSettlementsController, 'update'])
+      .use(middleware.permission('payable_settlements.edit'))
+    router
+      .delete('/payables/:payableId/settlements/:id', [PayableSettlementsController, 'destroy'])
+      .use(middleware.permission('payable_settlements.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

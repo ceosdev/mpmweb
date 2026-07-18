@@ -136,6 +136,13 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'payables.create', name: 'Criar contas a pagar', module: 'payables', action: 'create', description: 'Lançar novos títulos a pagar.' },
   { slug: 'payables.edit', name: 'Editar contas a pagar', module: 'payables', action: 'edit', description: 'Alterar títulos a pagar existentes.' },
   { slug: 'payables.delete', name: 'Excluir contas a pagar', module: 'payables', action: 'delete', description: 'Remover títulos a pagar.' },
+
+  // Baixas / pagamentos (filhos de contas a pagar). Abrem a partir do grid de
+  // contas a pagar; movem o saldo do título.
+  { slug: 'payable_settlements.view', name: 'Visualizar baixas', module: 'payable_settlements', action: 'view', description: 'Consultar as baixas (pagamentos) de um título a pagar.' },
+  { slug: 'payable_settlements.create', name: 'Criar baixas', module: 'payable_settlements', action: 'create', description: 'Lançar baixas (pagamentos) em um título a pagar.' },
+  { slug: 'payable_settlements.edit', name: 'Editar baixas', module: 'payable_settlements', action: 'edit', description: 'Alterar baixas existentes de um título.' },
+  { slug: 'payable_settlements.delete', name: 'Excluir baixas', module: 'payable_settlements', action: 'delete', description: 'Remover baixas de um título.' },
 ]
 
 export type RoleSlug = 'root'
