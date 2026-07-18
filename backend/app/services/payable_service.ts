@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon'
+import db from '@adonisjs/lucid/services/db'
 import Payable, { type PayableStatus } from '#models/payable'
+import PayableSettlement from '#models/payable_settlement'
 import type { TenantContext } from '#services/tenant_context'
 import payableRepository from '#repositories/payable_repository'
 import supplierRepository from '#repositories/supplier_repository'
@@ -198,6 +200,45 @@ export class PayableService {
       }
       throw error
     }
+  }
+
+  /**
+   * Cancels a title: **deletes all its settlements** and marks it `cancelled`
+   * (terminal). Multi-table (settlements + payable), so it runs in a transaction
+   * with the title locked (`forUpdate`).
+   *
+   * `cancelled` is the one status that does **not** derive from `paidAmount`:
+   * it is set directly here and never recomputed. `paidAmount` is zeroed because
+   * the settlements are gone.
+   */
+  async cancel(tenant: TenantContext, id: number) {
+    return db.transaction(async (trx) => {
+      const row = await Payable.query({ client: trx })
+        .where('company_id', tenant.company.id)
+        .where('id', id)
+        .forUpdate()
+        .first()
+      if (!row) throw new NotFoundException('Título não encontrado.')
+
+      if (row.status === 'cancelled') {
+        throw new BusinessException('Este título já está cancelado.')
+      }
+
+      // Remove todas as baixas do título (o cancelamento apaga o histórico de
+      // pagamentos, conforme confirmado pelo usuário no diálogo).
+      await PayableSettlement.query({ client: trx })
+        .where('company_id', tenant.company.id)
+        .where('payable_id', id)
+        .delete()
+
+      row.paidAmount = 0
+      row.status = 'cancelled'
+      row.useTransaction(trx)
+      await row.save()
+
+      await row.load('supplier')
+      return this.serialize(row)
+    })
   }
 
   /**

@@ -66,4 +66,8 @@ export default class PayablesController {
     await payableService.destroy(tenant, Number(params.id))
     return response.noContent()
   }
+
+  async cancel({ tenant, params }: HttpContext) {
+    return payableService.cancel(tenant, Number(params.id))
+  }
 }

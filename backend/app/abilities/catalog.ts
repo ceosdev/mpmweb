@@ -136,6 +136,7 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'payables.create', name: 'Criar contas a pagar', module: 'payables', action: 'create', description: 'Lançar novos títulos a pagar.' },
   { slug: 'payables.edit', name: 'Editar contas a pagar', module: 'payables', action: 'edit', description: 'Alterar títulos a pagar existentes.' },
   { slug: 'payables.delete', name: 'Excluir contas a pagar', module: 'payables', action: 'delete', description: 'Remover títulos a pagar.' },
+  { slug: 'payables.cancel', name: 'Cancelar contas a pagar', module: 'payables', action: 'cancel', description: 'Cancelar um título, excluindo todas as suas baixas.' },
 
   // Baixas / pagamentos (filhos de contas a pagar). Abrem a partir do grid de
   // contas a pagar; movem o saldo do título.

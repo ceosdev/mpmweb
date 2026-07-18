@@ -57,4 +57,7 @@ export const payablesApi = {
     api.put<Payable>(`/payables/${id}`, payload).then((r) => r.data),
 
   remove: (id: number) => api.delete(`/payables/${id}`).then(() => undefined),
+
+  /** Cancela o título: exclui todas as baixas e marca como cancelado. */
+  cancel: (id: number) => api.post<Payable>(`/payables/${id}/cancel`).then((r) => r.data),
 }

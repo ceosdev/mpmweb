@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { MoreHorizontal, Pencil, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react'
+import { Ban, MoreHorizontal, Pencil, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { payablesApi, type PayableListParams } from '@/services/payables-api'
 import { useAuth } from '@/providers/auth-provider'
@@ -68,6 +68,7 @@ export function PayablesPage() {
   const canActOnRow = canAny([
     'payables.edit',
     'payables.delete',
+    'payables.cancel',
     'payable_settlements.view',
   ])
 
@@ -96,6 +97,7 @@ export function PayablesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Payable | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [cancelId, setCancelId] = useState<number | null>(null)
   const [settlementsFor, setSettlementsFor] = useState<Payable | null>(null)
 
   function toggleSort(column: string) {
@@ -138,6 +140,20 @@ export function PayablesPage() {
       toast.success('Título removido.')
       queryClient.invalidateQueries({ queryKey: ['payables'] })
       setDeleteId(null)
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => payablesApi.cancel(id),
+    onSuccess: () => {
+      toast.success('Título cancelado.')
+      queryClient.invalidateQueries({ queryKey: ['payables'] })
+      // O cancelamento excluiu as baixas no servidor — invalida a lista de baixas
+      // em cache (senão, ao abrir "Pagamentos", o grid mostraria registros já
+      // apagados até o cache expirar / reload).
+      queryClient.invalidateQueries({ queryKey: ['payable-settlements'] })
+      setCancelId(null)
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   })
@@ -339,6 +355,18 @@ export function PayablesPage() {
                                 Pagamentos
                               </DropdownMenuItem>
                             </Can>
+                            {/* Cancelar é terminal — some quando o título já está cancelado. */}
+                            {row.status !== 'cancelled' && (
+                              <Can permission="payables.cancel">
+                                <DropdownMenuItem
+                                  onClick={() => setCancelId(row.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Ban className="size-4" />
+                                  Cancelar título
+                                </DropdownMenuItem>
+                              </Can>
+                            )}
                             <Can permission="payables.delete">
                               <DropdownMenuItem
                                 onClick={() => setDeleteId(row.id)}
@@ -378,6 +406,16 @@ export function PayablesPage() {
         confirmLabel="Excluir"
         loading={deleteMutation.isPending}
         onConfirm={() => deleteId !== null && deleteMutation.mutate(deleteId)}
+      />
+
+      <ConfirmDialog
+        open={cancelId !== null}
+        onOpenChange={(open) => !open && setCancelId(null)}
+        title="Cancelar título"
+        description="Deseja realmente cancelar o título selecionado? O ato de cancelamento irá excluir todas as baixas já realizadas para este título."
+        confirmLabel="Sim, cancelar título"
+        loading={cancelMutation.isPending}
+        onConfirm={() => cancelId !== null && cancelMutation.mutate(cancelId)}
       />
     </div>
   )

@@ -371,6 +371,9 @@ router
     router
       .delete('/payables/:id', [PayablesController, 'destroy'])
       .use(middleware.permission('payables.delete'))
+    router
+      .post('/payables/:id/cancel', [PayablesController, 'cancel'])
+      .use(middleware.permission('payables.cancel'))
 
     // Baixas (pagamentos) de um título — drill-down aninhado no título.
     router
