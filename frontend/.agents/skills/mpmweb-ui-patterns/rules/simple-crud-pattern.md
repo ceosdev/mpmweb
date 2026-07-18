@@ -103,8 +103,16 @@ Migration → Model → Repository → Service → Validator → Controller → 
 - Formulário em **modal** (regra [[crud-form-presentation]] — 2 campos → modal): `<entity>-form-dialog.tsx`.
 - Listagem paginada 20/página (regra [[crud-pagination]]), cabeçalhos ordenáveis (regra [[crud-sortable-columns]]).
 - Inativos visíveis na listagem com badge "Inativa" — o usuário precisa ver para reativar.
-- **Busca por descrição** por padrão: `Input` com ícone `Search` (lucide-react), `max-w-sm`, posicionado entre o `PageHeader` e o `Card`. Estado local + `useDebouncedValue` (350 ms, hook em `@/hooks/use-debounced-value`). Toda mudança de texto reseta `page` para 1. O termo debounced entra na `queryKey` e no parâmetro `search` do API client; backend já filtra com `lower(description) like ?`.
-- **Empty state contextual**: título e descrição mudam conforme há busca ativa ou não — `"Nenhum X encontrad{o,a}"` + `"Tente ajustar os termos da busca."` quando há `debouncedSearch`; `"Nenhum X cadastrad{o,a}"` + `"Cadastre o/a primeiro/a X desta empresa."` caso contrário.
+- **Busca por descrição** por padrão: `Input` com ícone `Search` (lucide-react), posicionado entre o `PageHeader` e o `Card`.
+- **Filtro só dispara no clique em "Pesquisar" — NUNCA a cada tecla/seleção** (regra do projeto, obrigatória em toda tela com filtro). Use o hook `useSearchFilters` (`@/hooks/use-search-filters`):
+  - Ele separa `draft` (o que os inputs editam) de `applied` (o que alimenta a `queryKey`/GET). Digitar/selecionar muda só o `draft`; nada consulta até `apply()`.
+  - **Ao montar, `applied === defaults`**, então a tela **já carrega** com os filtros padrão (uma consulta automática inicial). Só as manipulações posteriores exigem o botão.
+  - Cada input: `value={filters.draft.X}`, `onChange={(e) => filters.setField('X', e.target.value)}`, e `onKeyDown={(e) => e.key === 'Enter' && handleSearch()}`. **Sem** `setPage(1)` no `onChange`; **sem** `useDebouncedValue`.
+  - `queryKey` e params lêem de `filters.applied.X`.
+  - **Botão "Pesquisar"** sempre presente, ao fim da barra de filtros: use o componente compartilhado `SearchButton` (`@/components/common/search-button`), `onClick={handleSearch}` e `loading={listQuery.isFetching}` — o `loading` troca a lupa por um spinner e desabilita o botão enquanto a consulta roda (**feedback visual do clique**, obrigatório). `function handleSearch() { filters.apply(); setPage(1) }`.
+  - **Botão "Limpar filtros"** (ghost) permanece, gated por `filters.isDirty`: `function clearFilters() { filters.clear(); setPage(1) }` — volta rascunho **e** aplicados ao default (não ao vazio, quando o default tem recorte útil).
+  - **Paginação e ordenação continuam imediatas** — não passam pelo botão; operam sobre `filters.applied`.
+- **Empty state contextual**: usa `filters.isFiltered` (aplicados diferem do default) — `"Nenhum X encontrad{o,a}"` + `"Tente ajustar os termos da busca."` quando filtrado; `"Nenhum X cadastrad{o,a}"` + `"Cadastre o/a primeiro/a X desta empresa."` caso contrário.
 - Sem filtro de status por padrão (a menos que entre gratuitamente via componente compartilhado).
 - `ConfirmDialog` na exclusão (regra [[crud-confirmation-dialogs]]).
 - Toast (`sonner`) + `getErrorMessage()` para feedback.
@@ -126,6 +134,8 @@ Migration → Model → Repository → Service → Validator → Controller → 
 - **Soft delete** neste tipo de entidade — sempre hard delete.
 - **Filtro de status** antes de haver pedido real do usuário.
 - **Remover a busca por descrição** sob alegação de "ninguém vai usar" — ela faz parte do padrão e custa quase nada.
+- **Disparar a consulta a cada tecla/seleção** (debounce ou `onChange` que reseta página e refaz o GET) — proibido. Filtro só consulta no clique em **Pesquisar** (via `useSearchFilters`). A única consulta automática é a inicial, com os filtros padrão.
+- **Omitir o botão "Pesquisar"** em uma tela que tem filtro, ou remover o "Limpar filtros".
 - **Form em rota** — sempre modal (são 2 campos).
 - **Restrição de unicidade** sem requisito explícito.
 - **Tipos pré-cadastrados no seed** — cada empresa decide.

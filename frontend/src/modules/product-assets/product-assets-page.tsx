@@ -7,7 +7,7 @@ import { productAssetsApi, type ProductAssetListParams } from '@/services/produc
 import { productsApi } from '@/services/products-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import type { AssetSituation, ProductAsset } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -21,6 +21,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { ProductAssetFormDialog } from '@/modules/product-assets/product-asset-form-dialog'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -70,13 +71,14 @@ export function ProductAssetsPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [assetCodeFilter, setAssetCodeFilter] = useState('')
-  const [descriptionFilter, setDescriptionFilter] = useState('')
-  const [situationFilter, setSituationFilter] = useState<SituationFilter>('all')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({
+    assetCode: '',
+    description: '',
+    situationFilter: 'all' as SituationFilter,
+  })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedAssetCode = useDebouncedValue(assetCodeFilter)
-  const debouncedDescription = useDebouncedValue(descriptionFilter)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<ProductAsset | null>(null)
@@ -84,10 +86,6 @@ export function ProductAssetsPage() {
 
   function toggleSort(column: string) {
     setSort((current) => nextSortState(current, column))
-    setPage(1)
-  }
-
-  function resetPage() {
     setPage(1)
   }
 
@@ -106,15 +104,16 @@ export function ProductAssetsPage() {
 
   const listParams = useMemo<ProductAssetListParams>(
     () => ({
-      assetCode: debouncedAssetCode || undefined,
-      description: debouncedDescription || undefined,
-      situation: situationFilter === 'all' ? undefined : situationFilter,
+      assetCode: filters.applied.assetCode || undefined,
+      description: filters.applied.description || undefined,
+      situation:
+        filters.applied.situationFilter === 'all' ? undefined : filters.applied.situationFilter,
       page,
       perPage: PER_PAGE,
       sort: sort?.column,
       order: sort?.order,
     }),
-    [debouncedAssetCode, debouncedDescription, situationFilter, page, sort]
+    [filters.applied, page, sort]
   )
 
   const listQuery = useQuery({
@@ -143,10 +142,12 @@ export function ProductAssetsPage() {
     setFormOpen(true)
   }
 
+  function handleSearch() {
+    filters.apply()
+    setPage(1)
+  }
   function clearFilters() {
-    setAssetCodeFilter('')
-    setDescriptionFilter('')
-    setSituationFilter('all')
+    filters.clear()
     setPage(1)
   }
 
@@ -194,8 +195,6 @@ export function ProductAssetsPage() {
   const title = parentName ? `Ativos de ${parentName}` : 'Ativos'
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
-  const hasFilters =
-    assetCodeFilter.length > 0 || descriptionFilter.length > 0 || situationFilter !== 'all'
 
   return (
     <div className="space-y-6">
@@ -218,11 +217,9 @@ export function ProductAssetsPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por patrimônio"
-              value={assetCodeFilter}
-              onChange={(event) => {
-                setAssetCodeFilter(event.target.value)
-                resetPage()
-              }}
+              value={filters.draft.assetCode}
+              onChange={(event) => filters.setField('assetCode', event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
               className="w-48 pl-9"
             />
           </div>
@@ -234,11 +231,9 @@ export function ProductAssetsPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por descrição"
-              value={descriptionFilter}
-              onChange={(event) => {
-                setDescriptionFilter(event.target.value)
-                resetPage()
-              }}
+              value={filters.draft.description}
+              onChange={(event) => filters.setField('description', event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
               className="w-56 pl-9"
             />
           </div>
@@ -247,11 +242,8 @@ export function ProductAssetsPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Situação</label>
           <Select
-            value={situationFilter}
-            onValueChange={(value) => {
-              setSituationFilter(value as SituationFilter)
-              resetPage()
-            }}
+            value={filters.draft.situationFilter}
+            onValueChange={(value) => filters.setField('situationFilter', value as SituationFilter)}
           >
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -265,7 +257,8 @@ export function ProductAssetsPage() {
           </Select>
         </div>
 
-        {hasFilters && (
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
           <Button variant="ghost" onClick={clearFilters}>
             Limpar filtros
           </Button>
@@ -282,9 +275,9 @@ export function ProductAssetsPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={HardDrive}
-            title={hasFilters ? 'Nenhum ativo encontrado' : 'Nenhum ativo cadastrado'}
+            title={filters.isFiltered ? 'Nenhum ativo encontrado' : 'Nenhum ativo cadastrado'}
             description={
-              hasFilters
+              filters.isFiltered
                 ? 'Tente ajustar os filtros da busca.'
                 : 'Cadastre o primeiro ativo deste produto.'
             }

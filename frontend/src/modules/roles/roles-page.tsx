@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { rolesApi } from '@/services/roles-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import type { RoleListItem } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -19,6 +19,7 @@ import {
   type SortState,
 } from '@/components/data-table/sortable-header'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -45,10 +46,10 @@ export function RolesPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [search, setSearch] = useState('')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({ search: '' })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedSearch = useDebouncedValue(search)
 
   const [deleteRow, setDeleteRow] = useState<RoleListItem | null>(null)
 
@@ -57,11 +58,20 @@ export function RolesPage() {
     setPage(1)
   }
 
+  function handleSearch() {
+    filters.apply()
+    setPage(1)
+  }
+  function clearFilters() {
+    filters.clear()
+    setPage(1)
+  }
+
   const listQuery = useQuery({
-    queryKey: ['roles-list', companyId, debouncedSearch, page, sort],
+    queryKey: ['roles-list', companyId, filters.applied, page, sort],
     queryFn: () =>
       rolesApi.list({
-        search: debouncedSearch || undefined,
+        search: filters.applied.search || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -83,7 +93,7 @@ export function RolesPage() {
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
-  const hasSearch = debouncedSearch.length > 0
+  const hasSearch = filters.isFiltered
 
   return (
     <div className="space-y-6">
@@ -100,17 +110,23 @@ export function RolesPage() {
         </Can>
       </PageHeader>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-            setPage(1)
-          }}
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome"
+            value={filters.draft.search}
+            onChange={(event) => filters.setField('search', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="pl-9"
+          />
+        </div>
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
+          <Button variant="ghost" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        )}
       </div>
 
       <Card>

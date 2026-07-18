@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { customersApi, type CustomerListParams } from '@/services/customers-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import { maskCnpj, maskCpf, maskPhone, maskTaxId, onlyDigits } from '@/lib/masks'
 import type { Customer, CustomerType } from '@/types/api'
@@ -21,6 +21,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { CustomerFormDialog } from '@/modules/customers/customer-form-dialog'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -73,14 +74,15 @@ export function CustomersPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [nameFilter, setNameFilter] = useState('')
-  const [taxIdFilter, setTaxIdFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({
+    name: '',
+    taxId: '',
+    type: 'all' as TypeFilter,
+    status: 'active' as StatusFilter,
+  })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedName = useDebouncedValue(nameFilter)
-  const debouncedTaxId = useDebouncedValue(taxIdFilter)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Customer | null>(null)
@@ -93,16 +95,16 @@ export function CustomersPage() {
 
   const listParams = useMemo<CustomerListParams>(
     () => ({
-      name: debouncedName || undefined,
-      taxId: debouncedTaxId || undefined,
-      type: typeFilter === 'all' ? undefined : typeFilter,
-      status: statusFilter,
+      name: filters.applied.name || undefined,
+      taxId: filters.applied.taxId || undefined,
+      type: filters.applied.type === 'all' ? undefined : filters.applied.type,
+      status: filters.applied.status,
       page,
       perPage: PER_PAGE,
       sort: sort?.column,
       order: sort?.order,
     }),
-    [debouncedName, debouncedTaxId, typeFilter, statusFilter, page, sort]
+    [filters.applied, page, sort]
   )
 
   const listQuery = useQuery({
@@ -130,23 +132,14 @@ export function CustomersPage() {
     setFormOpen(true)
   }
 
-  function resetPage() {
+  function handleSearch() {
+    filters.apply()
     setPage(1)
   }
-
   function clearFilters() {
-    setNameFilter('')
-    setTaxIdFilter('')
-    setTypeFilter('all')
-    setStatusFilter('active')
+    filters.clear()
     setPage(1)
   }
-
-  const hasFilters =
-    nameFilter.length > 0 ||
-    taxIdFilter.length > 0 ||
-    typeFilter !== 'all' ||
-    statusFilter !== 'active'
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
@@ -173,11 +166,9 @@ export function CustomersPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome"
-              value={nameFilter}
-              onChange={(event) => {
-                setNameFilter(event.target.value)
-                resetPage()
-              }}
+              value={filters.draft.name}
+              onChange={(event) => filters.setField('name', event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
               className="w-64 pl-9"
             />
           </div>
@@ -187,11 +178,9 @@ export function CustomersPage() {
           <label className="text-xs font-medium text-muted-foreground">CPF/CNPJ</label>
           <MaskedInput
             placeholder="Buscar por CPF/CNPJ"
-            value={taxIdFilter}
-            onChange={(value) => {
-              setTaxIdFilter(value)
-              resetPage()
-            }}
+            value={filters.draft.taxId}
+            onChange={(value) => filters.setField('taxId', value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
             mask={maskTaxId}
             maxDigits={14}
             className="block w-48"
@@ -201,11 +190,8 @@ export function CustomersPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Tipo</label>
           <Select
-            value={typeFilter}
-            onValueChange={(value) => {
-              setTypeFilter(value as TypeFilter)
-              resetPage()
-            }}
+            value={filters.draft.type}
+            onValueChange={(value) => filters.setField('type', value as TypeFilter)}
           >
             <SelectTrigger className="w-44">
               <SelectValue />
@@ -221,11 +207,8 @@ export function CustomersPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Status</label>
           <Select
-            value={statusFilter}
-            onValueChange={(value) => {
-              setStatusFilter(value as StatusFilter)
-              resetPage()
-            }}
+            value={filters.draft.status}
+            onValueChange={(value) => filters.setField('status', value as StatusFilter)}
           >
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -238,7 +221,8 @@ export function CustomersPage() {
           </Select>
         </div>
 
-        {hasFilters && (
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
           <Button variant="ghost" onClick={clearFilters}>
             Limpar filtros
           </Button>
@@ -255,9 +239,9 @@ export function CustomersPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={Contact}
-            title={hasFilters ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+            title={filters.isFiltered ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
             description={
-              hasFilters
+              filters.isFiltered
                 ? 'Tente ajustar os termos da busca.'
                 : 'Cadastre o primeiro cliente desta empresa.'
             }

@@ -6,7 +6,7 @@ import { payablesApi, type PayableListParams } from '@/services/payables-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
 import { usePermissions } from '@/permissions/use-permissions'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/masks'
@@ -27,6 +27,7 @@ import { PayableFormDialog } from '@/modules/payables/payable-form-dialog'
 import { PayableSettlementsDialog } from '@/modules/payables/payable-settlements-dialog'
 import { PayableStatusBadge } from '@/modules/payables/payable-status-badge'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,23 +74,24 @@ export function PayablesPage() {
   // Calculado uma vez, na montagem: o recorte default é o mês corrente.
   const [defaultRange] = useState(currentMonthRange)
 
-  const [documentNumberFilter, setDocumentNumberFilter] = useState('')
-  const [supplierFilter, setSupplierFilter] = useState<number | null>(null)
-
-  // Vencimento vem **marcado** por default; emissão, desmarcado.
-  const [dueEnabled, setDueEnabled] = useState(true)
-  const [dueFrom, setDueFrom] = useState(defaultRange.from)
-  const [dueTo, setDueTo] = useState(defaultRange.to)
-
-  const [issueEnabled, setIssueEnabled] = useState(false)
-  const [issueFrom, setIssueFrom] = useState(defaultRange.from)
-  const [issueTo, setIssueTo] = useState(defaultRange.to)
-
-  // Nenhum selecionado = todos.
-  const [statusFilter, setStatusFilter] = useState<PayableStatusFilter[]>([])
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  // Ao montar, os aplicados = default (vencimento do mês corrente marcado), então
+  // a tela já carrega filtrada por isso.
+  const filters = useSearchFilters({
+    documentNumber: '',
+    supplierId: null as number | null,
+    // Vencimento vem **marcado** por default; emissão, desmarcado.
+    dueEnabled: true,
+    dueFrom: defaultRange.from,
+    dueTo: defaultRange.to,
+    issueEnabled: false,
+    issueFrom: defaultRange.from,
+    issueTo: defaultRange.to,
+    // Nenhum selecionado = todos.
+    statuses: [] as PayableStatusFilter[],
+  })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedDocumentNumber = useDebouncedValue(documentNumberFilter)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Payable | null>(null)
@@ -101,39 +103,28 @@ export function PayablesPage() {
     setPage(1)
   }
 
-  function resetPage() {
+  function handleSearch() {
+    filters.apply()
     setPage(1)
   }
 
-  const listParams = useMemo<PayableListParams>(
-    () => ({
-      documentNumber: debouncedDocumentNumber || undefined,
-      supplierId: supplierFilter ?? undefined,
+  const listParams = useMemo<PayableListParams>(() => {
+    const applied = filters.applied
+    return {
+      documentNumber: applied.documentNumber || undefined,
+      supplierId: applied.supplierId ?? undefined,
       // Desmarcar o checkbox desativa o filtro — as datas nem são enviadas.
-      dueFrom: dueEnabled ? dueFrom : undefined,
-      dueTo: dueEnabled ? dueTo : undefined,
-      issueFrom: issueEnabled ? issueFrom : undefined,
-      issueTo: issueEnabled ? issueTo : undefined,
-      statuses: statusFilter,
+      dueFrom: applied.dueEnabled ? applied.dueFrom : undefined,
+      dueTo: applied.dueEnabled ? applied.dueTo : undefined,
+      issueFrom: applied.issueEnabled ? applied.issueFrom : undefined,
+      issueTo: applied.issueEnabled ? applied.issueTo : undefined,
+      statuses: applied.statuses,
       page,
       perPage: PER_PAGE,
       sort: sort?.column,
       order: sort?.order,
-    }),
-    [
-      debouncedDocumentNumber,
-      supplierFilter,
-      dueEnabled,
-      dueFrom,
-      dueTo,
-      issueEnabled,
-      issueFrom,
-      issueTo,
-      statusFilter,
-      page,
-      sort,
-    ]
-  )
+    }
+  }, [filters.applied, page, sort])
 
   const listQuery = useQuery({
     queryKey: ['payables', companyId, listParams],
@@ -162,26 +153,9 @@ export function PayablesPage() {
 
   /** Volta ao **default** (mês corrente por vencimento), não ao vazio. */
   function clearFilters() {
-    setDocumentNumberFilter('')
-    setSupplierFilter(null)
-    setDueEnabled(true)
-    setDueFrom(defaultRange.from)
-    setDueTo(defaultRange.to)
-    setIssueEnabled(false)
-    setIssueFrom(defaultRange.from)
-    setIssueTo(defaultRange.to)
-    setStatusFilter([])
+    filters.clear()
     setPage(1)
   }
-
-  const hasFilters =
-    documentNumberFilter.length > 0 ||
-    supplierFilter !== null ||
-    !dueEnabled ||
-    dueFrom !== defaultRange.from ||
-    dueTo !== defaultRange.to ||
-    issueEnabled ||
-    statusFilter.length > 0
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
@@ -210,11 +184,9 @@ export function PayablesPage() {
             <Input
               placeholder="Buscar por número"
               className="w-48 pl-9"
-              value={documentNumberFilter}
-              onChange={(event) => {
-                setDocumentNumberFilter(event.target.value)
-                resetPage()
-              }}
+              value={filters.draft.documentNumber}
+              onChange={(event) => filters.setField('documentNumber', event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
             />
           </div>
         </div>
@@ -224,11 +196,8 @@ export function PayablesPage() {
           <div className="w-64">
             <EntityPicker
               source="supplier"
-              value={supplierFilter}
-              onChange={(value) => {
-                setSupplierFilter(value)
-                resetPage()
-              }}
+              value={filters.draft.supplierId}
+              onChange={(value) => filters.setField('supplierId', value)}
             />
           </div>
         </div>
@@ -236,41 +205,23 @@ export function PayablesPage() {
         <DateRangeFilter
           id="due"
           label="Vencimento"
-          enabled={dueEnabled}
-          onEnabledChange={(value) => {
-            setDueEnabled(value)
-            resetPage()
-          }}
-          from={dueFrom}
-          to={dueTo}
-          onFromChange={(value) => {
-            setDueFrom(value)
-            resetPage()
-          }}
-          onToChange={(value) => {
-            setDueTo(value)
-            resetPage()
-          }}
+          enabled={filters.draft.dueEnabled}
+          onEnabledChange={(value) => filters.setField('dueEnabled', value)}
+          from={filters.draft.dueFrom}
+          to={filters.draft.dueTo}
+          onFromChange={(value) => filters.setField('dueFrom', value)}
+          onToChange={(value) => filters.setField('dueTo', value)}
         />
 
         <DateRangeFilter
           id="issue"
           label="Emissão"
-          enabled={issueEnabled}
-          onEnabledChange={(value) => {
-            setIssueEnabled(value)
-            resetPage()
-          }}
-          from={issueFrom}
-          to={issueTo}
-          onFromChange={(value) => {
-            setIssueFrom(value)
-            resetPage()
-          }}
-          onToChange={(value) => {
-            setIssueTo(value)
-            resetPage()
-          }}
+          enabled={filters.draft.issueEnabled}
+          onEnabledChange={(value) => filters.setField('issueEnabled', value)}
+          from={filters.draft.issueFrom}
+          to={filters.draft.issueTo}
+          onFromChange={(value) => filters.setField('issueFrom', value)}
+          onToChange={(value) => filters.setField('issueTo', value)}
         />
 
         <div className="space-y-1.5">
@@ -282,17 +233,15 @@ export function PayablesPage() {
               id="status"
               className="w-full"
               options={STATUS_OPTIONS}
-              value={statusFilter}
+              value={filters.draft.statuses}
               emptyLabel="Todos"
-              onChange={(value) => {
-                setStatusFilter(value)
-                resetPage()
-              }}
+              onChange={(value) => filters.setField('statuses', value)}
             />
           </div>
         </div>
 
-        {hasFilters && (
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
           <Button variant="ghost" onClick={clearFilters}>
             Limpar filtros
           </Button>
@@ -309,9 +258,9 @@ export function PayablesPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={Receipt}
-            title={hasFilters ? 'Nenhum título encontrado' : 'Nenhum título lançado'}
+            title={filters.isFiltered ? 'Nenhum título encontrado' : 'Nenhum título lançado'}
             description={
-              hasFilters
+              filters.isFiltered
                 ? 'Tente ajustar os filtros da busca.'
                 : 'Lance o primeiro título a pagar desta empresa.'
             }

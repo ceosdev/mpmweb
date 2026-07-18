@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { servicesApi, type ServiceListParams } from '@/services/services-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import { formatCurrency } from '@/lib/masks'
 import type { Service, ServiceType } from '@/types/api'
@@ -20,6 +20,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { ServiceFormDialog } from '@/modules/services/service-form-dialog'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -54,11 +55,10 @@ export function ServicesPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [descriptionFilter, setDescriptionFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({ description: '', type: 'all' as TypeFilter })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedDescription = useDebouncedValue(descriptionFilter)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Service | null>(null)
@@ -71,14 +71,14 @@ export function ServicesPage() {
 
   const listParams = useMemo<ServiceListParams>(
     () => ({
-      description: debouncedDescription || undefined,
-      type: typeFilter === 'all' ? undefined : typeFilter,
+      description: filters.applied.description || undefined,
+      type: filters.applied.type === 'all' ? undefined : filters.applied.type,
       page,
       perPage: PER_PAGE,
       sort: sort?.column,
       order: sort?.order,
     }),
-    [debouncedDescription, typeFilter, page, sort]
+    [filters.applied, page, sort]
   )
 
   const listQuery = useQuery({
@@ -106,17 +106,14 @@ export function ServicesPage() {
     setFormOpen(true)
   }
 
-  function resetPage() {
+  function handleSearch() {
+    filters.apply()
     setPage(1)
   }
-
   function clearFilters() {
-    setDescriptionFilter('')
-    setTypeFilter('all')
+    filters.clear()
     setPage(1)
   }
-
-  const hasFilters = descriptionFilter.length > 0 || typeFilter !== 'all'
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
@@ -143,11 +140,9 @@ export function ServicesPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por descrição"
-              value={descriptionFilter}
-              onChange={(event) => {
-                setDescriptionFilter(event.target.value)
-                resetPage()
-              }}
+              value={filters.draft.description}
+              onChange={(event) => filters.setField('description', event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
               className="w-64 pl-9"
             />
           </div>
@@ -156,11 +151,8 @@ export function ServicesPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Tipo</label>
           <Select
-            value={typeFilter}
-            onValueChange={(value) => {
-              setTypeFilter(value as TypeFilter)
-              resetPage()
-            }}
+            value={filters.draft.type}
+            onValueChange={(value) => filters.setField('type', value as TypeFilter)}
           >
             <SelectTrigger className="w-48">
               <SelectValue />
@@ -173,7 +165,8 @@ export function ServicesPage() {
           </Select>
         </div>
 
-        {hasFilters && (
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
           <Button variant="ghost" onClick={clearFilters}>
             Limpar filtros
           </Button>
@@ -190,9 +183,9 @@ export function ServicesPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={Hammer}
-            title={hasFilters ? 'Nenhum serviço encontrado' : 'Nenhum serviço cadastrado'}
+            title={filters.isFiltered ? 'Nenhum serviço encontrado' : 'Nenhum serviço cadastrado'}
             description={
-              hasFilters
+              filters.isFiltered
                 ? 'Tente ajustar os termos da busca.'
                 : 'Cadastre o primeiro serviço desta empresa.'
             }
