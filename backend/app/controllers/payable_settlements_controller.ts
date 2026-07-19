@@ -1,6 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http'
 import payableSettlementService from '#services/payable_settlement_service'
 import {
+  batchPayableSettlementValidator,
   createPayableSettlementValidator,
   updatePayableSettlementValidator,
 } from '#validators/payable_settlement_validators'
@@ -19,6 +20,17 @@ export default class PayableSettlementsController {
     const payload = await request.validateUsing(createPayableSettlementValidator)
     const row = await payableSettlementService.create(tenant, Number(params.payableId), payload)
     return response.created(row)
+  }
+
+  /**
+   * Pagamento em lote: `payableId` **não** vem do path (opera sobre vários
+   * títulos), vem no corpo. Cria uma baixa por título numa única transação.
+   */
+  async batchStore({ tenant, request }: HttpContext) {
+    const { payableIds, paymentTypeId } = await request.validateUsing(
+      batchPayableSettlementValidator
+    )
+    return payableSettlementService.batchCreate(tenant, payableIds, paymentTypeId)
   }
 
   async update({ tenant, request, params }: HttpContext) {

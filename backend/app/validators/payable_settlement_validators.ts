@@ -19,6 +19,10 @@ const messages = new SimpleMessagesProvider({
   'paymentTypeId.required': 'Selecione o tipo de pagamento.',
   'paymentTypeId.min': 'Selecione o tipo de pagamento.',
 
+  'payableIds.required': 'Selecione ao menos um título.',
+  'payableIds.array.minLength': 'Selecione ao menos um título.',
+  'payableIds.notEmpty': 'Selecione ao menos um título.',
+
   'amount.required': 'Valor pago é obrigatório.',
   'amount.min': 'Valor pago deve ser maior que zero.',
 
@@ -51,3 +55,16 @@ export const updatePayableSettlementValidator = vine.compile(
   })
 )
 updatePayableSettlementValidator.messagesProvider = messages
+
+/**
+ * Pagamento em lote: uma forma de pagamento aplicada a vários títulos. O cliente
+ * envia só os ids e o tipo — valor (saldo) e data (hoje) são derivados no
+ * service, dentro da transação. Ids duplicados são deduplicados lá.
+ */
+export const batchPayableSettlementValidator = vine.compile(
+  vine.object({
+    payableIds: vine.array(vine.number().withoutDecimals().min(1)).minLength(1),
+    paymentTypeId: vine.number().withoutDecimals().min(1),
+  })
+)
+batchPayableSettlementValidator.messagesProvider = messages

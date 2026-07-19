@@ -362,6 +362,11 @@ router
     router
       .post('/payables', [PayablesController, 'store'])
       .use(middleware.permission('payables.create'))
+    // Pagamento em lote — antes de `/payables/:id`, senão o router casaria
+    // `batch-settlements` como um id.
+    router
+      .post('/payables/batch-settlements', [PayableSettlementsController, 'batchStore'])
+      .use(middleware.permission('payable_settlements.batch'))
     router
       .get('/payables/:id', [PayablesController, 'show'])
       .use(middleware.permission('payables.view'))

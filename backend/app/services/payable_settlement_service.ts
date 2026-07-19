@@ -7,8 +7,9 @@ import type { TenantContext } from '#services/tenant_context'
 import payableSettlementRepository from '#repositories/payable_settlement_repository'
 import payableRepository from '#repositories/payable_repository'
 import paymentTypeRepository from '#repositories/payment_type_repository'
-import payableService from '#services/payable_service'
+import payableService, { OWING_STATUSES } from '#services/payable_service'
 import { BusinessException, NotFoundException } from '#exceptions/app_exception'
+import { todayIso } from '#utils/dates'
 
 export interface CreatePayableSettlementDTO {
   /** VineJS parses `YYYY-MM-DD` into a `Date`; the model wants a luxon DateTime. */
@@ -75,6 +76,72 @@ export class PayableSettlementService {
 
       await settlement.load('paymentType')
       return this.serialize(settlement)
+    })
+  }
+
+  /**
+   * Pagamento em lote: cria **uma baixa por título**, com a **mesma** forma de
+   * pagamento e **data = hoje**, cada uma pelo **saldo restante** do título.
+   * Aberto quita o total; Parcial quita só o que falta — ambos fecham em Pago.
+   *
+   * **Tudo ou nada**: roda numa única transação; cada título é travado
+   * (`forUpdate`, em ordem crescente de id para não dar deadlock). Se qualquer um
+   * deixou de ser elegível (não é do tenant, foi pago/cancelado antes), a
+   * transação inteira faz rollback e nada é persistido.
+   */
+  async batchCreate(tenant: TenantContext, payableIds: number[], paymentTypeId: number) {
+    // Dedupe + ordena: lock determinístico e sem baixar o mesmo título duas vezes.
+    const ids = [...new Set(payableIds)].sort((a, b) => a - b)
+    const today = DateTime.fromISO(todayIso())
+
+    return db.transaction(async (trx) => {
+      await this.assertPaymentType(tenant, paymentTypeId)
+
+      let settledCount = 0
+      let totalPaid = 0
+
+      for (const id of ids) {
+        const payable = await this.lockPayable(tenant, id, trx)
+
+        if (!OWING_STATUSES.includes(payable.status)) {
+          throw new BusinessException(
+            `O título ${payable.documentNumber}/${payable.installment} não pode ser pago em lote.`
+          )
+        }
+
+        // Saldo real: baixas já existentes (0 se Aberto) → quanto ainda falta.
+        const alreadyPaid = await this.sumSettlements(tenant, id, trx)
+        const balance = payableService.remainingBalance(payable, alreadyPaid)
+        if (balance <= 0) {
+          throw new BusinessException(
+            `O título ${payable.documentNumber}/${payable.installment} não pode ser pago em lote.`
+          )
+        }
+
+        // Valida (Σ ≤ total) e recalcula o status na memória. Fecha em Pago.
+        payableService.applySettlement(payable, alreadyPaid, balance)
+
+        await PayableSettlement.create(
+          {
+            companyId: tenant.company.id,
+            payableId: id,
+            paymentTypeId,
+            settlementDate: today,
+            amount: balance,
+            documentNumber: null,
+            notes: null,
+          },
+          { client: trx }
+        )
+
+        payable.useTransaction(trx)
+        await payable.save()
+
+        settledCount += 1
+        totalPaid += balance
+      }
+
+      return { settledCount, totalPaid }
     })
   }
 

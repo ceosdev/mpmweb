@@ -126,9 +126,16 @@ interface PayableFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   payable: Payable | null
+  /** Somente-leitura: reusa o mesmo modal para "Visualizar", sem permitir edição. */
+  readOnly?: boolean
 }
 
-export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDialogProps) {
+export function PayableFormDialog({
+  open,
+  onOpenChange,
+  payable,
+  readOnly = false,
+}: PayableFormDialogProps) {
   const isEdit = Boolean(payable)
   const queryClient = useQueryClient()
 
@@ -173,7 +180,9 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <DialogTitle>{isEdit ? 'Editar título' : 'Novo título'}</DialogTitle>
+            <DialogTitle>
+              {readOnly ? 'Visualizar título' : isEdit ? 'Editar título' : 'Novo título'}
+            </DialogTitle>
             {/* Status é read-only — resultado, nunca escolha. */}
             {payable && <PayableStatusBadge status={payable.status} />}
           </div>
@@ -190,7 +199,12 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
               error={form.formState.errors.documentNumber?.message}
               className="md:col-span-2"
             >
-              <Input id="documentNumber" maxLength={20} {...form.register('documentNumber')} />
+              <Input
+                id="documentNumber"
+                maxLength={20}
+                disabled={readOnly}
+                {...form.register('documentNumber')}
+              />
             </Field>
 
             <Field
@@ -204,6 +218,7 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
                 type="number"
                 min={1}
                 max={999}
+                disabled={readOnly}
                 {...form.register('installment', { valueAsNumber: true })}
               />
             </Field>
@@ -225,6 +240,7 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
                     value={field.value ? field.value : null}
                     onChange={(value) => field.onChange(value ?? 0)}
                     invalid={Boolean(form.formState.errors.supplierId)}
+                    disabled={readOnly}
                   />
                 )}
               />
@@ -236,7 +252,7 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
               error={form.formState.errors.issueDate?.message}
               className="md:col-span-3"
             >
-              <Input id="issueDate" type="date" {...form.register('issueDate')} />
+              <Input id="issueDate" type="date" disabled={readOnly} {...form.register('issueDate')} />
             </Field>
 
             <Field
@@ -245,7 +261,7 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
               error={form.formState.errors.dueDate?.message}
               className="md:col-span-3"
             >
-              <Input id="dueDate" type="date" {...form.register('dueDate')} />
+              <Input id="dueDate" type="date" disabled={readOnly} {...form.register('dueDate')} />
             </Field>
 
             <MoneyField
@@ -253,24 +269,28 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
               name="amount"
               label="Valor do título"
               error={form.formState.errors.amount?.message}
+              disabled={readOnly}
             />
             <MoneyField
               control={form.control}
               name="discount"
               label="Desconto"
               error={form.formState.errors.discount?.message}
+              disabled={readOnly}
             />
             <MoneyField
               control={form.control}
               name="fine"
               label="Multa"
               error={form.formState.errors.fine?.message}
+              disabled={readOnly}
             />
             <MoneyField
               control={form.control}
               name="interest"
               label="Juros"
               error={form.formState.errors.interest?.message}
+              disabled={readOnly}
             />
 
             <Field
@@ -279,7 +299,7 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
               error={form.formState.errors.notes?.message}
               className="md:col-span-6"
             >
-              <Textarea id="notes" rows={3} {...form.register('notes')} />
+              <Textarea id="notes" rows={3} disabled={readOnly} {...form.register('notes')} />
             </Field>
           </div>
         </form>
@@ -296,17 +316,25 @@ export function PayableFormDialog({ open, onOpenChange, payable }: PayableFormDi
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={mutation.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button type="submit" form="payable-form" disabled={mutation.isPending}>
-            {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            Salvar
-          </Button>
+          {readOnly ? (
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Fechar
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={mutation.isPending}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" form="payable-form" disabled={mutation.isPending}>
+                {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                Salvar
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -319,11 +347,13 @@ function MoneyField({
   name,
   label,
   error,
+  disabled,
 }: {
   control: ReturnType<typeof useForm<FormValues>>['control']
   name: 'amount' | 'discount' | 'fine' | 'interest'
   label: string
   error?: string
+  disabled?: boolean
 }) {
   return (
     <Field label={label} htmlFor={name} error={error} className="md:col-span-3 lg:col-span-3">
@@ -339,6 +369,7 @@ function MoneyField({
             onChange={field.onChange}
             mask={maskMoney}
             maxDigits={12}
+            disabled={disabled}
           />
         )}
       />

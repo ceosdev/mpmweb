@@ -144,6 +144,7 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'payable_settlements.create', name: 'Criar baixas', module: 'payable_settlements', action: 'create', description: 'Lançar baixas (pagamentos) em um título a pagar.' },
   { slug: 'payable_settlements.edit', name: 'Editar baixas', module: 'payable_settlements', action: 'edit', description: 'Alterar baixas existentes de um título.' },
   { slug: 'payable_settlements.delete', name: 'Excluir baixas', module: 'payable_settlements', action: 'delete', description: 'Remover baixas de um título.' },
+  { slug: 'payable_settlements.batch', name: 'Pagar em lote', module: 'payable_settlements', action: 'batch', description: 'Pagar vários títulos de uma vez, com a mesma forma de pagamento.' },
 ]
 
 export type RoleSlug = 'root'

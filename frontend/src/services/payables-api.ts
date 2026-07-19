@@ -35,6 +35,12 @@ export interface CreatePayablePayload {
 
 export type UpdatePayablePayload = Partial<CreatePayablePayload>
 
+/** Resultado do pagamento em lote (uma baixa por título, na mesma transação). */
+export interface BatchSettleResult {
+  settledCount: number
+  totalPaid: number
+}
+
 export const payablesApi = {
   list: ({ statuses, ...params }: PayableListParams) =>
     api
@@ -60,4 +66,14 @@ export const payablesApi = {
 
   /** Cancela o título: exclui todas as baixas e marca como cancelado. */
   cancel: (id: number) => api.post<Payable>(`/payables/${id}/cancel`).then((r) => r.data),
+
+  /**
+   * Pagamento em lote: baixa vários títulos com a mesma forma de pagamento, na
+   * data de hoje, cada um pelo saldo restante. Só ids + tipo — o backend deriva
+   * valor e data.
+   */
+  batchSettle: (payableIds: number[], paymentTypeId: number) =>
+    api
+      .post<BatchSettleResult>('/payables/batch-settlements', { payableIds, paymentTypeId })
+      .then((r) => r.data),
 }

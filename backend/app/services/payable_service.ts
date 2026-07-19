@@ -41,8 +41,11 @@ const SORT_COLUMNS: Record<string, string> = {
 
 const TOTAL_EXPRESSION = '(amount - discount + fine + interest)'
 
-/** A payable is only overdue while something is still owed on it. */
-const OWING_STATUSES: PayableStatus[] = ['open', 'partially_paid']
+/**
+ * A payable still owes while it is `open` or `partially_paid`. Drives both the
+ * virtual "overdue" and the batch-payment eligibility.
+ */
+export const OWING_STATUSES: PayableStatus[] = ['open', 'partially_paid']
 
 export interface CreatePayableDTO {
   documentNumber: string
@@ -275,6 +278,17 @@ export class PayableService {
    * (`0` on delete). Throws **422** with the available balance for THIS
    * settlement when it would overpay.
    */
+  /**
+   * Remaining balance (in reais) of a title given what has already been paid,
+   * computed in cents so it is exact. Never negative. Used by the batch payment
+   * to know how much to settle on each title (Aberto = total; Parcial = o que
+   * falta).
+   */
+  remainingBalance(row: Payable, paidReais: number): number {
+    const balanceCents = Math.max(0, this.totalCents(row) - this.cents(paidReais))
+    return balanceCents / 100
+  }
+
   applySettlement(row: Payable, othersPaidReais: number, thisAmountReais: number) {
     const totalCents = this.totalCents(row)
     const othersCents = this.cents(othersPaidReais)

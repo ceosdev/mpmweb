@@ -1,6 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, MoreHorizontal, Pencil, Plus, Receipt, Search, Trash2, Wallet } from 'lucide-react'
+import {
+  Ban,
+  Eye,
+  ListChecks,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Receipt,
+  Search,
+  Trash2,
+  Wallet,
+  X,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { payablesApi, type PayableListParams } from '@/services/payables-api'
 import { useAuth } from '@/providers/auth-provider'
@@ -25,6 +37,7 @@ import { EntityPicker } from '@/components/common/entity-picker'
 import { MultiSelect, type MultiSelectOption } from '@/components/form/multi-select'
 import { PayableFormDialog } from '@/modules/payables/payable-form-dialog'
 import { PayableSettlementsDialog } from '@/modules/payables/payable-settlements-dialog'
+import { BatchPaymentDialog } from '@/modules/payables/batch-payment-dialog'
 import { PayableStatusBadge } from '@/modules/payables/payable-status-badge'
 import { Button } from '@/components/ui/button'
 import { SearchButton } from '@/components/common/search-button'
@@ -61,16 +74,18 @@ const STATUS_OPTIONS: MultiSelectOption<PayableStatusFilter>[] = [
 
 export function PayablesPage() {
   const { tenant } = useAuth()
-  const { canAny } = usePermissions()
+  const { canAny, can } = usePermissions()
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
   // A coluna "Ações" só aparece se o usuário tem ao menos uma das ações do menu.
   const canActOnRow = canAny([
+    'payables.view',
     'payables.edit',
     'payables.delete',
     'payables.cancel',
     'payable_settlements.view',
   ])
+  const canBatch = can('payable_settlements.batch')
 
   // Calculado uma vez, na montagem: o recorte default é o mês corrente.
   const [defaultRange] = useState(currentMonthRange)
@@ -96,18 +111,51 @@ export function PayablesPage() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Payable | null>(null)
+  // Reusa o mesmo modal do form para "Visualizar" (somente-leitura).
+  const [formReadOnly, setFormReadOnly] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [cancelId, setCancelId] = useState<number | null>(null)
   const [settlementsFor, setSettlementsFor] = useState<Payable | null>(null)
 
+  // Modo pagamento em lote: multisseleção de títulos que ainda devem, escopada à
+  // página/consulta atual. Ver docs/spec/financeiro/003-pagamento-em-lote.md.
+  const [batchMode, setBatchMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [batchDialogOpen, setBatchDialogOpen] = useState(false)
+  // Página que o usuário tentou abrir com seleção ativa (dispara o aviso).
+  const [pendingPage, setPendingPage] = useState<number | null>(null)
+
+  /** Só entram no lote os títulos que ainda devem (Aberto ou Parcial). */
+  function isOwing(row: Payable) {
+    return row.status === 'open' || row.status === 'partially_paid'
+  }
+
+  /** Desliga o modo lote e limpa a seleção. `notify` avisa o usuário. */
+  function exitBatchMode(notify = false) {
+    setBatchMode((wasOn) => {
+      if (wasOn && notify) toast.info('Modo pagamento em lote desativado.')
+      return false
+    })
+    setSelectedIds(new Set())
+  }
+
+  // Trocar de empresa zera o modo lote (a seleção é por id da empresa anterior).
+  useEffect(() => {
+    setBatchMode(false)
+    setSelectedIds(new Set())
+  }, [companyId])
+
   function toggleSort(column: string) {
     setSort((current) => nextSortState(current, column))
     setPage(1)
+    // Ordenar troca as linhas visíveis — a seleção deixaria de bater com a tela.
+    exitBatchMode(true)
   }
 
   function handleSearch() {
     filters.apply()
     setPage(1)
+    exitBatchMode(true)
   }
 
   const listParams = useMemo<PayableListParams>(() => {
@@ -160,10 +208,17 @@ export function PayablesPage() {
 
   function openCreate() {
     setEditing(null)
+    setFormReadOnly(false)
     setFormOpen(true)
   }
   function openEdit(row: Payable) {
     setEditing(row)
+    setFormReadOnly(false)
+    setFormOpen(true)
+  }
+  function openView(row: Payable) {
+    setEditing(row)
+    setFormReadOnly(true)
     setFormOpen(true)
   }
 
@@ -171,10 +226,47 @@ export function PayablesPage() {
   function clearFilters() {
     filters.clear()
     setPage(1)
+    exitBatchMode(true)
   }
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
+
+  // Elegíveis da página e estado de seleção derivados das linhas atuais.
+  const eligibleRows = useMemo(() => rows.filter(isOwing), [rows])
+  const hasEligible = eligibleRows.length > 0
+  const allEligibleSelected =
+    hasEligible && eligibleRows.every((row) => selectedIds.has(row.id))
+  const selectedPayables = useMemo(
+    () => rows.filter((row) => selectedIds.has(row.id)),
+    [rows, selectedIds]
+  )
+
+  function toggleAll(checked: boolean) {
+    setSelectedIds(checked ? new Set(eligibleRows.map((row) => row.id)) : new Set())
+  }
+
+  function toggleOne(id: number, checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  /**
+   * Paginação só vale para a página atual. Com seleção ativa, avisa antes de
+   * trocar (e perder a seleção); sem seleção, troca direto e sai do modo.
+   */
+  function handlePageChange(next: number) {
+    if (batchMode && selectedIds.size > 0) {
+      setPendingPage(next)
+      return
+    }
+    exitBatchMode(true)
+    setPage(next)
+  }
 
   return (
     <div className="space-y-6">
@@ -262,7 +354,49 @@ export function PayablesPage() {
             Limpar filtros
           </Button>
         )}
+
+        {/* Entrada do modo lote — alinhada à direita, na mesma linha do Pesquisar. */}
+        {canBatch && !batchMode && (
+          <Button
+            variant="outline"
+            className="ml-auto"
+            onClick={() => setBatchMode(true)}
+            disabled={!hasEligible}
+            title={
+              hasEligible
+                ? undefined
+                : 'Nenhum título em aberto nesta página para pagar em lote.'
+            }
+          >
+            <ListChecks className="size-4" />
+            Pagamento em lote
+          </Button>
+        )}
       </div>
+
+      {batchMode && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/5 px-4 py-2.5">
+          <span className="text-sm font-medium">
+            {selectedIds.size === 0
+              ? 'Modo pagamento em lote: selecione os títulos em aberto que deseja pagar.'
+              : `${selectedIds.size} ${selectedIds.size === 1 ? 'título selecionado' : 'títulos selecionados'}`}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => exitBatchMode()}>
+              <X className="size-4" />
+              Sair do modo lote
+            </Button>
+            <Button
+              size="sm"
+              disabled={selectedIds.size === 0}
+              onClick={() => setBatchDialogOpen(true)}
+            >
+              <Wallet className="size-4" />
+              Pagar {selectedIds.size} em lote
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Card>
         {listQuery.isLoading ? (
@@ -285,6 +419,16 @@ export function PayablesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                {batchMode && (
+                  <TableHead className="w-0">
+                    <Checkbox
+                      checked={allEligibleSelected}
+                      onCheckedChange={(checked) => toggleAll(checked === true)}
+                      disabled={!hasEligible}
+                      aria-label="Selecionar todos os títulos em aberto da página"
+                    />
+                  </TableHead>
+                )}
                 <SortableHeader column="document_number" sort={sort} onSort={toggleSort}>
                   Número
                 </SortableHeader>
@@ -311,7 +455,21 @@ export function PayablesPage() {
             </TableHeader>
             <TableBody>
               {rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className={cn(batchMode && selectedIds.has(row.id) && 'bg-primary/5')}
+                >
+                  {batchMode && (
+                    <TableCell className="w-0">
+                      {isOwing(row) && (
+                        <Checkbox
+                          checked={selectedIds.has(row.id)}
+                          onCheckedChange={(checked) => toggleOne(row.id, checked === true)}
+                          aria-label={`Selecionar título ${row.documentNumber}`}
+                        />
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="font-medium">{row.documentNumber}</TableCell>
                   <TableCell className="text-muted-foreground">{row.installment}</TableCell>
                   <TableCell className="text-muted-foreground">
@@ -335,7 +493,8 @@ export function PayablesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end">
-                      {canActOnRow && (
+                      {/* No modo lote o foco é selecionar; as ações por linha somem. */}
+                      {!batchMode && canActOnRow && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" aria-label="Ações">
@@ -343,6 +502,12 @@ export function PayablesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <Can permission="payables.view">
+                              <DropdownMenuItem onClick={() => openView(row)}>
+                                <Eye className="size-4" />
+                                Visualizar
+                              </DropdownMenuItem>
+                            </Can>
                             <Can permission="payables.edit">
                               <DropdownMenuItem onClick={() => openEdit(row)}>
                                 <Pencil className="size-4" />
@@ -388,9 +553,40 @@ export function PayablesPage() {
         )}
       </Card>
 
-      {meta && <Pagination meta={meta} onChange={setPage} />}
+      {meta && <Pagination meta={meta} onChange={handlePageChange} />}
 
-      <PayableFormDialog open={formOpen} onOpenChange={setFormOpen} payable={editing} />
+      <BatchPaymentDialog
+        open={batchDialogOpen}
+        onOpenChange={setBatchDialogOpen}
+        payables={selectedPayables}
+        onSettled={() => {
+          setBatchDialogOpen(false)
+          exitBatchMode()
+        }}
+      />
+
+      <ConfirmDialog
+        open={pendingPage !== null}
+        onOpenChange={(open) => !open && setPendingPage(null)}
+        title="Sair do modo pagamento em lote?"
+        description="O pagamento em lote funciona apenas na página atual. Mudar de página vai desativar o modo lote e limpar a seleção. Deseja continuar?"
+        confirmLabel="Sim, mudar de página"
+        onConfirm={() => {
+          if (pendingPage !== null) {
+            const next = pendingPage
+            setPendingPage(null)
+            exitBatchMode()
+            setPage(next)
+          }
+        }}
+      />
+
+      <PayableFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        payable={editing}
+        readOnly={formReadOnly}
+      />
 
       <PayableSettlementsDialog
         open={settlementsFor !== null}
