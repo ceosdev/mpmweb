@@ -31,6 +31,8 @@ export const MODULE_LABELS: Record<string, string> = {
   brand_models: 'Modelos da marca',
   payables: 'Contas a pagar',
   payable_settlements: 'Baixas do título',
+  receivables: 'Contas a receber',
+  receivable_settlements: 'Baixas do título a receber',
 }
 
 export function moduleLabel(module: string): string {

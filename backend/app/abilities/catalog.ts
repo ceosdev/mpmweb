@@ -145,6 +145,20 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'payable_settlements.edit', name: 'Editar baixas', module: 'payable_settlements', action: 'edit', description: 'Alterar baixas existentes de um título.' },
   { slug: 'payable_settlements.delete', name: 'Excluir baixas', module: 'payable_settlements', action: 'delete', description: 'Remover baixas de um título.' },
   { slug: 'payable_settlements.batch', name: 'Pagar em lote', module: 'payable_settlements', action: 'batch', description: 'Pagar vários títulos de uma vez, com a mesma forma de pagamento.' },
+
+  // Contas a receber (financeiro) — espelho de contas a pagar, vínculo no cliente.
+  { slug: 'receivables.view', name: 'Visualizar contas a receber', module: 'receivables', action: 'view', description: 'Listar e consultar os títulos a receber da empresa.' },
+  { slug: 'receivables.create', name: 'Criar contas a receber', module: 'receivables', action: 'create', description: 'Lançar novos títulos a receber.' },
+  { slug: 'receivables.edit', name: 'Editar contas a receber', module: 'receivables', action: 'edit', description: 'Alterar títulos a receber existentes.' },
+  { slug: 'receivables.delete', name: 'Excluir contas a receber', module: 'receivables', action: 'delete', description: 'Remover títulos a receber.' },
+  { slug: 'receivables.cancel', name: 'Cancelar contas a receber', module: 'receivables', action: 'cancel', description: 'Cancelar um título, excluindo todas as suas baixas.' },
+
+  // Baixas / recebimentos (filhos de contas a receber).
+  { slug: 'receivable_settlements.view', name: 'Visualizar baixas a receber', module: 'receivable_settlements', action: 'view', description: 'Consultar as baixas (recebimentos) de um título a receber.' },
+  { slug: 'receivable_settlements.create', name: 'Criar baixas a receber', module: 'receivable_settlements', action: 'create', description: 'Lançar baixas (recebimentos) em um título a receber.' },
+  { slug: 'receivable_settlements.edit', name: 'Editar baixas a receber', module: 'receivable_settlements', action: 'edit', description: 'Alterar baixas existentes de um título a receber.' },
+  { slug: 'receivable_settlements.delete', name: 'Excluir baixas a receber', module: 'receivable_settlements', action: 'delete', description: 'Remover baixas de um título a receber.' },
+  { slug: 'receivable_settlements.batch', name: 'Receber em lote', module: 'receivable_settlements', action: 'batch', description: 'Receber vários títulos de uma vez, com a mesma forma de pagamento.' },
 ]
 
 export type RoleSlug = 'root'

@@ -112,6 +112,11 @@ const PayablesPage = lazy(() =>
     default: m.PayablesPage,
   }))
 )
+const ReceivablesPage = lazy(() =>
+  import('@/modules/receivables/receivables-page').then((m) => ({
+    default: m.ReceivablesPage,
+  }))
+)
 const NotFoundPage = lazy(() =>
   import('@/modules/misc/not-found-page').then((m) => ({ default: m.NotFoundPage }))
 )
@@ -243,6 +248,10 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="payables.view" />,
             children: [{ path: 'payables', element: <PayablesPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="receivables.view" />,
+            children: [{ path: 'receivables', element: <ReceivablesPage /> }],
           },
         ],
       },

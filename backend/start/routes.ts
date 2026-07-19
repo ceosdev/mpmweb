@@ -40,6 +40,9 @@ const BrandModelsController = () => import('#controllers/brand_models_controller
 const PayablesController = () => import('#controllers/payables_controller')
 const PayableSettlementsController = () =>
   import('#controllers/payable_settlements_controller')
+const ReceivablesController = () => import('#controllers/receivables_controller')
+const ReceivableSettlementsController = () =>
+  import('#controllers/receivable_settlements_controller')
 
 /**
  * Health check.
@@ -393,6 +396,45 @@ router
     router
       .delete('/payables/:payableId/settlements/:id', [PayableSettlementsController, 'destroy'])
       .use(middleware.permission('payable_settlements.delete'))
+
+    // Contas a receber (financeiro) — espelho de contas a pagar, vínculo no cliente.
+    router
+      .get('/receivables', [ReceivablesController, 'index'])
+      .use(middleware.permission('receivables.view'))
+    router
+      .post('/receivables', [ReceivablesController, 'store'])
+      .use(middleware.permission('receivables.create'))
+    // Recebimento em lote — antes de `/receivables/:id`, senão o router casaria
+    // `batch-settlements` como um id.
+    router
+      .post('/receivables/batch-settlements', [ReceivableSettlementsController, 'batchStore'])
+      .use(middleware.permission('receivable_settlements.batch'))
+    router
+      .get('/receivables/:id', [ReceivablesController, 'show'])
+      .use(middleware.permission('receivables.view'))
+    router
+      .put('/receivables/:id', [ReceivablesController, 'update'])
+      .use(middleware.permission('receivables.edit'))
+    router
+      .delete('/receivables/:id', [ReceivablesController, 'destroy'])
+      .use(middleware.permission('receivables.delete'))
+    router
+      .post('/receivables/:id/cancel', [ReceivablesController, 'cancel'])
+      .use(middleware.permission('receivables.cancel'))
+
+    // Baixas (recebimentos) de um título — drill-down aninhado no título.
+    router
+      .get('/receivables/:receivableId/settlements', [ReceivableSettlementsController, 'index'])
+      .use(middleware.permission('receivable_settlements.view'))
+    router
+      .post('/receivables/:receivableId/settlements', [ReceivableSettlementsController, 'store'])
+      .use(middleware.permission('receivable_settlements.create'))
+    router
+      .put('/receivables/:receivableId/settlements/:id', [ReceivableSettlementsController, 'update'])
+      .use(middleware.permission('receivable_settlements.edit'))
+    router
+      .delete('/receivables/:receivableId/settlements/:id', [ReceivableSettlementsController, 'destroy'])
+      .use(middleware.permission('receivable_settlements.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

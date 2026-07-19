@@ -5,6 +5,7 @@ import {
   Contact,
   FileText,
   Hammer,
+  HandCoins,
   Landmark,
   LayoutDashboard,
   Package,
@@ -71,6 +72,7 @@ export const MENU: MenuEntry[] = [
     icon: Landmark,
     children: [
       { label: 'Contas a pagar', to: '/payables', icon: Receipt, permission: 'payables.view' },
+      { label: 'Contas a receber', to: '/receivables', icon: HandCoins, permission: 'receivables.view' },
     ],
   },
   {

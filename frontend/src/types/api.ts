@@ -380,3 +380,49 @@ export interface PayableSettlement {
   notes: string | null
   createdAt: string | null
 }
+
+/**
+ * Título a receber — espelho de `Payable`, com `customer*` no lugar de
+ * `supplier*`. `status`, `total`, `balance` e `isOverdue` vêm **resolvidos pelo
+ * backend**. Ver `docs/spec/financeiro/004-contas-a-receber.md`.
+ */
+export type ReceivableStatus = 'open' | 'partially_paid' | 'paid' | 'cancelled'
+
+/** `overdue` é virtual: não é status gravado, é comparação de data. */
+export type ReceivableStatusFilter = ReceivableStatus | 'overdue'
+
+export interface Receivable {
+  id: number
+  customerId: number
+  customerName: string | null
+  documentNumber: string
+  installment: number
+  issueDate: string
+  dueDate: string
+  amount: number
+  discount: number
+  fine: number
+  interest: number
+  paidAmount: number
+  status: ReceivableStatus
+  notes: string | null
+  /** amount - discount + fine + interest. É o que a coluna "Valor" exibe. */
+  total: number
+  /** max(0, total - paidAmount); 0 quando cancelado. */
+  balance: number
+  isOverdue: boolean
+  createdAt: string | null
+}
+
+/** Baixa (recebimento) de um título a receber. Ver `docs/spec/financeiro/004`. */
+export interface ReceivableSettlement {
+  id: number
+  receivableId: number
+  paymentTypeId: number
+  paymentTypeName: string | null
+  settlementDate: string
+  amount: number
+  documentNumber: string | null
+  notes: string | null
+  createdAt: string | null
+}
