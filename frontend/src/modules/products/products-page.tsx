@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { HardDrive, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Boxes, HardDrive, Package, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { productsApi, type ProductListParams } from '@/services/products-api'
 import { productGroupsApi } from '@/services/product-groups-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import { formatCurrency, formatQuantity } from '@/lib/masks'
@@ -23,6 +23,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { ProductFormDialog } from '@/modules/products/product-form-dialog'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -71,15 +72,17 @@ export function ProductsPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [descriptionFilter, setDescriptionFilter] = useState('')
-  const [groupFilter, setGroupFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
-  const [controlsStockFilter, setControlsStockFilter] = useState<ControlsStockFilter>('all')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active')
-  const [lowStockFilter, setLowStockFilter] = useState(false)
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({
+    description: '',
+    groupFilter: 'all',
+    typeFilter: 'all' as TypeFilter,
+    controlsStockFilter: 'all' as ControlsStockFilter,
+    statusFilter: 'active' as StatusFilter,
+    lowStockFilter: false,
+  })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedDescription = useDebouncedValue(descriptionFilter)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -102,28 +105,22 @@ export function ProductsPage() {
 
   const listParams = useMemo<ProductListParams>(
     () => ({
-      description: debouncedDescription || undefined,
-      productGroupId: groupFilter === 'all' ? undefined : Number(groupFilter),
-      type: typeFilter === 'all' ? undefined : typeFilter,
+      description: filters.applied.description || undefined,
+      productGroupId:
+        filters.applied.groupFilter === 'all' ? undefined : Number(filters.applied.groupFilter),
+      type: filters.applied.typeFilter === 'all' ? undefined : filters.applied.typeFilter,
       controlsStock:
-        controlsStockFilter === 'all' ? undefined : controlsStockFilter === 'yes',
-      status: statusFilter,
-      lowStock: lowStockFilter || undefined,
+        filters.applied.controlsStockFilter === 'all'
+          ? undefined
+          : filters.applied.controlsStockFilter === 'yes',
+      status: filters.applied.statusFilter,
+      lowStock: filters.applied.lowStockFilter || undefined,
       page,
       perPage: PER_PAGE,
       sort: sort?.column,
       order: sort?.order,
     }),
-    [
-      debouncedDescription,
-      groupFilter,
-      typeFilter,
-      controlsStockFilter,
-      statusFilter,
-      lowStockFilter,
-      page,
-      sort,
-    ]
+    [filters.applied, page, sort]
   )
 
   const listQuery = useQuery({
@@ -151,27 +148,14 @@ export function ProductsPage() {
     setFormOpen(true)
   }
 
-  function resetPage() {
+  function handleSearch() {
+    filters.apply()
     setPage(1)
   }
-
   function clearFilters() {
-    setDescriptionFilter('')
-    setGroupFilter('all')
-    setTypeFilter('all')
-    setControlsStockFilter('all')
-    setStatusFilter('active')
-    setLowStockFilter(false)
+    filters.clear()
     setPage(1)
   }
-
-  const hasFilters =
-    descriptionFilter.length > 0 ||
-    groupFilter !== 'all' ||
-    typeFilter !== 'all' ||
-    controlsStockFilter !== 'all' ||
-    statusFilter !== 'active' ||
-    lowStockFilter
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
@@ -179,6 +163,7 @@ export function ProductsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Boxes}
         title="Produtos"
         description="Cadastre os produtos da empresa ativa."
       >
@@ -197,11 +182,9 @@ export function ProductsPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por descrição"
-              value={descriptionFilter}
-              onChange={(event) => {
-                setDescriptionFilter(event.target.value)
-                resetPage()
-              }}
+              value={filters.draft.description}
+              onChange={(event) => filters.setField('description', event.target.value)}
+              onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
               className="w-56 pl-9"
             />
           </div>
@@ -210,11 +193,8 @@ export function ProductsPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Grupo</label>
           <Select
-            value={groupFilter}
-            onValueChange={(value) => {
-              setGroupFilter(value)
-              resetPage()
-            }}
+            value={filters.draft.groupFilter}
+            onValueChange={(value) => filters.setField('groupFilter', value)}
           >
             <SelectTrigger className="w-44">
               <SelectValue />
@@ -233,11 +213,8 @@ export function ProductsPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Tipo</label>
           <Select
-            value={typeFilter}
-            onValueChange={(value) => {
-              setTypeFilter(value as TypeFilter)
-              resetPage()
-            }}
+            value={filters.draft.typeFilter}
+            onValueChange={(value) => filters.setField('typeFilter', value as TypeFilter)}
           >
             <SelectTrigger className="w-44">
               <SelectValue />
@@ -253,11 +230,10 @@ export function ProductsPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Controla estoque</label>
           <Select
-            value={controlsStockFilter}
-            onValueChange={(value) => {
-              setControlsStockFilter(value as ControlsStockFilter)
-              resetPage()
-            }}
+            value={filters.draft.controlsStockFilter}
+            onValueChange={(value) =>
+              filters.setField('controlsStockFilter', value as ControlsStockFilter)
+            }
           >
             <SelectTrigger className="w-36">
               <SelectValue />
@@ -273,11 +249,8 @@ export function ProductsPage() {
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Status</label>
           <Select
-            value={statusFilter}
-            onValueChange={(value) => {
-              setStatusFilter(value as StatusFilter)
-              resetPage()
-            }}
+            value={filters.draft.statusFilter}
+            onValueChange={(value) => filters.setField('statusFilter', value as StatusFilter)}
           >
             <SelectTrigger className="w-36">
               <SelectValue />
@@ -293,18 +266,16 @@ export function ProductsPage() {
         <div className="flex items-center gap-2 self-end pb-2.5">
           <Checkbox
             id="lowStock"
-            checked={lowStockFilter}
-            onCheckedChange={(checked) => {
-              setLowStockFilter(checked === true)
-              resetPage()
-            }}
+            checked={filters.draft.lowStockFilter}
+            onCheckedChange={(checked) => filters.setField('lowStockFilter', Boolean(checked))}
           />
           <Label htmlFor="lowStock" className="text-sm font-normal">
             Estoque baixo
           </Label>
         </div>
 
-        {hasFilters && (
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
           <Button variant="ghost" onClick={clearFilters}>
             Limpar filtros
           </Button>
@@ -321,9 +292,9 @@ export function ProductsPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             icon={Package}
-            title={hasFilters ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+            title={filters.isFiltered ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
             description={
-              hasFilters
+              filters.isFiltered
                 ? 'Tente ajustar os filtros da busca.'
                 : 'Cadastre o primeiro produto desta empresa.'
             }

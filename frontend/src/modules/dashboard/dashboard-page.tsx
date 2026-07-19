@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Building2, KeyRound, ShieldCheck, Users } from 'lucide-react'
+import { Building2, KeyRound, LayoutDashboard, ShieldCheck, Users } from 'lucide-react'
 import { dashboardApi } from '@/services/dashboard-api'
 import { useAuth } from '@/providers/auth-provider'
 import type { DashboardStats } from '@/types/api'
@@ -28,6 +28,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={LayoutDashboard}
         title={`Olá, ${user?.name.split(' ')[0] ?? ''}`}
         description={`Visão geral de ${tenant?.company.tradeName ?? tenant?.company.legalName ?? ''}.`}
       />

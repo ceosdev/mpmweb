@@ -4,6 +4,7 @@ import type { TenantContext } from '#services/tenant_context'
 import customerRepository from '#repositories/customer_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 import { isValidCnpj, isValidCpf } from '#utils/tax_id'
+import { LOOKUP_DEFAULT_LIMIT, lookupTaxIdDigits, type LookupParams } from '#utils/lookup'
 
 export interface ListParams {
   name?: string
@@ -124,6 +125,51 @@ export class CustomerService {
     return this.serialize(row)
   }
 
+  /**
+   * Feeds the EntityPicker. Mirrors `SupplierService.lookup`, but the term also
+   * matches the trade name (nome fantasia) — customers are often known by it.
+   *
+   * - `ids` — hydration; resolves ids **regardless of `is_active`**.
+   * - `q` — search; active customers only.
+   */
+  async lookup(tenant: TenantContext, params: LookupParams) {
+    if (params.ids && params.ids.length > 0) {
+      const rows = await customerRepository
+        .query(tenant.company.id)
+        .whereIn('id', params.ids)
+        .orderBy('legal_name', 'asc')
+
+      return { data: rows.map((row) => this.serializeLookup(row)), hasMore: false }
+    }
+
+    const term = params.q?.trim()
+    if (!term) {
+      throw new BusinessException('Informe um termo de busca ou uma lista de códigos.')
+    }
+
+    const limit = params.limit ?? LOOKUP_DEFAULT_LIMIT
+    const like = `%${term.toLowerCase()}%`
+    const digits = lookupTaxIdDigits(term)
+
+    // One extra row tells us whether there is more to find, without a count(*).
+    const rows = await customerRepository
+      .query(tenant.company.id)
+      .where('is_active', true)
+      .where((sub) => {
+        sub
+          .whereRaw('lower(legal_name) like ?', [like])
+          .orWhereRaw('lower(trade_name) like ?', [like])
+        if (digits) sub.orWhere('tax_id', 'like', `%${digits}%`)
+      })
+      .orderBy('legal_name', 'asc')
+      .limit(limit + 1)
+
+    return {
+      data: rows.slice(0, limit).map((row) => this.serializeLookup(row)),
+      hasMore: rows.length > limit,
+    }
+  }
+
   async create(tenant: TenantContext, dto: CreateCustomerDTO) {
     this.assertTypeMatchesTaxId(dto.type, dto.taxId)
 
@@ -215,6 +261,21 @@ export class CustomerService {
     }
     if (!isValidCnpj(taxId)) {
       throw new BusinessException('CNPJ inválido.')
+    }
+  }
+
+  /**
+   * Minimal projection for the lookup endpoint: just enough to identify the
+   * customer. No address, e-mail or phone — this endpoint is reachable by any
+   * user of the tenant, without `customers.view`.
+   */
+  private serializeLookup(row: Customer) {
+    return {
+      id: row.id,
+      legalName: row.legalName,
+      tradeName: row.tradeName,
+      taxId: row.taxId,
+      isActive: row.isActive,
     }
   }
 

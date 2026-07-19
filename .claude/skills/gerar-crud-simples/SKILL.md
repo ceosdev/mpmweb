@@ -91,7 +91,7 @@ Crie/atualize, **nesta ordem**:
 3. `frontend/src/permissions/module-labels.ts` — **obrigatório**: adicione `<MODULE_SLUG>: '<LABEL_PT_PLURAL_CAP>',` ao mapa `MODULE_LABELS`. Sem isso, as telas de Permissões/Perfis/Usuários exibem o slug cru em inglês (ex.: `brand_models`) para o usuário. Rótulo em pt-BR **capitalizado** (só a inicial maiúscula, plural): `Tipos de pagamento`. Se o cadastro for uma **tela filha** (drill-down a partir de outra), o rótulo nomeia o pai — `Ativos do produto`, `Modelos da marca`, `Subgrupos de produto` — e não só `Ativos`/`Modelos`.
 4. `frontend/src/permissions/menu.ts` — adicione import do `<ICON>` (no agrupado lucide-react) e item de menu. Ver template **menu**.
 5. `frontend/src/routes/router.tsx` — adicione import lazy + bloco `PermissionRoute` com `path: '<URL>'`. Ver template **router**.
-6. `frontend/src/modules/<MODULE_FOLDER>/<MODULE_FOLDER>-page.tsx` — listagem com busca por descrição (debounced) + paginação + ordenação. Ver template **page**.
+6. `frontend/src/modules/<MODULE_FOLDER>/<MODULE_FOLDER>-page.tsx` — listagem com busca por descrição (só consulta no botão **Pesquisar**, via `useSearchFilters`) + paginação + ordenação. Ver template **page**.
 7. `frontend/src/modules/<MODULE_FOLDER>/<MODEL_VAR_KEBAB>-form-dialog.tsx` — modal. (`MODEL_VAR_KEBAB` = singular do `MODULE_FOLDER`, ex.: `document-type`.) Ver template **dialog**.
 
 ### Etapa 6 — Validar e migrar
@@ -599,7 +599,8 @@ import { toast } from 'sonner'
 import { {{MODEL_VAR_PLURAL}}Api } from '@/services/{{URL}}-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
+import { SearchButton } from '@/components/common/search-button'
 import { getErrorMessage } from '@/lib/errors'
 import type { {{MODEL_CLASS}} } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -633,10 +634,10 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [search, setSearch] = useState('')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({ search: '' })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedSearch = useDebouncedValue(search)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<{{MODEL_CLASS}} | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -646,11 +647,20 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
     setPage(1)
   }
 
+  function handleSearch() {
+    filters.apply()
+    setPage(1)
+  }
+  function clearFilters() {
+    filters.clear()
+    setPage(1)
+  }
+
   const listQuery = useQuery({
-    queryKey: ['{{URL}}', companyId, debouncedSearch, page, sort],
+    queryKey: ['{{URL}}', companyId, filters.applied, page, sort],
     queryFn: () =>
       {{MODEL_VAR_PLURAL}}Api.list({
-        search: debouncedSearch || undefined,
+        search: filters.applied.search || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -680,7 +690,7 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
-  const hasSearch = debouncedSearch.length > 0
+  const hasSearch = filters.isFiltered
 
   return (
     <div className="space-y-6">
@@ -696,17 +706,23 @@ export function {{MODEL_CLASS_PLURAL}}Page() {
         </Can>
       </PageHeader>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por descrição"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-            setPage(1)
-          }}
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por descrição"
+            value={filters.draft.search}
+            onChange={(event) => filters.setField('search', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="pl-9"
+          />
+        </div>
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
+          <Button variant="ghost" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        )}
       </div>
 
       <Card>

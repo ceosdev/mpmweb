@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Shield } from 'lucide-react'
 import { toast } from 'sonner'
 import { rolesApi, type CreateRolePayload, type UpdateRolePayload } from '@/services/roles-api'
 import { catalogApi } from '@/services/catalog-api'
@@ -172,6 +172,7 @@ export function RoleFormPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Shield}
         title={isCreating ? 'Novo perfil' : 'Editar perfil'}
         description={
           isCreating

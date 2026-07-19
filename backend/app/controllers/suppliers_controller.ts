@@ -5,6 +5,8 @@ import {
   createSupplierValidator,
   updateSupplierValidator,
 } from '#validators/supplier_validators'
+import { lookupValidator } from '#validators/lookup_validators'
+import { parseLookupIds } from '#utils/lookup'
 
 function parseType(raw: unknown): SupplierType | undefined {
   if (raw === 'goods' || raw === 'service') return raw
@@ -28,6 +30,21 @@ export default class SuppliersController {
       perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
       sort: request.input('sort') || undefined,
       order,
+    })
+  }
+
+  /**
+   * Feeds the EntityPicker. Unlike the other actions, this one is **not** gated
+   * by `suppliers.view`: whoever can reach a screen that picks a supplier must
+   * be able to search, even without access to the supplier registry itself.
+   * The payload is minimal (see `SupplierService.serializeLookup`).
+   */
+  async lookup({ tenant, request }: HttpContext) {
+    const payload = await request.validateUsing(lookupValidator)
+    return supplierService.lookup(tenant, {
+      q: payload.q,
+      ids: parseLookupIds(payload.ids),
+      limit: payload.limit,
     })
   }
 

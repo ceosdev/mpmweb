@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Building2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   companiesApi,
@@ -198,6 +198,7 @@ export function CompanyFormPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Building2}
         title={isCreating ? 'Nova empresa' : 'Editar empresa'}
         description={
           isCreating

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { documentTypesApi } from '@/services/document-types-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import type { DocumentType } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -19,6 +19,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { DocumentTypeFormDialog } from '@/modules/document-types/document-type-form-dialog'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -39,10 +40,10 @@ export function DocumentTypesPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [search, setSearch] = useState('')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({ search: '' })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedSearch = useDebouncedValue(search)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<DocumentType | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -52,11 +53,20 @@ export function DocumentTypesPage() {
     setPage(1)
   }
 
+  function handleSearch() {
+    filters.apply()
+    setPage(1)
+  }
+  function clearFilters() {
+    filters.clear()
+    setPage(1)
+  }
+
   const listQuery = useQuery({
-    queryKey: ['document-types', companyId, debouncedSearch, page, sort],
+    queryKey: ['document-types', companyId, filters.applied, page, sort],
     queryFn: () =>
       documentTypesApi.list({
-        search: debouncedSearch || undefined,
+        search: filters.applied.search || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -86,11 +96,12 @@ export function DocumentTypesPage() {
 
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
-  const hasSearch = debouncedSearch.length > 0
+  const hasSearch = filters.isFiltered
 
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={FileText}
         title="Tipos de documento"
         description="Cadastre os tipos de documento aceitos pela empresa ativa."
       >
@@ -102,17 +113,23 @@ export function DocumentTypesPage() {
         </Can>
       </PageHeader>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por descrição"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-            setPage(1)
-          }}
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por descrição"
+            value={filters.draft.search}
+            onChange={(event) => filters.setField('search', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="pl-9"
+          />
+        </div>
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
+          <Button variant="ghost" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        )}
       </div>
 
       <Card>

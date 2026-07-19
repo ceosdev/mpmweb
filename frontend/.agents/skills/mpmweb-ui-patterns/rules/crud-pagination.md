@@ -41,12 +41,12 @@ return (
 const [page, setPage] = useState(1)
 
 const listQuery = useQuery({
-  queryKey: ['users', companyId, page, debouncedSearch, sort],
+  queryKey: ['users', companyId, page, filters.applied, sort],
   queryFn: () =>
     usersApi.list({
       page,
       perPage: 20,
-      search: debouncedSearch || undefined,
+      search: filters.applied.search || undefined,
       sort,
     }),
   placeholderData: (prev) => prev, // mantém a página anterior visível enquanto carrega
@@ -83,6 +83,13 @@ return (
   página anterior continue visível enquanto a próxima carrega — evita o
   flash de tela vazia.
 - Renderize o rodapé de paginação só quando `meta.lastPage > 1`.
+- **Navegação em ícones**: o rodapé traz quatro botões — **primeira / anterior /
+  próxima / última** página (`ChevronsLeft`, `ChevronLeft`, `ChevronRight`,
+  `ChevronsRight`), cada um com `aria-label` em pt-BR. Os chevrons duplos saltam
+  para os extremos (`onChange(1)` e `onChange(meta.lastPage)`). Botões desabilitam
+  nos limites (primeira/anterior na página 1; próxima/última na última). **Não
+  reimplemente** — tudo isso já vem do componente `Pagination` compartilhado
+  (`@/components/data-table/pagination`); a tela só passa `meta` e `onChange`.
 
 ## Relacionadas
 

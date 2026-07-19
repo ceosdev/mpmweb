@@ -5,8 +5,10 @@ import {
   Contact,
   FileText,
   Hammer,
+  Landmark,
   LayoutDashboard,
   Package,
+  Receipt,
   Ruler,
   Settings,
   Shield,
@@ -62,6 +64,13 @@ export const MENU: MenuEntry[] = [
       { label: 'Tipos de documento', to: '/document-types', icon: FileText, permission: 'document_types.view' },
       { label: 'Tipos de pagamento', to: '/payment-types', icon: Wallet, permission: 'payment_types.view' },
       { label: 'Unidades de medida', to: '/units-of-measure', icon: Ruler, permission: 'units_of_measure.view' },
+    ],
+  },
+  {
+    label: 'Financeiro',
+    icon: Landmark,
+    children: [
+      { label: 'Contas a pagar', to: '/payables', icon: Receipt, permission: 'payables.view' },
     ],
   },
   {

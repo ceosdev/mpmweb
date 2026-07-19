@@ -7,7 +7,7 @@ import { catalogApi } from '@/services/catalog-api'
 import { useAuth } from '@/providers/auth-provider'
 import { usePermissions } from '@/permissions/use-permissions'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 import type { UserDetail } from '@/types/api'
@@ -22,6 +22,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { UserFormDialog } from '@/modules/users/user-form-dialog'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -46,10 +47,10 @@ export function UsersPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [search, setSearch] = useState('')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({ search: '' })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedSearch = useDebouncedValue(search)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<UserDetail | null>(null)
@@ -62,11 +63,20 @@ export function UsersPage() {
     setPage(1)
   }
 
+  function handleSearch() {
+    filters.apply()
+    setPage(1)
+  }
+  function clearFilters() {
+    filters.clear()
+    setPage(1)
+  }
+
   const listQuery = useQuery({
-    queryKey: ['users', companyId, debouncedSearch, page, sort],
+    queryKey: ['users', companyId, filters.applied, page, sort],
     queryFn: () =>
       usersApi.list({
-        search: debouncedSearch || undefined,
+        search: filters.applied.search || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -117,7 +127,7 @@ export function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Usuários" description="Gerencie os usuários vinculados à empresa ativa.">
+      <PageHeader icon={Users} title="Usuários" description="Gerencie os usuários vinculados à empresa ativa.">
         <Can permission="users.create">
           <Button onClick={openCreate}>
             <Plus className="size-4" />
@@ -126,17 +136,23 @@ export function UsersPage() {
         </Can>
       </PageHeader>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome ou e-mail"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-            setPage(1)
-          }}
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou e-mail"
+            value={filters.draft.search}
+            onChange={(event) => filters.setField('search', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="pl-9"
+          />
+        </div>
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
+          <Button variant="ghost" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        )}
       </div>
 
       <Card>

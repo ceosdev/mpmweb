@@ -7,7 +7,7 @@ import { brandModelsApi } from '@/services/brand-models-api'
 import { brandsApi } from '@/services/brands-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
-import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import type { BrandModel } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
@@ -21,6 +21,7 @@ import {
 } from '@/components/data-table/sortable-header'
 import { BrandModelFormDialog } from '@/modules/brand-models/brand-model-form-dialog'
 import { Button } from '@/components/ui/button'
+import { SearchButton } from '@/components/common/search-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -48,16 +49,25 @@ export function BrandModelsPage() {
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
 
-  const [search, setSearch] = useState('')
+  // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
+  const filters = useSearchFilters({ search: '' })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
-  const debouncedSearch = useDebouncedValue(search)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<BrandModel | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   function toggleSort(column: string) {
     setSort((current) => nextSortState(current, column))
+    setPage(1)
+  }
+
+  function handleSearch() {
+    filters.apply()
+    setPage(1)
+  }
+  function clearFilters() {
+    filters.clear()
     setPage(1)
   }
 
@@ -71,10 +81,10 @@ export function BrandModelsPage() {
   const parentNotFound = !Number.isFinite(brandId) || brandId <= 0 || parentQuery.isError
 
   const listQuery = useQuery({
-    queryKey: ['brand-models', companyId, brandId, debouncedSearch, page, sort],
+    queryKey: ['brand-models', companyId, brandId, filters.applied, page, sort],
     queryFn: () =>
       brandModelsApi.list(brandId, {
-        search: debouncedSearch || undefined,
+        search: filters.applied.search || undefined,
         page,
         perPage: PER_PAGE,
         sort: sort?.column,
@@ -132,13 +142,13 @@ export function BrandModelsPage() {
   const title = parentName ? `Modelos de ${parentName}` : 'Modelos'
   const rows = listQuery.data?.data ?? []
   const meta = listQuery.data?.meta
-  const hasSearch = debouncedSearch.length > 0
+  const hasSearch = filters.isFiltered
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         {backLink}
-        <PageHeader title={title} description="Modelos vinculados a esta marca.">
+        <PageHeader icon={Shapes} title={title} description="Modelos vinculados a esta marca.">
           <Can permission="brand_models.create">
             <Button onClick={openCreate} disabled={!parentQuery.data}>
               <Plus className="size-4" />
@@ -148,17 +158,23 @@ export function BrandModelsPage() {
         </PageHeader>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por descrição"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-            setPage(1)
-          }}
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por descrição"
+            value={filters.draft.search}
+            onChange={(event) => filters.setField('search', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="pl-9"
+          />
+        </div>
+        <SearchButton onClick={handleSearch} loading={listQuery.isFetching} />
+        {filters.isDirty && (
+          <Button variant="ghost" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        )}
       </div>
 
       <Card>
