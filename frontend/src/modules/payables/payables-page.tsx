@@ -532,15 +532,19 @@ export function PayablesPage() {
                                 </DropdownMenuItem>
                               </Can>
                             )}
-                            <Can permission="payables.delete">
-                              <DropdownMenuItem
-                                onClick={() => setDeleteId(row.id)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="size-4" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </Can>
+                            {/* Título gerado por entrada de serviço — o backend recusa a
+                                exclusão; cancele a entrada para removê-lo. */}
+                            {row.serviceEntryId === null && (
+                              <Can permission="payables.delete">
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteId(row.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="size-4" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </Can>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}

@@ -13,7 +13,7 @@ import {
 import { serviceGroupsApi } from '@/services/service-groups-api'
 import { useAuth } from '@/providers/auth-provider'
 import { getErrorMessage } from '@/lib/errors'
-import { maskMoney } from '@/lib/masks'
+import { maskMoney, reaisToCents } from '@/lib/masks'
 import type { Service } from '@/types/api'
 import { MaskedInput } from '@/components/form/masked-input'
 import { Button } from '@/components/ui/button'
@@ -54,12 +54,6 @@ type FormValues = z.infer<typeof schema>
 function centsToReais(cents: string): number | undefined {
   if (!cents) return undefined
   return Number(cents) / 100
-}
-
-/** Reais number (123.45) → cents string ("12345"), or '' when null. */
-function reaisToCents(value: number | null): string {
-  if (value === null) return ''
-  return String(Math.round(value * 100))
 }
 
 function emptyValues(): FormValues {

@@ -108,7 +108,7 @@ explícita de `payables`.
 
 | Campo (UI, pt-BR) | Coluna (DB, en) | Tipo                      | Obrigatório | Observações |
 | ----------------- | --------------- | ------------------------- | ----------- | ----------- |
-| Serviço           | `service_id`    | FK `services`             | **sim**     | `Select` dos serviços **ativos**. |
+| Serviço           | `service_id`    | FK `services`             | **sim**     | `Select` dos serviços **ativos** e do tipo **terceiro** (`third_party`), filtrado no servidor. A entrada documenta a nota de um fornecedor; serviço interno não entra. |
 | Qtd.              | `quantity`      | `integer`                 | **sim**     | `≥ 1`. **Inteiro** (decisão do usuário) — serviço se conta por unidade. |
 | Valor             | `unit_price`    | `decimal(12,2)`           | **sim**     | `> 0`. Máscara BRL. Sugerido pelo `suggested_value` do serviço ([brecha 6](#6-valor-sugerido-do-serviço)). |
 | Desconto          | `discount`      | `decimal(12,2)` default 0 | não         | Desconto **daquele serviço**. Máscara BRL. `≤ quantity × unit_price`. |
@@ -155,7 +155,7 @@ A tela **abre na listagem**. Colunas:
 | Tipo de documento | Descrição do tipo (join). |
 | Emissão | `dd/MM/yyyy` (`formatIsoDate`). |
 | Data operação | `dd/MM/yyyy`. |
-| Valor da entrada | Σ dos itens (bruto), `R$ 0,00`. **Não ordenável** — ver [brecha 7](#7-coluna-valor-não-ordenável). |
+| Valor da entrada | Σ dos itens (bruto), `R$ 0,00`. **Ordenável** pela mesma expressão que exibe — ver [brecha 7](#7-coluna-valor-não-ordenável). |
 | Status | `ServiceEntryStatusBadge`: Aberta (`secondary`) / Finalizada (`success`) / Cancelada (`destructive`). |
 | Ações | `DropdownMenu` — ver abaixo. |
 
@@ -756,13 +756,22 @@ Ao escolher o serviço no sub-form, a spec **preenche** o campo Valor com o
 `suggested_value` do serviço (quando houver), **editável**. É conveniência pura;
 diga se prefere o campo sempre vazio.
 
-### 7. Coluna "Valor" não ordenável
+### 7. Coluna "Valor" não ordenável ✅ *resolvido — passou a ordenar*
 
-O valor da entrada é `Σ` dos filhos, então ordenar por ele exige ordenar pela
-mesma subquery que o exibe. É factível, mas a listagem já ordena por data da
-operação e o ganho é pequeno. A coluna fica **exibida e não ordenável**, como a
-coluna "Grupo" na tela de Serviços. Se quiser ordenável, o custo é uma
-`orderByRaw` sobre a subquery.
+A spec previa a coluna **exibida e não ordenável**, com o argumento de que
+ordenar pela soma dos filhos exigiria repetir a subquery no `ORDER BY` e o ganho
+seria pequeno.
+
+**Resolvido pelo usuário depois da entrega:** ele pediu ordenação também em
+*Fornecedor*, *Tipo de documento*, *Valor da entrada* e *Status* — hoje **todas
+as colunas de dados ordenam**. As três primeiras não são coluna desta tabela, e
+entraram como `SORT_EXPRESSIONS` no service: subquery correlacionada em vez de
+`join`, porque o `paginate` do Lucid conta linhas e manter uma fonte só no `from`
+não mexe na contagem. O valor ordena pela **mesma expressão que exibe** — se
+divergissem, a coluna mostraria um número e ordenaria por outro. O *status*
+ordena por um `CASE` na **ordem do ciclo de vida** (aberta → finalizada →
+cancelada): ordenar pela coluna crua daria a alfabética do slug em inglês, que
+põe "Cancelada" antes de "Aberta" e não corresponde a nada que o usuário vê.
 
 ### 8. Valor exibido no grid é o bruto
 

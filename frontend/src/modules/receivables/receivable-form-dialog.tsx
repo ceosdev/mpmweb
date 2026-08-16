@@ -11,7 +11,7 @@ import {
   type UpdateReceivablePayload,
 } from '@/services/receivables-api'
 import { getErrorMessage } from '@/lib/errors'
-import { formatCurrency, maskMoney } from '@/lib/masks'
+import { centsToReais, formatCurrency, maskMoney, reaisToCents } from '@/lib/masks'
 import { todayIso } from '@/lib/format'
 import type { Receivable } from '@/types/api'
 import { EntityPicker } from '@/components/common/entity-picker'
@@ -63,18 +63,6 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
-
-/** Centavos ("12345") → reais (123.45). Vazio → 0. */
-function centsToReais(cents: string): number {
-  if (!cents) return 0
-  return Number(cents) / 100
-}
-
-/** Reais (123.45) → centavos ("12345"), para o form. */
-function reaisToCents(value: number | null | undefined): string {
-  if (value === null || value === undefined) return ''
-  return String(Math.round(value * 100))
-}
 
 function emptyValues(): FormValues {
   const today = todayIso()

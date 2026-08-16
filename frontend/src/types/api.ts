@@ -349,6 +349,8 @@ export interface Payable {
   id: number
   supplierId: number
   supplierName: string | null
+  /** Origem do título: a entrada de serviço que o gerou, ou `null` quando lançado à mão. */
+  serviceEntryId: number | null
   documentNumber: string
   installment: number
   issueDate: string
@@ -425,4 +427,117 @@ export interface ReceivableSettlement {
   documentNumber: string | null
   notes: string | null
   createdAt: string | null
+}
+
+export interface ExpenseGroup {
+  id: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}
+
+/**
+ * Parametrização de LDF (lançamento direto financeiro) — ver
+ * `docs/spec/cadastros/018`. O `id` é o que a UI exibe como "Código".
+ */
+export interface LdfParameter {
+  id: number
+  expenseGroupId: number
+  expenseGroupDescription: string | null
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}
+
+export type ServiceEntryStatus = 'open' | 'finalized' | 'cancelled'
+export type TaxWithholding = 'issuer' | 'recipient'
+
+export interface ServiceEntryItem {
+  id: number
+  serviceId: number
+  serviceDescription: string | null
+  quantity: number
+  unitPrice: number
+  discount: number
+  /** Derivado: quantity × unitPrice − discount. */
+  lineTotal: number
+}
+
+export interface ServiceEntry {
+  id: number
+  documentTypeId: number
+  documentTypeName: string | null
+  supplierId: number
+  supplierName: string | null
+  paymentTypeId: number
+  paymentTypeName: string | null
+  documentNumber: string
+  series: string | null
+  subSeries: string | null
+  issueDate: string
+  operationDate: string
+  discount: number
+  taxWithholding: TaxWithholding
+  iss: number
+  pis: number
+  cofins: number
+  inss: number
+  irrf: number
+  csll: number
+  installmentCount: number
+  firstDueDate: string
+  status: ServiceEntryStatus
+  finalizedAt: string | null
+  /** Σ dos itens (bruto) — o valor da nota. */
+  itemsTotal: number
+  /** Σ dos 6 impostos, ou 0 quando a retenção é do emissor. */
+  withheldTaxes: number
+  /** itemsTotal − discount − withheldTaxes: o que vira contas a pagar. */
+  netAmount: number
+  /** Presente só no `get` (detalhe), ausente na listagem. */
+  items?: ServiceEntryItem[]
+  createdAt: string | null
+}
+
+export interface ServiceEntryItemPayload {
+  serviceId: number
+  quantity: number
+  unitPrice: number
+  discount: number
+}
+
+export interface ServiceEntryPayload {
+  documentTypeId: number
+  documentNumber: string
+  series?: string
+  subSeries?: string
+  issueDate: string
+  supplierId: number
+  discount: number
+  taxWithholding: TaxWithholding
+  iss: number
+  pis: number
+  cofins: number
+  inss: number
+  irrf: number
+  csll: number
+  paymentTypeId: number
+  installmentCount: number
+  firstDueDate: string
+  items: ServiceEntryItemPayload[]
+}
+
+export interface ServiceEntryListParams {
+  documentNumber?: string
+  supplierId?: number
+  operationFrom?: string
+  operationTo?: string
+  issueFrom?: string
+  issueTo?: string
+  /** Múltipla escolha. Lista vazia = **todas** (o param nem é enviado). */
+  statuses?: ServiceEntryStatus[]
+  page?: number
+  perPage?: number
+  sort?: string
+  order?: 'asc' | 'desc'
 }

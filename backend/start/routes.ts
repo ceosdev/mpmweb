@@ -43,6 +43,9 @@ const PayableSettlementsController = () =>
 const ReceivablesController = () => import('#controllers/receivables_controller')
 const ReceivableSettlementsController = () =>
   import('#controllers/receivable_settlements_controller')
+const ExpenseGroupsController = () => import('#controllers/expense_groups_controller')
+const LdfParametersController = () => import('#controllers/ldf_parameters_controller')
+const ServiceEntriesController = () => import('#controllers/service_entries_controller')
 
 /**
  * Health check.
@@ -435,6 +438,63 @@ router
     router
       .delete('/receivables/:receivableId/settlements/:id', [ReceivableSettlementsController, 'destroy'])
       .use(middleware.permission('receivable_settlements.delete'))
+
+    // Entrada de serviço (módulo Serviços)
+    router
+      .get('/service-entries', [ServiceEntriesController, 'index'])
+      .use(middleware.permission('service_entries.view'))
+    router
+      .post('/service-entries', [ServiceEntriesController, 'store'])
+      .use(middleware.permission('service_entries.create'))
+    router
+      .get('/service-entries/:id', [ServiceEntriesController, 'show'])
+      .use(middleware.permission('service_entries.view'))
+    router
+      .put('/service-entries/:id', [ServiceEntriesController, 'update'])
+      .use(middleware.permission('service_entries.edit'))
+    router
+      .delete('/service-entries/:id', [ServiceEntriesController, 'destroy'])
+      .use(middleware.permission('service_entries.delete'))
+    router
+      .post('/service-entries/:id/finalize', [ServiceEntriesController, 'finalize'])
+      .use(middleware.permission('service_entries.finalize'))
+    router
+      .post('/service-entries/:id/cancel', [ServiceEntriesController, 'cancel'])
+      .use(middleware.permission('service_entries.cancel'))
+
+    // Grupos de despesa
+    router
+      .get('/expense-groups', [ExpenseGroupsController, 'index'])
+      .use(middleware.permission('expense_groups.view'))
+    router
+      .post('/expense-groups', [ExpenseGroupsController, 'store'])
+      .use(middleware.permission('expense_groups.create'))
+    router
+      .get('/expense-groups/:id', [ExpenseGroupsController, 'show'])
+      .use(middleware.permission('expense_groups.view'))
+    router
+      .put('/expense-groups/:id', [ExpenseGroupsController, 'update'])
+      .use(middleware.permission('expense_groups.edit'))
+    router
+      .delete('/expense-groups/:id', [ExpenseGroupsController, 'destroy'])
+      .use(middleware.permission('expense_groups.delete'))
+
+    // Parametrizações de LDF
+    router
+      .get('/ldf-parameters', [LdfParametersController, 'index'])
+      .use(middleware.permission('ldf_parameters.view'))
+    router
+      .post('/ldf-parameters', [LdfParametersController, 'store'])
+      .use(middleware.permission('ldf_parameters.create'))
+    router
+      .get('/ldf-parameters/:id', [LdfParametersController, 'show'])
+      .use(middleware.permission('ldf_parameters.view'))
+    router
+      .put('/ldf-parameters/:id', [LdfParametersController, 'update'])
+      .use(middleware.permission('ldf_parameters.edit'))
+    router
+      .delete('/ldf-parameters/:id', [LdfParametersController, 'destroy'])
+      .use(middleware.permission('ldf_parameters.delete'))
   })
   .prefix('/api')
   .use([middleware.auth(), middleware.tenant()])

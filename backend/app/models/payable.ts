@@ -40,6 +40,14 @@ export default class Payable extends BaseModel {
   @column({ columnName: 'supplier_id' })
   declare supplierId: number
 
+  /**
+   * Origin of this title: the service entry that generated it, or `null` when it
+   * was entered by hand. Future origins (lançamento direto financeiro) get their
+   * own nullable column — one per origin, no polymorphism.
+   */
+  @column({ columnName: 'service_entry_id' })
+  declare serviceEntryId: number | null
+
   @column({ columnName: 'document_number' })
   declare documentNumber: string
 

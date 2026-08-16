@@ -15,7 +15,7 @@ import { paymentTypesApi } from '@/services/payment-types-api'
 import { useAuth } from '@/providers/auth-provider'
 import { Can } from '@/permissions/can'
 import { getErrorMessage } from '@/lib/errors'
-import { formatCurrency, maskMoney } from '@/lib/masks'
+import { centsToReais, formatCurrency, maskMoney, reaisToCents } from '@/lib/masks'
 import { formatIsoDate, todayIso } from '@/lib/format'
 import type { Payable, PayableSettlement } from '@/types/api'
 import { PayableStatusBadge } from '@/modules/payables/payable-status-badge'
@@ -282,18 +282,6 @@ function HeaderItem({ label, children }: { label: string; children: React.ReactN
       <span>{children}</span>
     </div>
   )
-}
-
-/** Centavos ("12345") → reais (123.45). Vazio → 0. */
-function centsToReais(cents: string): number {
-  if (!cents) return 0
-  return Number(cents) / 100
-}
-
-/** Reais (123.45) → centavos ("12345"), para o form. */
-function reaisToCents(value: number | null | undefined): string {
-  if (value === null || value === undefined) return ''
-  return String(Math.round(value * 100))
 }
 
 const formSchema = z.object({

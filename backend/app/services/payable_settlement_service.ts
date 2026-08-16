@@ -145,6 +145,67 @@ export class PayableSettlementService {
     })
   }
 
+  /**
+   * Settles a payable **in full**, inside the caller's transaction. Used by the
+   * automatic settlement of a payment type flagged `auto_settlement` — the
+   * payable was just created by the same transaction, so it has no other
+   * settlements and its balance is its total.
+   *
+   * The status still moves through the usual owners (`applySettlement` →
+   * `recomputeStatus`); nothing here reimplements the settlement rules.
+   *
+   * `paymentTypeId` here comes from the service entry that triggered this
+   * settlement, chosen back when the type could have been active. There is no
+   * UI step in this flow to swap it for another one, so — unlike `create`
+   * and `batchCreate`, which reject an inactive type on a hand-picked baixa —
+   * we accept it inactive (`allowInactiveId: paymentTypeId` always matches).
+   * What we never accept is an id from **another tenant**: `payment_types` is
+   * per-tenant data, but `payable_settlements.payment_type_id`'s FK only
+   * references `payment_types(id)` (not composed with `company_id`), so a
+   * cross-tenant id would insert with no error from the database, and
+   * `serialize` would then silently resolve `paymentType.description` from
+   * another company via the unfiltered `belongsTo` relation. Same guard the
+   * siblings use, kept here so the extension point is safe on its own.
+   */
+  async settleFullInTransaction(
+    tenant: TenantContext,
+    payable: Payable,
+    paymentTypeId: number,
+    settlementDate: DateTime,
+    notes: string | null,
+    trx: TransactionClientContract
+  ): Promise<void> {
+    await this.assertPaymentType(tenant, paymentTypeId, paymentTypeId)
+
+    const amount = payableService.remainingBalance(payable, Number(payable.paidAmount))
+    // No-op by design: in the intended path the payable was just created in
+    // this same transaction, so its balance always equals its total, and
+    // Task 6 already rejects a base smaller than the installment count before
+    // reaching here. Unlike `batchCreate` (a hand-picked, user-facing batch),
+    // there is no user waiting on a "nothing to settle" error for this
+    // automatic step.
+    if (amount <= 0) return
+
+    // Valida (Σ ≤ total) e recalcula o status na memória. Fecha em Pago.
+    payableService.applySettlement(payable, Number(payable.paidAmount), amount)
+
+    await PayableSettlement.create(
+      {
+        companyId: tenant.company.id,
+        payableId: payable.id,
+        paymentTypeId,
+        settlementDate,
+        amount,
+        documentNumber: null,
+        notes,
+      },
+      { client: trx }
+    )
+
+    payable.useTransaction(trx)
+    await payable.save()
+  }
+
   async update(
     tenant: TenantContext,
     payableId: number,

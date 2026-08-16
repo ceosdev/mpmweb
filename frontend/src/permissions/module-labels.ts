@@ -33,6 +33,9 @@ export const MODULE_LABELS: Record<string, string> = {
   payable_settlements: 'Baixas do título',
   receivables: 'Contas a receber',
   receivable_settlements: 'Baixas do título a receber',
+  expense_groups: 'Grupos de despesa',
+  ldf_parameters: 'Parametrizações de LDF',
+  service_entries: 'Entradas de serviço',
 }
 
 export function moduleLabel(module: string): string {

@@ -159,6 +159,26 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'receivable_settlements.edit', name: 'Editar baixas a receber', module: 'receivable_settlements', action: 'edit', description: 'Alterar baixas existentes de um título a receber.' },
   { slug: 'receivable_settlements.delete', name: 'Excluir baixas a receber', module: 'receivable_settlements', action: 'delete', description: 'Remover baixas de um título a receber.' },
   { slug: 'receivable_settlements.batch', name: 'Receber em lote', module: 'receivable_settlements', action: 'batch', description: 'Receber vários títulos de uma vez, com a mesma forma de pagamento.' },
+
+  // Service entries
+  { slug: 'service_entries.view', name: 'Visualizar entradas de serviço', module: 'service_entries', action: 'view', description: 'Listar e consultar as entradas de serviço da empresa.' },
+  { slug: 'service_entries.create', name: 'Criar entrada de serviço', module: 'service_entries', action: 'create', description: 'Lançar novas entradas de nota fiscal de serviço.' },
+  { slug: 'service_entries.edit', name: 'Editar entrada de serviço', module: 'service_entries', action: 'edit', description: 'Alterar entradas de serviço ainda abertas.' },
+  { slug: 'service_entries.delete', name: 'Excluir entrada de serviço', module: 'service_entries', action: 'delete', description: 'Remover entradas de serviço ainda abertas.' },
+  { slug: 'service_entries.finalize', name: 'Finalizar entrada de serviço', module: 'service_entries', action: 'finalize', description: 'Finalizar a entrada e gerar os títulos a pagar correspondentes.' },
+  { slug: 'service_entries.cancel', name: 'Cancelar entrada de serviço', module: 'service_entries', action: 'cancel', description: 'Cancelar a entrada e todos os títulos a pagar que ela gerou.' },
+
+  // Grupos de despesa
+  { slug: 'expense_groups.view', name: 'Visualizar grupos de despesa', module: 'expense_groups', action: 'view', description: 'Listar e consultar grupos de despesa da empresa.' },
+  { slug: 'expense_groups.create', name: 'Criar grupos de despesa', module: 'expense_groups', action: 'create', description: 'Cadastrar grupos de despesa.' },
+  { slug: 'expense_groups.edit', name: 'Editar grupos de despesa', module: 'expense_groups', action: 'edit', description: 'Alterar grupos de despesa existentes.' },
+  { slug: 'expense_groups.delete', name: 'Excluir grupos de despesa', module: 'expense_groups', action: 'delete', description: 'Remover grupos de despesa.' },
+
+  // Parametrizações de LDF (lançamento direto financeiro)
+  { slug: 'ldf_parameters.view', name: 'Visualizar parametrizações de LDF', module: 'ldf_parameters', action: 'view', description: 'Listar e consultar parametrizações de LDF da empresa.' },
+  { slug: 'ldf_parameters.create', name: 'Criar parametrizações de LDF', module: 'ldf_parameters', action: 'create', description: 'Cadastrar parametrizações de LDF.' },
+  { slug: 'ldf_parameters.edit', name: 'Editar parametrizações de LDF', module: 'ldf_parameters', action: 'edit', description: 'Alterar parametrizações de LDF existentes.' },
+  { slug: 'ldf_parameters.delete', name: 'Excluir parametrizações de LDF', module: 'ldf_parameters', action: 'delete', description: 'Remover parametrizações de LDF.' },
 ]
 
 export type RoleSlug = 'root'

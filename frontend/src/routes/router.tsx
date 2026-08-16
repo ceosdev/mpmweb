@@ -112,9 +112,29 @@ const PayablesPage = lazy(() =>
     default: m.PayablesPage,
   }))
 )
+const ServiceEntriesPage = lazy(() =>
+  import('@/modules/service-entries/service-entries-page').then((m) => ({
+    default: m.ServiceEntriesPage,
+  }))
+)
+const ServiceEntryFormPage = lazy(() =>
+  import('@/modules/service-entries/service-entry-form-page').then((m) => ({
+    default: m.ServiceEntryFormPage,
+  }))
+)
 const ReceivablesPage = lazy(() =>
   import('@/modules/receivables/receivables-page').then((m) => ({
     default: m.ReceivablesPage,
+  }))
+)
+const ExpenseGroupsPage = lazy(() =>
+  import('@/modules/expense-groups/expense-groups-page').then((m) => ({
+    default: m.ExpenseGroupsPage,
+  }))
+)
+const LdfParametersPage = lazy(() =>
+  import('@/modules/ldf-parameters/ldf-parameters-page').then((m) => ({
+    default: m.LdfParametersPage,
   }))
 )
 const NotFoundPage = lazy(() =>
@@ -252,6 +272,33 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="receivables.view" />,
             children: [{ path: 'receivables', element: <ReceivablesPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="service_entries.view" />,
+            children: [{ path: 'service-entries', element: <ServiceEntriesPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="service_entries.create" />,
+            // Registrada antes de `:id`, senão o router casaria `new` como um id.
+            children: [{ path: 'service-entries/new', element: <ServiceEntryFormPage mode="create" /> }],
+          },
+          {
+            element: <PermissionRoute permission="service_entries.edit" />,
+            children: [
+              { path: 'service-entries/:id/edit', element: <ServiceEntryFormPage mode="edit" /> },
+            ],
+          },
+          {
+            element: <PermissionRoute permission="service_entries.view" />,
+            children: [{ path: 'service-entries/:id', element: <ServiceEntryFormPage mode="view" /> }],
+          },
+          {
+            element: <PermissionRoute permission="expense_groups.view" />,
+            children: [{ path: 'expense-groups', element: <ExpenseGroupsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="ldf_parameters.view" />,
+            children: [{ path: 'ldf-parameters', element: <LdfParametersPage /> }],
           },
         ],
       },

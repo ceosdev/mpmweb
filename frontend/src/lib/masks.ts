@@ -106,3 +106,30 @@ export function parseDecimal(masked: string): number | null {
 export function formatQuantity(value: number): string {
   return value.toLocaleString('pt-BR', { maximumFractionDigits: 3 })
 }
+
+/**
+ * Centavos ("12345") → reais (123.45). Vazio → 0.
+ *
+ * Vive aqui, e não em cada formulário, porque a conversão de centavos é
+ * justamente onde uma cópia divergente causaria estrago silencioso.
+ *
+ * Contrato: vazio vira **zero**, não `null`/`undefined` — por isso serve a
+ * campo monetário **obrigatório**, onde "sem valor" não é um estado válido e
+ * o form já garante isso via schema (ex.: `amount` de título a pagar/receber).
+ * Campo monetário **opcional/nullable**, onde vazio precisa continuar vazio
+ * (virar `undefined`/`null`, nunca zero, para não gravar "custo zero" onde o
+ * certo é "sem custo definido"), **não** usa esta função — mantém o próprio
+ * conversor local de propósito. Ver `suggestedValue` em
+ * `modules/services/service-form-dialog.tsx` e `costPrice` em
+ * `modules/products/product-form-dialog.tsx`.
+ */
+export function centsToReais(cents: string): number {
+  if (!cents) return 0
+  return Number(cents) / 100
+}
+
+/** Reais (123.45) → centavos ("12345"), para o form. */
+export function reaisToCents(value: number | null | undefined): string {
+  if (value === null || value === undefined) return ''
+  return String(Math.round(value * 100))
+}
