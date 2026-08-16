@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Paginated, ProductAsset, AssetSituation } from '@/types/api'
 
 export interface ProductAssetListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   assetCode?: string
   description?: string
   situation?: AssetSituation

@@ -3,9 +3,11 @@ import type { TenantContext } from '#services/tenant_context'
 import supplierRepository from '#repositories/supplier_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 import { isValidTaxId } from '#utils/tax_id'
-import { LOOKUP_DEFAULT_LIMIT, lookupTaxIdDigits, type LookupParams } from '#utils/lookup'
+import { LOOKUP_DEFAULT_LIMIT, lookupCodeId, lookupTaxIdDigits, type LookupParams } from '#utils/lookup'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   name?: string
   taxId?: string
   type?: SupplierType
@@ -18,6 +20,7 @@ export interface ListParams {
 
 /** Columns the listing is allowed to sort by, mapped to their SQL column. */
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   name: 'name',
   tax_id: 'tax_id',
   type: 'type',
@@ -65,6 +68,9 @@ export class SupplierService {
     const query = supplierRepository
       .query(tenant.company.id)
       .orderBy(sortColumn ?? 'name', sortColumn ? sortDirection : 'asc')
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.name) {
       const term = `%${params.name.toLowerCase()}%`
@@ -133,6 +139,9 @@ export class SupplierService {
     const limit = params.limit ?? LOOKUP_DEFAULT_LIMIT
     const like = `%${term.toLowerCase()}%`
     const digits = lookupTaxIdDigits(term)
+    // Código: termo puramente numérico casa o id exato, a mesma busca por código
+    // das listagens trazida para dentro do picker.
+    const codeId = lookupCodeId(term)
 
     // Fetch one extra row: if it comes back, there is more to find and the UI
     // asks the user to refine the search — cheaper than a count(*).
@@ -142,6 +151,7 @@ export class SupplierService {
       .where((sub) => {
         sub.whereRaw('lower(name) like ?', [like])
         if (digits) sub.orWhere('tax_id', 'like', `%${digits}%`)
+        if (codeId !== null) sub.orWhere('id', codeId)
       })
       .orderBy('name', 'asc')
       .limit(limit + 1)

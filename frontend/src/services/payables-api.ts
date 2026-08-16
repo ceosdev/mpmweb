@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Paginated, Payable, PayableStatusFilter } from '@/types/api'
 
 export interface PayableListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   documentNumber?: string
   supplierId?: number
   dueFrom?: string

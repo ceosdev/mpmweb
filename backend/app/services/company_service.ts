@@ -13,6 +13,8 @@ import { slugify } from '#utils/slug'
 import { BusinessException, ForbiddenException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   search?: string
   page?: number
   perPage?: number
@@ -22,6 +24,7 @@ export interface ListParams {
 
 /** Columns the listing is allowed to sort by, mapped to their SQL column. */
 const COMPANY_SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   legal_name: 'legal_name',
   trade_name: 'trade_name',
   tax_id: 'tax_id',
@@ -89,6 +92,9 @@ export class CompanyService {
     if (!tenant.isRoot) {
       query.where('id', tenant.company.id)
     }
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.search) {
       const term = `%${params.search.toLowerCase()}%`

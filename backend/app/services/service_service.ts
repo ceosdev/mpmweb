@@ -5,6 +5,8 @@ import serviceGroupRepository from '#repositories/service_group_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   description?: string
   type?: ServiceType
   page?: number
@@ -15,6 +17,7 @@ export interface ListParams {
 
 /** Columns the listing is allowed to sort by, mapped to their SQL column. */
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   description: 'description',
   type: 'type',
   suggested_value: 'suggested_value',
@@ -52,6 +55,9 @@ export class ServiceService {
       .query(tenant.company.id)
       .preload('group')
       .orderBy(sortColumn ?? 'description', sortColumn ? sortDirection : 'asc')
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.description) {
       const term = `%${params.description.toLowerCase()}%`

@@ -29,6 +29,7 @@ export default class ReceivablesController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return receivableService.list(tenant, {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       documentNumber: request.input('documentNumber') || undefined,
       customerId: request.input('customerId') ? Number(request.input('customerId')) : undefined,
       dueFrom: request.input('dueFrom') || undefined,

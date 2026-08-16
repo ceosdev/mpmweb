@@ -4,9 +4,11 @@ import type { TenantContext } from '#services/tenant_context'
 import customerRepository from '#repositories/customer_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 import { isValidCnpj, isValidCpf } from '#utils/tax_id'
-import { LOOKUP_DEFAULT_LIMIT, lookupTaxIdDigits, type LookupParams } from '#utils/lookup'
+import { LOOKUP_DEFAULT_LIMIT, lookupCodeId, lookupTaxIdDigits, type LookupParams } from '#utils/lookup'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   name?: string
   taxId?: string
   type?: CustomerType
@@ -19,6 +21,7 @@ export interface ListParams {
 
 /** Columns the listing is allowed to sort by, mapped to their SQL column. */
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   legal_name: 'legal_name',
   trade_name: 'trade_name',
   tax_id: 'tax_id',
@@ -80,6 +83,9 @@ export class CustomerService {
     const query = customerRepository
       .query(tenant.company.id)
       .orderBy(sortColumn ?? 'legal_name', sortColumn ? sortDirection : 'asc')
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.name) {
       const term = `%${params.name.toLowerCase()}%`
@@ -150,6 +156,9 @@ export class CustomerService {
     const limit = params.limit ?? LOOKUP_DEFAULT_LIMIT
     const like = `%${term.toLowerCase()}%`
     const digits = lookupTaxIdDigits(term)
+    // Código: termo puramente numérico casa o id exato, a mesma busca por código
+    // das listagens trazida para dentro do picker.
+    const codeId = lookupCodeId(term)
 
     // One extra row tells us whether there is more to find, without a count(*).
     const rows = await customerRepository
@@ -160,6 +169,7 @@ export class CustomerService {
           .whereRaw('lower(legal_name) like ?', [like])
           .orWhereRaw('lower(trade_name) like ?', [like])
         if (digits) sub.orWhere('tax_id', 'like', `%${digits}%`)
+        if (codeId !== null) sub.orWhere('id', codeId)
       })
       .orderBy('legal_name', 'asc')
       .limit(limit + 1)

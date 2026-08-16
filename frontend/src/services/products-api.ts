@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Paginated, Product, ProductType } from '@/types/api'
 
 export interface ProductListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   description?: string
   productGroupId?: number
   type?: ProductType

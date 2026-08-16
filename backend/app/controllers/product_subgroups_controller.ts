@@ -13,6 +13,7 @@ export default class ProductSubgroupsController {
   async index({ tenant, request, params }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return productSubgroupService.list(tenant, Number(params.groupId), {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       search: request.input('search'),
       page: request.input('page') ? Number(request.input('page')) : undefined,
       perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,

@@ -16,13 +16,26 @@ import type { EntityOption, EntitySource } from './types'
  * continua sendo decisão de cada tela.
  */
 
+/**
+ * Sublinha da opção: **código** sempre, e o documento quando houver.
+ *
+ * O código entra aqui porque o lookup passou a achar por ele — quem digita "704"
+ * precisa ver qual dos resultados é o 704, senão a busca por código acha mas não
+ * identifica. `maskTaxId` devolve string vazia quando não há documento, e nesse
+ * caso sobra só o código.
+ */
+function entitySublabel(id: number, taxId: string): string {
+  const documento = taxIdSublabel(taxId)
+  return documento ? `#${id} · ${documento}` : `#${id}`
+}
+
 /** `maskTaxId` devolve string vazia quando não há documento; o sublabel some. */
 function taxIdSublabel(taxId: string): string | undefined {
   return maskTaxId(taxId) || undefined
 }
 
 const supplierSource: EntitySource = {
-  placeholder: 'Buscar fornecedor por nome ou CNPJ...',
+  placeholder: 'Buscar fornecedor por código, nome ou CNPJ...',
   emptyMessage: 'Nenhum fornecedor encontrado.',
 
   async search(term, signal) {
@@ -40,13 +53,13 @@ function toSupplierOption(row: SupplierLookup): EntityOption {
   return {
     id: row.id,
     label: row.name,
-    sublabel: taxIdSublabel(row.taxId),
+    sublabel: entitySublabel(row.id, row.taxId),
     isActive: row.isActive,
   }
 }
 
 const customerSource: EntitySource = {
-  placeholder: 'Buscar cliente por nome ou CPF/CNPJ...',
+  placeholder: 'Buscar cliente por código, nome ou CPF/CNPJ...',
   emptyMessage: 'Nenhum cliente encontrado.',
 
   async search(term, signal) {
@@ -64,8 +77,9 @@ function toCustomerOption(row: CustomerLookup): EntityOption {
   return {
     id: row.id,
     label: row.legalName,
-    // O nome fantasia identifica melhor que o documento; o CPF/CNPJ é o reserva.
-    sublabel: row.tradeName ?? taxIdSublabel(row.taxId),
+    // Código sempre; depois o nome fantasia, que identifica melhor que o
+    // documento, com o CPF/CNPJ de reserva.
+    sublabel: `#${row.id} · ${row.tradeName ?? taxIdSublabel(row.taxId) ?? '—'}`,
     isActive: row.isActive,
   }
 }

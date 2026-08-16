@@ -23,6 +23,7 @@ export default class ProductsController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return productService.list(tenant, {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       description: request.input('description') || undefined,
       productGroupId: request.input('productGroupId')
         ? Number(request.input('productGroupId'))

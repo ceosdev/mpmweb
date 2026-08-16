@@ -74,7 +74,7 @@ export function SuppliersPage() {
 
   // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
   const filters = useSearchFilters({
-    name: '',
+    id: '', name: '',
     taxId: '',
     type: 'all' as TypeFilter,
     status: 'all' as StatusFilter,
@@ -93,6 +93,7 @@ export function SuppliersPage() {
 
   const listParams = useMemo<SupplierListParams>(
     () => ({
+      id: filters.applied.id ? Number(filters.applied.id) : undefined,
       name: filters.applied.name || undefined,
       taxId: filters.applied.taxId || undefined,
       type: filters.applied.type === 'all' ? undefined : filters.applied.type,
@@ -158,6 +159,17 @@ export function SuppliersPage() {
       </PageHeader>
 
       <div className="flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-[7rem]">
+          <Input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            placeholder="Código"
+            value={filters.draft.id}
+            onChange={(event) => filters.setField('id', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+          />
+        </div>
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Nome</label>
           <div className="relative">
@@ -250,6 +262,9 @@ export function SuppliersPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <SortableHeader column="id" sort={sort} onSort={toggleSort}>
+                  Código
+                </SortableHeader>
                 <SortableHeader column="name" sort={sort} onSort={toggleSort}>
                   Nome
                 </SortableHeader>
@@ -272,6 +287,7 @@ export function SuppliersPage() {
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.id}>
+                  <TableCell className="text-muted-foreground">{row.id}</TableCell>
                   <TableCell className="font-medium">{row.name}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {maskCpfOrCnpj(row.taxId)}

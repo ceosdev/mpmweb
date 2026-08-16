@@ -92,7 +92,7 @@ export function ReceivablesPage() {
 
   // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
   const filters = useSearchFilters({
-    documentNumber: '',
+    id: '', documentNumber: '',
     customerId: null as number | null,
     // Vencimento vem **marcado** por default; emissão, desmarcado.
     dueEnabled: true,
@@ -159,6 +159,7 @@ export function ReceivablesPage() {
   const listParams = useMemo<ReceivableListParams>(() => {
     const applied = filters.applied
     return {
+      id: applied.id ? Number(applied.id) : undefined,
       documentNumber: applied.documentNumber || undefined,
       customerId: applied.customerId ?? undefined,
       // Desmarcar o checkbox desativa o filtro — as datas nem são enviadas.
@@ -283,6 +284,17 @@ export function ReceivablesPage() {
       </PageHeader>
 
       <div className="flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-[7rem]">
+          <Input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            placeholder="Código"
+            value={filters.draft.id}
+            onChange={(event) => filters.setField('id', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+          />
+        </div>
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Número do título</label>
           <div className="relative">
@@ -415,6 +427,9 @@ export function ReceivablesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <SortableHeader column="id" sort={sort} onSort={toggleSort}>
+                  Código
+                </SortableHeader>
                 {batchMode && (
                   <TableHead className="w-0">
                     <Checkbox
@@ -455,6 +470,7 @@ export function ReceivablesPage() {
                   key={row.id}
                   className={cn(batchMode && selectedIds.has(row.id) && 'bg-primary/5')}
                 >
+                  <TableCell className="text-muted-foreground">{row.id}</TableCell>
                   {batchMode && (
                     <TableCell className="w-0">
                       {isOwing(row) && (

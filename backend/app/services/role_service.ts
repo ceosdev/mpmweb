@@ -9,6 +9,8 @@ import {
 } from '#exceptions/app_exception'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   search?: string
   page?: number
   perPage?: number
@@ -17,6 +19,7 @@ export interface ListParams {
 }
 
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   name: 'name',
   is_active: 'is_active',
   created_at: 'created_at',
@@ -56,6 +59,9 @@ export class RoleService {
       .query(tenant.company.id)
       .withCount('permissions')
       .orderBy(sortColumn ?? 'name', sortColumn ? sortDirection : 'asc')
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.search) {
       const term = `%${params.search.toLowerCase()}%`

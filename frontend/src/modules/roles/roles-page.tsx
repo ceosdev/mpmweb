@@ -47,7 +47,7 @@ export function RolesPage() {
   const companyId = tenant?.companyId
 
   // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
-  const filters = useSearchFilters({ search: '' })
+  const filters = useSearchFilters({ id: '', search: '' })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
 
@@ -71,6 +71,7 @@ export function RolesPage() {
     queryKey: ['roles-list', companyId, filters.applied, page, sort],
     queryFn: () =>
       rolesApi.list({
+        id: filters.applied.id ? Number(filters.applied.id) : undefined,
         search: filters.applied.search || undefined,
         page,
         perPage: PER_PAGE,
@@ -111,6 +112,17 @@ export function RolesPage() {
       </PageHeader>
 
       <div className="flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-[7rem]">
+          <Input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            placeholder="Código"
+            value={filters.draft.id}
+            onChange={(event) => filters.setField('id', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+          />
+        </div>
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -150,6 +162,9 @@ export function RolesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <SortableHeader column="id" sort={sort} onSort={toggleSort}>
+                  Código
+                </SortableHeader>
                 <SortableHeader column="name" sort={sort} onSort={toggleSort}>
                   Nome
                 </SortableHeader>
@@ -164,6 +179,7 @@ export function RolesPage() {
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.id}>
+                  <TableCell className="text-muted-foreground">{row.id}</TableCell>
                   <TableCell className="font-medium">{row.name}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {row.description || '—'}

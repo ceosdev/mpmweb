@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Paginated, PaymentType } from '@/types/api'
 
 export interface PaymentTypeListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   search?: string
   page?: number
   perPage?: number

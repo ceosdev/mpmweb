@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Paginated, Receivable, ReceivableStatusFilter } from '@/types/api'
 
 export interface ReceivableListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   documentNumber?: string
   customerId?: number
   dueFrom?: string

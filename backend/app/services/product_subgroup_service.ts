@@ -5,6 +5,8 @@ import productGroupRepository from '#repositories/product_group_repository'
 import { ConflictException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   search?: string
   page?: number
   perPage?: number
@@ -13,6 +15,7 @@ export interface ListParams {
 }
 
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   description: 'description',
   is_active: 'is_active',
   created_at: 'created_at',
@@ -52,6 +55,9 @@ export class ProductSubgroupService {
     const query = productSubgroupRepository
       .query(tenant.company.id, productGroupId)
       .orderBy(sortColumn ?? 'description', sortColumn ? sortDirection : 'asc')
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.search) {
       const term = `%${params.search.toLowerCase()}%`

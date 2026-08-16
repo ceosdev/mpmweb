@@ -54,3 +54,22 @@ export function lookupTaxIdDigits(term: string): string | null {
   const digits = term.replace(/\D/g, '')
   return digits.length >= TAX_ID_MIN_DIGITS ? digits : null
 }
+
+/** Maior valor de um `integer` no Postgres — os ids são `increments()`, ou seja, `int4`. */
+const INT4_MAX = 2147483647
+
+/**
+ * O id exato a casar quando o usuário digita um **código** no picker, ou `null`
+ * quando o termo não é um código.
+ *
+ * Só termo **inteiramente numérico** conta: "ADERICO 12" é busca por nome, não
+ * por código. E o teto de `int4` não é preciosismo — sem ele, digitar um CNPJ
+ * cru (14 dígitos) produziria um número fora da faixa da coluna e o Postgres
+ * responderia `22003 numeric field overflow`, virando um 500 no meio de uma
+ * busca perfeitamente razoável.
+ */
+export function lookupCodeId(term: string): number | null {
+  if (!/^\d+$/.test(term)) return null
+  const value = Number(term)
+  return Number.isInteger(value) && value > 0 && value <= INT4_MAX ? value : null
+}

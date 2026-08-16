@@ -7,6 +7,8 @@ import BrandModel from '#models/brand_model'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   assetCode?: string
   description?: string
   situation?: AssetSituation
@@ -18,6 +20,7 @@ export interface ListParams {
 
 /** Columns the listing is allowed to sort by, mapped to their SQL column. */
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   description: 'description',
   asset_code: 'asset_code',
   situation: 'situation',
@@ -75,6 +78,9 @@ export class ProductAssetService {
     const query = productAssetRepository
       .query(tenant.company.id, productId)
       .orderBy(sortColumn ?? 'description', sortColumn ? sortDirection : 'asc')
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.assetCode) {
       const term = `%${params.assetCode.toLowerCase()}%`

@@ -12,6 +12,7 @@ export default class ServicesController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return serviceService.list(tenant, {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       description: request.input('description') || undefined,
       type: parseType(request.input('type')),
       page: request.input('page') ? Number(request.input('page')) : undefined,

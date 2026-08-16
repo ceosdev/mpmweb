@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Paginated, Supplier, SupplierType } from '@/types/api'
 
 export interface SupplierListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   name?: string
   taxId?: string
   type?: SupplierType

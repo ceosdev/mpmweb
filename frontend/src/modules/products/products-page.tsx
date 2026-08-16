@@ -74,7 +74,7 @@ export function ProductsPage() {
 
   // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
   const filters = useSearchFilters({
-    description: '',
+    id: '', description: '',
     groupFilter: 'all',
     typeFilter: 'all' as TypeFilter,
     controlsStockFilter: 'all' as ControlsStockFilter,
@@ -105,6 +105,7 @@ export function ProductsPage() {
 
   const listParams = useMemo<ProductListParams>(
     () => ({
+      id: filters.applied.id ? Number(filters.applied.id) : undefined,
       description: filters.applied.description || undefined,
       productGroupId:
         filters.applied.groupFilter === 'all' ? undefined : Number(filters.applied.groupFilter),
@@ -176,6 +177,21 @@ export function ProductsPage() {
       </PageHeader>
 
       <div className="flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-[7rem]">
+          <Label htmlFor="filterId" className="mb-1.5 block text-sm">
+            Código
+          </Label>
+          <Input
+            id="filterId"
+            type="number"
+            min={1}
+            inputMode="numeric"
+            placeholder="Código"
+            value={filters.draft.id}
+            onChange={(event) => filters.setField('id', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+          />
+        </div>
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Descrição</label>
           <div className="relative">
@@ -303,6 +319,9 @@ export function ProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <SortableHeader column="id" sort={sort} onSort={toggleSort}>
+                  Código
+                </SortableHeader>
                 <SortableHeader column="description" sort={sort} onSort={toggleSort}>
                   Descrição
                 </SortableHeader>
@@ -328,6 +347,7 @@ export function ProductsPage() {
                 const low = isLowStock(row)
                 return (
                   <TableRow key={row.id}>
+                  <TableCell className="text-muted-foreground">{row.id}</TableCell>
                     <TableCell className="font-medium">{row.description}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {TYPE_LABELS[row.type]}

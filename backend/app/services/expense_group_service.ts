@@ -4,6 +4,8 @@ import expenseGroupRepository from '#repositories/expense_group_repository'
 import { ConflictException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   search?: string
   page?: number
   perPage?: number
@@ -13,6 +15,7 @@ export interface ListParams {
 
 /** Columns the listing is allowed to sort by. */
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   description: 'description',
   is_active: 'is_active',
   created_at: 'created_at',
@@ -43,6 +46,9 @@ export class ExpenseGroupService {
     const query = expenseGroupRepository
       .query(tenant.company.id)
       .orderBy(sortColumn ?? 'description', sortColumn ? sortDirection : 'asc')
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.search) {
       const term = `%${params.search.toLowerCase()}%`

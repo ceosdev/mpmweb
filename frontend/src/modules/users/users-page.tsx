@@ -48,7 +48,7 @@ export function UsersPage() {
   const companyId = tenant?.companyId
 
   // Filtros só disparam a consulta no clique em "Pesquisar" (ver useSearchFilters).
-  const filters = useSearchFilters({ search: '' })
+  const filters = useSearchFilters({ id: '', search: '' })
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState<SortState | null>(null)
 
@@ -76,6 +76,7 @@ export function UsersPage() {
     queryKey: ['users', companyId, filters.applied, page, sort],
     queryFn: () =>
       usersApi.list({
+        id: filters.applied.id ? Number(filters.applied.id) : undefined,
         search: filters.applied.search || undefined,
         page,
         perPage: PER_PAGE,
@@ -137,6 +138,17 @@ export function UsersPage() {
       </PageHeader>
 
       <div className="flex flex-wrap items-end gap-3">
+        <div className="w-full max-w-[7rem]">
+          <Input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            placeholder="Código"
+            value={filters.draft.id}
+            onChange={(event) => filters.setField('id', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+          />
+        </div>
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -172,6 +184,9 @@ export function UsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <SortableHeader column="id" sort={sort} onSort={toggleSort}>
+                  Código
+                </SortableHeader>
                 <SortableHeader column="name" sort={sort} onSort={toggleSort}>
                   Nome
                 </SortableHeader>
@@ -191,6 +206,7 @@ export function UsersPage() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.membershipId}>
+                  <TableCell className="text-muted-foreground">{user.id}</TableCell>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell className="text-muted-foreground">{user.email}</TableCell>
                   <TableCell>

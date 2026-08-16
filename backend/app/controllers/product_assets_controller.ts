@@ -20,6 +20,7 @@ export default class ProductAssetsController {
   async index({ tenant, request, params }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return productAssetService.list(tenant, Number(params.productId), {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       assetCode: request.input('assetCode') || undefined,
       description: request.input('description') || undefined,
       situation: parseSituation(request.input('situation')),

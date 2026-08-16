@@ -9,6 +9,8 @@ import membershipRepository from '#repositories/membership_repository'
 import { BusinessException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   search?: string
   page?: number
   perPage?: number
@@ -18,6 +20,7 @@ export interface ListParams {
 
 /** Columns the listing is allowed to sort by, mapped to their SQL expression. */
 const USER_SORT_COLUMNS: Record<string, string> = {
+  id: 'users.id',
   name: 'users.name',
   email: 'users.email',
   is_active: 'memberships.is_active',
@@ -70,6 +73,12 @@ export class UserService {
       .whereNull('memberships.deleted_at')
       .whereHas('user', (userQuery) => {
         userQuery.whereNull('users.deleted_at')
+
+        // O "Código" desta tela é o id do **usuário** — é ele que o `serialize`
+        // expõe como `id` —, não o do vínculo. Qualificado com a tabela porque
+        // a query junta `memberships` e `users`, e `id` cru seria ambíguo.
+        if (params.id) userQuery.where('users.id', params.id)
+
         if (params.search) {
           const term = `%${params.search.toLowerCase()}%`
           userQuery.where((sub) => {

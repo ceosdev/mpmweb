@@ -162,6 +162,8 @@ rota atual); expandir é ação explícita do usuário.
 
 ## Convenções importantes
 
+- **Código (`id`) em toda listagem**: **todas as 21 telas de listagem** exibem o `id` como **primeira coluna, rotulada "Código"** e **ordenável**, e têm um filtro **Código** (`Input type="number"`) como primeiro campo da barra de filtros. A busca é **exata** (`where id = N`), não "contém" — id é identidade, e buscar "12" trazendo 12, 120 e 312 seria ruído. O campo **nunca aparece em formulário**: é autoincremento, o usuário só consulta. Backend: `ListParams` tem `id?: number`, `SORT_COLUMNS` tem `id`, e o controller lê `request.input('id')`. Em `users`, o "Código" é o id do **usuário** (o que o `serialize` expõe), qualificado como `users.id` porque a query junta `memberships`.
+- **EntityPicker também acha por código**: `GET /<entidade>/lookup?q=` casa nome, CPF/CNPJ **e** id exato quando o termo é inteiramente numérico (`lookupCodeId` em `#utils/lookup`, com teto de `int4` — sem ele, um CNPJ cru de 14 dígitos estouraria a faixa da coluna e viraria 500). O código aparece no sublabel da opção (`#704 · 12.345.678/0001-99`), senão a busca por código acha mas não identifica qual resultado é.
 - **Idioma**: código (tabelas, colunas, models, rotas, JSON da API) em inglês; textos visíveis ao usuário e mensagens de erro da API em português.
 - **Multitenant**: toda `queryKey` no frontend inclui `tenant.companyId`. Toda query de negócio no backend é filtrada por `tenant.company.id` (exceto ROOT).
 - **Máscaras**: CPF/CNPJ/CEP/telefone armazenados crus no banco; mascarados só na UI (`frontend/src/lib/masks.ts` + `MaskedInput`).

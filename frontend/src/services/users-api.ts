@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { ImportableUser, Paginated, UserDetail, UserListItem } from '@/types/api'
 
 export interface UserListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   search?: string
   page?: number
   perPage?: number

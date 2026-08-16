@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Paginated, Service, ServiceType } from '@/types/api'
 
 export interface ServiceListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   description?: string
   type?: ServiceType
   page?: number

@@ -33,6 +33,7 @@ export default class PayablesController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return payableService.list(tenant, {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       documentNumber: request.input('documentNumber') || undefined,
       supplierId: request.input('supplierId') ? Number(request.input('supplierId')) : undefined,
       dueFrom: request.input('dueFrom') || undefined,

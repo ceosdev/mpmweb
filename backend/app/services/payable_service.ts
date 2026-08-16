@@ -13,6 +13,8 @@ import { todayIso } from '#utils/dates'
 export type PayableStatusFilter = PayableStatus | 'overdue'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   documentNumber?: string
   supplierId?: number
   dueFrom?: string
@@ -33,6 +35,7 @@ export interface ListParams {
  * expression, otherwise the column would contradict its own ordering.
  */
 const SORT_COLUMNS: Record<string, string> = {
+  id: 'id',
   document_number: 'document_number',
   installment: 'installment',
   issue_date: 'issue_date',
@@ -94,6 +97,9 @@ export class PayableService {
       const sortColumn = params.sort && SORT_COLUMNS[params.sort]
       query.orderBy(sortColumn ?? 'due_date', sortColumn ? direction : 'asc')
     }
+
+    if (params.id) query.where('id', params.id)
+
 
     if (params.documentNumber) {
       const term = `%${params.documentNumber.toLowerCase()}%`

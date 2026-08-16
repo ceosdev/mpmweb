@@ -2,6 +2,8 @@ import { api } from '@/services/api-client'
 import type { Customer, CustomerType, Paginated } from '@/types/api'
 
 export interface CustomerListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   name?: string
   taxId?: string
   type?: CustomerType

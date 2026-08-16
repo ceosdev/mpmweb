@@ -22,6 +22,7 @@ export default class CustomersController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return customerService.list(tenant, {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       name: request.input('name') || undefined,
       taxId: request.input('taxId') || undefined,
       type: parseType(request.input('type')),
