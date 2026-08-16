@@ -183,6 +183,7 @@ no uso inicial.
 - Specs de features, organizadas por contexto:
   - [`docs/spec/cadastros/`](docs/spec/cadastros/) — telas de cadastro (001–016).
   - [`docs/spec/financeiro/`](docs/spec/financeiro/) — telas do financeiro (001 = contas a pagar, 002 = baixa, 003 = pagamento em lote, 004 = contas a receber).
+  - [`docs/spec/servicos/`](docs/spec/servicos/) — telas do módulo Serviços (001 = entrada de serviço). **Ainda não implementada.**
   - [`docs/spec/comum/`](docs/spec/comum/) — **componentes e capacidades transversais**, que servem a vários contextos (001 = EntityPicker).
   - [`docs/superpowers/specs/`](docs/superpowers/specs/) — specs de design mais antigas.
 - Regras de UI do projeto: [`frontend/.agents/skills/mpmweb-ui-patterns/`](frontend/.agents/skills/mpmweb-ui-patterns/).
