@@ -31,6 +31,7 @@ export default class ServiceEntriesController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'asc' ? 'asc' : 'desc'
     return serviceEntryService.list(tenant, {
+      id: request.input('id') ? Number(request.input('id')) : undefined,
       documentNumber: request.input('documentNumber') || undefined,
       supplierId: request.input('supplierId') ? Number(request.input('supplierId')) : undefined,
       operationFrom: request.input('operationFrom') || undefined,

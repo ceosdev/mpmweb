@@ -19,6 +19,8 @@ import { BusinessException, ConflictException, NotFoundException } from '#except
 import { todayIso } from '#utils/dates'
 
 export interface ListParams {
+  /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
+  id?: number
   documentNumber?: string
   supplierId?: number
   operationFrom?: string
@@ -136,6 +138,8 @@ export class ServiceEntryService {
     } else {
       query.orderBy('operation_date', 'desc').orderBy('id', 'desc')
     }
+
+    if (params.id) query.where('id', params.id)
 
     if (params.documentNumber) {
       const term = `%${params.documentNumber.toLowerCase()}%`

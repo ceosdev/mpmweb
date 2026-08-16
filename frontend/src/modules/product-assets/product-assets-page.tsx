@@ -212,7 +212,10 @@ export function ProductAssetsPage() {
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-full max-w-[7rem]">
+        <div className="space-y-1.5">
+          {/* `block` no label: o <input> é inline — sem isso ele sobe para a
+              mesma linha do rótulo (os demais filtros têm wrapper bloco). */}
+          <label className="block text-xs font-medium text-muted-foreground">Código</label>
           <Input
             type="number"
             min={1}
@@ -221,6 +224,7 @@ export function ProductAssetsPage() {
             value={filters.draft.id}
             onChange={(event) => filters.setField('id', event.target.value)}
             onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="w-24"
           />
         </div>
         <div className="space-y-1.5">

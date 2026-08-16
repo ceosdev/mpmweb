@@ -88,7 +88,7 @@ export function ServiceEntriesPage() {
   // Ao montar, os aplicados = default (operação do mês corrente marcada), então
   // a tela já carrega filtrada por isso.
   const filters = useSearchFilters({
-    documentNumber: '',
+    id: '', documentNumber: '',
     supplierId: null as number | null,
     // Operação vem **marcada** por default; emissão, desmarcada.
     operationEnabled: true,
@@ -127,6 +127,7 @@ export function ServiceEntriesPage() {
   const listParams = useMemo<ServiceEntryListParams>(() => {
     const applied = filters.applied
     return {
+      id: applied.id ? Number(applied.id) : undefined,
       documentNumber: applied.documentNumber || undefined,
       supplierId: applied.supplierId ?? undefined,
       // Desmarcar o checkbox desativa o filtro — as datas nem são enviadas.
@@ -191,6 +192,21 @@ export function ServiceEntriesPage() {
       </PageHeader>
 
       <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1.5">
+          {/* `block` no label: o <input> é inline — sem isso ele sobe para a
+              mesma linha do rótulo (os demais filtros têm wrapper bloco). */}
+          <label className="block text-xs font-medium text-muted-foreground">Código</label>
+          <Input
+            type="number"
+            min={1}
+            inputMode="numeric"
+            placeholder="Código"
+            value={filters.draft.id}
+            onChange={(event) => filters.setField('id', event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="w-24"
+          />
+        </div>
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-muted-foreground">Número do documento</label>
           <div className="relative">

@@ -528,6 +528,8 @@ export interface ServiceEntryPayload {
 }
 
 export interface ServiceEntryListParams {
+  /** Busca exata pelo código (autoincremento). */
+  id?: number
   documentNumber?: string
   supplierId?: number
   operationFrom?: string
