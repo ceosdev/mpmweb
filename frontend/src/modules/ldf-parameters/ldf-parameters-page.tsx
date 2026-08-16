@@ -152,6 +152,7 @@ export function LdfParametersPage() {
           <label className="block text-xs font-medium text-muted-foreground">Código</label>
           <Input
             inputMode="numeric"
+            placeholder="Código"
             value={filters.draft.code}
             onChange={(event) =>
               filters.setField('code', event.target.value.replace(/\D/g, ''))

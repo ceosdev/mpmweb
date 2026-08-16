@@ -42,7 +42,7 @@ export function AppSidebar({ collapsed }: AppSidebarProps) {
       <Link
         to="/"
         title={collapsed ? 'Ir para o dashboard' : undefined}
-        className="flex h-14 items-center gap-2.5 px-4 transition-opacity hover:opacity-80"
+        className="flex h-14 shrink-0 items-center gap-2.5 px-4 transition-opacity hover:opacity-80"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Boxes className="size-5" />
@@ -50,7 +50,13 @@ export function AppSidebar({ collapsed }: AppSidebarProps) {
         {!collapsed && <span className="text-sm font-semibold tracking-tight">MPM Web</span>}
       </Link>
 
-      <nav className="flex-1 space-y-1 px-3 py-2">
+      {/*
+        `min-h-0` é o que faz o scroll funcionar: num flex column, um filho
+        `flex-1` não encolhe abaixo da altura do próprio conteúdo sem isso — o
+        menu crescia para fora da tela e levava o seletor de empresa junto,
+        deixando os últimos grupos inalcançáveis com tudo expandido.
+      */}
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
         {collapsed
           ? flattenLeaves(items).map((leaf) => (
               <SidebarLeaf key={leaf.to} item={leaf} collapsed />
@@ -64,7 +70,7 @@ export function AppSidebar({ collapsed }: AppSidebarProps) {
             )}
       </nav>
 
-      <div className="border-t px-3 py-3">
+      <div className="shrink-0 border-t px-3 py-3">
         <CompanySwitcher collapsed={collapsed} />
       </div>
     </aside>
