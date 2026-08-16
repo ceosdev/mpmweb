@@ -696,6 +696,11 @@ Apenas as 6 permissões novas.
 - [ ] Após finalizar, a tela de **contas a pagar** mostra os títulos novos
       (invalidação de `['payables']`).
 - [ ] Multitenant: trocar de empresa não vaza entradas nem itens de outra empresa.
+- [ ] **`finalize` e `cancel` são poderes independentes de `edit`**: um perfil com
+      `service_entries.view/create/edit/delete` e **sem** `finalize` não vê a ação
+      "Finalizar entrada" no grid **e** recebe **403** ao chamar o endpoint direto;
+      o mesmo vale para `cancel`. Um perfil só com `view` + `finalize` consegue
+      finalizar sem conseguir editar.
 - [ ] `ui/radio-group.tsx` existe e o `RadioGroup` alterna os campos de imposto.
 - [ ] `reaisToCents`/`centsToReais` vivem em `lib/masks.ts` e os formulários que
       tinham cópia local passam a importar de lá (sem mudança de comportamento).
