@@ -26,7 +26,11 @@ export function AppLayout() {
       <AppSidebar collapsed={collapsed} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <AppHeader onToggleSidebar={toggleSidebar} />
-        <main className="flex-1 overflow-y-auto p-6">
+        {/* `relative` makes <main> the containing block of absolutely
+            positioned descendants (e.g. Radix Select's hidden native
+            <select>), so they are clipped by its scroll instead of growing
+            the document and creating a second, window-level scrollbar. */}
+        <main className="relative flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-6xl space-y-6">
             <Outlet />
           </div>

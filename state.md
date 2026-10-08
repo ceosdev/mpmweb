@@ -177,6 +177,7 @@ rota atual); expandir é ação explícita do usuário.
 - **Query string**: o parser do Adonis **quebra vírgula em array** e o axios **manda a vírgula crua**. Params de lista (`?ids=1,2`, `?status=open,paid`) devem aceitar **string e array** — foi bug real no lookup.
 - **`PageHeader`** aceita `icon`: toda tela exibe, ao lado do título, **o mesmo ícone do seu item de menu**.
 - **Sidebar rola; cabeçalho e rodapé não**: em `components/app-sidebar.tsx`, a `<nav>` é `min-h-0 flex-1 overflow-y-auto`, e o logo e o seletor de empresa são `shrink-0`. O **`min-h-0` é o que faz o scroll existir** — num flex column, um filho `flex-1` não encolhe abaixo da altura do próprio conteúdo sem ele, e o menu crescia para fora da tela em vez de rolar, levando o seletor de empresa junto e deixando os últimos itens inalcançáveis com todos os grupos abertos. Se um grupo novo entrar no menu, é essa a invariante a não quebrar.
+- **Só o `<main>` rola, nunca a janela**: em `layouts/app-layout.tsx`, o `<main>` é `relative flex-1 overflow-y-auto`. O **`relative` é obrigatório** — sem ele, elementos `position: absolute` dentro da página (o `<select>` nativo oculto que o Select do Radix renderiza dentro de `<form>`, `sr-only`, etc.) usam o viewport como bloco de contenção, escapam do scroll do `<main>` e esticam o documento: aparecia uma segunda barra de rolagem na janela e, ao rolar, a sidebar subia e quebrava (visto na visualização da Entrada de Serviço).
 
 ## Storage de arquivos
 
