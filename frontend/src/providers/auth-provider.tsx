@@ -1,5 +1,6 @@
 import { createContext, use, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { authApi } from '@/services/auth-api'
+import { filterStorage } from '@/lib/filter-storage'
 import { authStorage } from '@/lib/auth-storage'
 import type { AuthUser, CompanySummary, TenantContext } from '@/types/api'
 
@@ -119,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Stateless logout — ignore network errors.
     }
     authStorage.clear()
+    filterStorage.clearAll()
     setUser(null)
     setCompanies([])
     setTenant(null)
