@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-08-16
+**Snapshot**: 2026-10-08
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
