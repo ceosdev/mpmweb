@@ -21,3 +21,5 @@ npm-debug.log*
 
 # Claude Code local config (per-developer permissions)
 .claude/settings.local.json
+
+database_erp

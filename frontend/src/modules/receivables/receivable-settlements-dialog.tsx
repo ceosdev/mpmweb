@@ -213,8 +213,10 @@ export function ReceivableSettlementsDialog({
                         {row.documentNumber || '—'}
                       </TableCell>
                       <TableCell>{formatCurrency(row.amount)}</TableCell>
-                      <TableCell className="max-w-[16rem] truncate text-muted-foreground">
-                        {row.notes || '—'}
+                      <TableCell className="w-full max-w-0 text-muted-foreground">
+                        <div className="truncate" title={row.notes ?? undefined}>
+                          {row.notes || '—'}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">

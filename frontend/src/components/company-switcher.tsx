@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/providers/auth-provider'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
+import { resolveAssetUrl } from '@/services/api-client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ export function CompanySwitcher({ collapsed = false }: CompanySwitcherProps) {
 
   const active = companies.find((c) => c.id === activeCompanyId)
   const label = active ? (active.tradeName ?? active.legalName) : 'Selecione a empresa'
+  const activeLogo = resolveAssetUrl(active?.logoUrl)
 
   async function handleSelect(companyId: number) {
     if (companyId === activeCompanyId || switching) return
@@ -49,9 +51,15 @@ export function CompanySwitcher({ collapsed = false }: CompanySwitcherProps) {
           collapsed && 'justify-center px-0'
         )}
       >
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Building2 className="size-4" />
-        </span>
+        {activeLogo ? (
+          <span className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-background">
+            <img src={activeLogo} alt="" className="size-full object-contain" />
+          </span>
+        ) : (
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Building2 className="size-4" />
+          </span>
+        )}
         {!collapsed && (
           <>
             <span className="flex-1 truncate font-medium">{label}</span>
