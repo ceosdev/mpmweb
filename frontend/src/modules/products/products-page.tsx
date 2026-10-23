@@ -359,7 +359,10 @@ export function ProductsPage() {
                       {row.unitDescription || '—'}
                     </TableCell>
                     <TableCell>
-                      {row.controlsStock && row.quantityInStock !== null ? (
+                      {row.type === 'fixed_asset' ? (
+                        // Ativo não tem saldo: o estoque é a contagem de ativos disponíveis.
+                        <span title="Ativos disponíveis">{row.availableAssets ?? 0}</span>
+                      ) : row.controlsStock && row.quantityInStock !== null ? (
                         <span
                           className={cn(
                             low && 'font-medium text-destructive'

@@ -244,6 +244,11 @@ export interface Product {
   controlsStock: boolean
   minimumStock: number | null
   quantityInStock: number | null
+  /**
+   * Só para `fixed_asset` (nos demais, `null`): quantos ativos do produto estão
+   * disponíveis — é o "estoque" de um ativo, que não tem saldo próprio.
+   */
+  availableAssets: number | null
   /** Cost price as a decimal string (up to 10 fraction digits), e.g. "25.6000000000". */
   costPrice: string | null
   isActive: boolean

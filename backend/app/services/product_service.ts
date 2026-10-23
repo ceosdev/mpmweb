@@ -1,4 +1,5 @@
 import Product, { type ProductType } from '#models/product'
+import db from '@adonisjs/lucid/services/db'
 import type { TenantContext } from '#services/tenant_context'
 import productRepository from '#repositories/product_repository'
 import productGroupRepository from '#repositories/product_group_repository'
@@ -22,12 +23,32 @@ export interface ListParams {
   order?: 'asc' | 'desc'
 }
 
+/**
+ * Ativos **disponíveis** do produto — é o "estoque" de um produto
+ * `fixed_asset`, que não tem saldo próprio (a entrada de mercadoria cria um
+ * ativo por unidade em vez de somar `quantity_in_stock`). Alocado ou vendido
+ * não está em casa, por isso não conta. Subquery correlacionada, não `join`:
+ * o `paginate` do Lucid conta linhas.
+ */
+const AVAILABLE_ASSETS_SQL = `(select count(*)
+    from product_assets
+   where product_assets.product_id = products.id
+     and product_assets.company_id = products.company_id
+     and product_assets.situation = 'available')`
+
+/**
+ * A coluna Estoque da listagem: saldo para consumível, ativos disponíveis para
+ * ativo imobilizado. Ordena pela **mesma** expressão que exibe.
+ */
+const STOCK_SORT_SQL = `(case when products.type = 'fixed_asset'
+    then ${AVAILABLE_ASSETS_SQL}
+    else products.quantity_in_stock end)`
+
 /** Columns the listing is allowed to sort by, mapped to their SQL column. */
 const SORT_COLUMNS: Record<string, string> = {
   id: 'id',
   description: 'description',
   type: 'type',
-  quantity_in_stock: 'quantity_in_stock',
   cost_price: 'cost_price',
   is_active: 'is_active',
   created_at: 'created_at',
@@ -71,7 +92,15 @@ export class ProductService {
       .query(tenant.company.id)
       .preload('group')
       .preload('unit')
-      .orderBy(sortColumn ?? 'description', sortColumn ? sortDirection : 'asc')
+      .select('products.*')
+      .select(db.raw(`${AVAILABLE_ASSETS_SQL} as available_assets`))
+
+    if (params.sort === 'quantity_in_stock') {
+      // `sortDirection` já é 'asc' | 'desc' — nada do cliente entra cru na expressão.
+      query.orderByRaw(`${STOCK_SORT_SQL} ${sortDirection} nulls last`)
+    } else {
+      query.orderBy(sortColumn ?? 'description', sortColumn ? sortDirection : 'asc')
+    }
 
     if (params.id) query.where('id', params.id)
 
@@ -125,6 +154,8 @@ export class ProductService {
       .where('id', id)
       .preload('group')
       .preload('unit')
+      .select('products.*')
+      .select(db.raw(`${AVAILABLE_ASSETS_SQL} as available_assets`))
       .first()
     if (!row) throw new NotFoundException('Produto não encontrado.')
     return this.serialize(row)
@@ -205,9 +236,8 @@ export class ProductService {
       costPrice: dto.costPrice ?? null,
       isActive: dto.isActive ?? true,
     })
-    await row.load('group')
-    await row.load('unit')
-    return this.serialize(row)
+    // Via `show`: traz também a contagem de ativos disponíveis.
+    return this.show(tenant, row.id)
   }
 
   async update(tenant: TenantContext, id: number, dto: UpdateProductDTO) {
@@ -248,9 +278,8 @@ export class ProductService {
     if (quantityInStock === null) row.quantityInStock = null
 
     await row.save()
-    await row.load('group')
-    await row.load('unit')
-    return this.serialize(row)
+    // Via `show`: traz também a contagem de ativos disponíveis.
+    return this.show(tenant, row.id)
   }
 
   async destroy(tenant: TenantContext, id: number) {
@@ -344,6 +373,11 @@ export class ProductService {
       controlsStock: row.controlsStock,
       minimumStock: toNumberOrNull(row.minimumStock),
       quantityInStock: toNumberOrNull(row.quantityInStock),
+      // Só para `fixed_asset`: quantos ativos do produto estão disponíveis.
+      availableAssets:
+        row.type === 'fixed_asset'
+          ? Number((row.$extras as { available_assets?: string | number }).available_assets ?? 0)
+          : null,
       costPrice: row.costPrice,
       isActive: row.isActive,
       createdAt: row.createdAt?.toISO() ?? null,
