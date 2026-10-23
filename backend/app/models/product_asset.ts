@@ -54,6 +54,10 @@ export default class ProductAsset extends BaseModel {
   @column()
   declare notes: string | null
 
+  /** Goods entry that generated this asset, or `null` when created by hand. */
+  @column({ columnName: 'goods_entry_id' })
+  declare goodsEntryId: number | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

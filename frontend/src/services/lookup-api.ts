@@ -1,5 +1,5 @@
 import { api } from '@/services/api-client'
-import type { CustomerLookup, LookupResponse, SupplierLookup } from '@/types/api'
+import type { CustomerLookup, LookupResponse, ProductLookup, SupplierLookup } from '@/types/api'
 
 /**
  * Clientes HTTP dos endpoints de lookup, que alimentam o EntityPicker.
@@ -30,3 +30,4 @@ function lookupApi<T>(resource: string) {
 
 export const supplierLookupApi = lookupApi<SupplierLookup>('suppliers')
 export const customerLookupApi = lookupApi<CustomerLookup>('customers')
+export const productLookupApi = lookupApi<ProductLookup>('products')

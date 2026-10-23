@@ -10,7 +10,7 @@ import { Can } from '@/permissions/can'
 import { useSearchFilters } from '@/hooks/use-search-filters'
 import { getErrorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
-import { formatCurrency, formatQuantity } from '@/lib/masks'
+import { formatDecimalPrice, formatQuantity } from '@/lib/masks'
 import type { Product, ProductType } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
@@ -373,7 +373,7 @@ export function ProductsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {row.costPrice !== null ? formatCurrency(row.costPrice) : '—'}
+                      {formatDecimalPrice(row.costPrice, 4)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={row.isActive ? 'default' : 'outline'}>

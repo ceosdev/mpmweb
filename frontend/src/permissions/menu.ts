@@ -2,6 +2,7 @@ import {
   Boxes,
   Briefcase,
   Building2,
+  ArrowLeftRight,
   ClipboardList,
   Contact,
   FileInput,
@@ -11,6 +12,7 @@ import {
   Landmark,
   LayoutDashboard,
   Package,
+  PackagePlus,
   Receipt,
   ReceiptText,
   Ruler,
@@ -86,6 +88,13 @@ export const MENU: MenuEntry[] = [
     icon: Briefcase,
     children: [
       { label: 'Entrada de serviço', to: '/service-entries', icon: FileInput, permission: 'service_entries.view' },
+    ],
+  },
+  {
+    label: 'Mercadoria',
+    icon: ArrowLeftRight,
+    children: [
+      { label: 'Entrada de mercadoria', to: '/goods-entries', icon: PackagePlus, permission: 'goods_entries.view' },
     ],
   },
   {

@@ -42,23 +42,15 @@ export default class Product extends BaseModel {
   @column({ columnName: 'controls_stock' })
   declare controlsStock: boolean
 
-  @column({
-    columnName: 'minimum_stock',
-    consume: (value: string | null) => (value === null ? null : Number(value)),
-  })
-  declare minimumStock: number | null
+  /** decimal columns: the driver returns strings and they are kept as such. */
+  @column({ columnName: 'minimum_stock' })
+  declare minimumStock: string | null
 
-  @column({
-    columnName: 'quantity_in_stock',
-    consume: (value: string | null) => (value === null ? null : Number(value)),
-  })
-  declare quantityInStock: number | null
+  @column({ columnName: 'quantity_in_stock' })
+  declare quantityInStock: string | null
 
-  @column({
-    columnName: 'cost_price',
-    consume: (value: string | null) => (value === null ? null : Number(value)),
-  })
-  declare costPrice: number | null
+  @column({ columnName: 'cost_price' })
+  declare costPrice: string | null
 
   @column({ columnName: 'is_active' })
   declare isActive: boolean

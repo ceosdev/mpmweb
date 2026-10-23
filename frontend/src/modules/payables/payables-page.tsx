@@ -552,9 +552,9 @@ export function PayablesPage() {
                                 </DropdownMenuItem>
                               </Can>
                             )}
-                            {/* Título gerado por entrada de serviço — o backend recusa a
+                            {/* Título gerado por entrada de serviço ou de mercadoria — o backend recusa a
                                 exclusão; cancele a entrada para removê-lo. */}
-                            {row.serviceEntryId === null && (
+                            {row.serviceEntryId === null && row.goodsEntryId === null && (
                               <Can permission="payables.delete">
                                 <DropdownMenuItem
                                   onClick={() => setDeleteId(row.id)}

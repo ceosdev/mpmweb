@@ -1,6 +1,6 @@
-import { customerLookupApi, supplierLookupApi } from '@/services/lookup-api'
+import { customerLookupApi, productLookupApi, supplierLookupApi } from '@/services/lookup-api'
 import { maskTaxId } from '@/lib/masks'
-import type { CustomerLookup, SupplierLookup } from '@/types/api'
+import type { CustomerLookup, ProductLookup, SupplierLookup } from '@/types/api'
 import type { EntityOption, EntitySource } from './types'
 
 /**
@@ -84,9 +84,36 @@ function toCustomerOption(row: CustomerLookup): EntityOption {
   }
 }
 
+const productSource: EntitySource = {
+  placeholder: 'Buscar produto por código ou descrição...',
+  emptyMessage: 'Nenhum produto encontrado.',
+
+  async search(term, signal) {
+    const { data, hasMore } = await productLookupApi.search(term, signal)
+    return { options: data.map(toProductOption), hasMore }
+  },
+
+  async fetchByIds(ids) {
+    const { data } = await productLookupApi.byIds(ids)
+    return data.map(toProductOption)
+  },
+}
+
+function toProductOption(row: ProductLookup): EntityOption {
+  const kind = row.type === 'fixed_asset' ? 'Ativo' : 'Consumo'
+  return {
+    id: row.id,
+    label: row.description,
+    sublabel: `#${row.id} · ${kind} · ${row.unitOfMeasure ?? '—'}`,
+    isActive: row.isActive,
+    data: row,
+  }
+}
+
 export const ENTITY_SOURCES = {
   supplier: supplierSource,
   customer: customerSource,
+  product: productSource,
 } satisfies Record<string, EntitySource>
 
 export type EntitySourceKey = keyof typeof ENTITY_SOURCES

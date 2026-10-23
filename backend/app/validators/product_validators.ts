@@ -27,8 +27,13 @@ const messages = new SimpleMessagesProvider({
   'type.enum': 'Tipo inválido.',
   'minimumStock.min': 'Estoque mínimo não pode ser negativo.',
   'quantityInStock.min': 'Quantidade em estoque não pode ser negativa.',
-  'costPrice.min': 'Preço de custo não pode ser negativo.',
+  'costPrice.regex': 'Preço de custo inválido (até 10 casas decimais).',
+  'decimal': 'Use no máximo 4 casas decimais.',
+  'max': 'Valor muito alto.',
 })
+
+/** Custo: decimal(20,10) em texto — até 10 dígitos inteiros e 10 casas. */
+const COST_PRICE_REGEX = /^\d{1,10}(\.\d{1,10})?$/
 
 const PRODUCT_TYPES = ['consumable', 'fixed_asset'] as const
 
@@ -40,9 +45,9 @@ export const createProductValidator = vine.compile(
     productSubgroupId: vine.number().positive().optional().nullable(),
     unitOfMeasureId: vine.number().positive().optional().nullable(),
     controlsStock: vine.boolean().optional(),
-    minimumStock: vine.number().min(0).optional().nullable(),
-    quantityInStock: vine.number().min(0).optional().nullable(),
-    costPrice: vine.number().min(0).optional().nullable(),
+    minimumStock: vine.number().min(0).max(99999999999).decimal([0, 4]).optional().nullable(),
+    quantityInStock: vine.number().min(0).max(99999999999).decimal([0, 4]).optional().nullable(),
+    costPrice: vine.string().trim().regex(COST_PRICE_REGEX).optional().nullable(),
     isActive: vine.boolean().optional(),
   })
 )
@@ -56,9 +61,9 @@ export const updateProductValidator = vine.compile(
     productSubgroupId: vine.number().positive().optional().nullable(),
     unitOfMeasureId: vine.number().positive().optional().nullable(),
     controlsStock: vine.boolean().optional(),
-    minimumStock: vine.number().min(0).optional().nullable(),
+    minimumStock: vine.number().min(0).max(99999999999).decimal([0, 4]).optional().nullable(),
     // quantityInStock intentionally omitted — immutable after create (strategy A).
-    costPrice: vine.number().min(0).optional().nullable(),
+    costPrice: vine.string().trim().regex(COST_PRICE_REGEX).optional().nullable(),
     isActive: vine.boolean().optional(),
   })
 )

@@ -27,7 +27,7 @@ export interface CreateProductPayload {
   /** Set only on create — immutable afterwards. */
   quantityInStock?: number | null
   /** Cost price in reais. */
-  costPrice?: number | null
+  costPrice?: string | null
   isActive?: boolean
 }
 

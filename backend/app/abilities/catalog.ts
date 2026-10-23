@@ -168,6 +168,14 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'service_entries.finalize', name: 'Finalizar entrada de serviço', module: 'service_entries', action: 'finalize', description: 'Finalizar a entrada e gerar os títulos a pagar correspondentes.' },
   { slug: 'service_entries.cancel', name: 'Cancelar entrada de serviço', module: 'service_entries', action: 'cancel', description: 'Cancelar a entrada e todos os títulos a pagar que ela gerou.' },
 
+  // Entradas de mercadoria
+  { slug: 'goods_entries.view', name: 'Visualizar entradas de mercadoria', module: 'goods_entries', action: 'view', description: 'Listar e consultar as entradas de mercadoria da empresa.' },
+  { slug: 'goods_entries.create', name: 'Criar entrada de mercadoria', module: 'goods_entries', action: 'create', description: 'Lançar novas entradas de nota fiscal de mercadoria.' },
+  { slug: 'goods_entries.edit', name: 'Editar entrada de mercadoria', module: 'goods_entries', action: 'edit', description: 'Alterar entradas de mercadoria ainda abertas.' },
+  { slug: 'goods_entries.delete', name: 'Excluir entrada de mercadoria', module: 'goods_entries', action: 'delete', description: 'Remover entradas de mercadoria ainda abertas.' },
+  { slug: 'goods_entries.finalize', name: 'Finalizar entrada de mercadoria', module: 'goods_entries', action: 'finalize', description: 'Finalizar a entrada e gerar títulos a pagar, estoque e ativos.' },
+  { slug: 'goods_entries.cancel', name: 'Cancelar entrada de mercadoria', module: 'goods_entries', action: 'cancel', description: 'Cancelar a entrada e desfazer títulos, estoque e ativos gerados.' },
+
   // Grupos de despesa
   { slug: 'expense_groups.view', name: 'Visualizar grupos de despesa', module: 'expense_groups', action: 'view', description: 'Listar e consultar grupos de despesa da empresa.' },
   { slug: 'expense_groups.create', name: 'Criar grupos de despesa', module: 'expense_groups', action: 'create', description: 'Cadastrar grupos de despesa.' },

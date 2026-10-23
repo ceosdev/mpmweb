@@ -15,9 +15,8 @@ import { productSubgroupsApi } from '@/services/product-subgroups-api'
 import { unitsOfMeasureApi } from '@/services/units-of-measure-api'
 import { useAuth } from '@/providers/auth-provider'
 import { getErrorMessage } from '@/lib/errors'
-import { maskMoney, maskQuantity, parseDecimal, reaisToCents } from '@/lib/masks'
-import type { Product } from '@/types/api'
-import { MaskedInput } from '@/components/form/masked-input'
+import { formatDecimalPrice, maskDecimalPrice, maskQuantity, parseDecimal, parseDecimalPrice } from '@/lib/masks'
+import type { Product, ProductType } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -37,7 +36,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const PRODUCT_TYPES = ['consumable', 'fixed_asset'] as const
 const NONE = 'none'
 
 const schema = z.object({
@@ -54,17 +52,17 @@ const schema = z.object({
   /** Masked pt-BR decimals. */
   minimumStock: z.string(),
   quantityInStock: z.string(),
-  /** Raw, digits-only cents (e.g. "12345" = R$ 123,45). */
+  /** Masked pt-BR decimal, up to 10 fraction digits (e.g. "3,4566666667"). */
   costPrice: z.string(),
   isActive: z.boolean(),
 })
 
 type FormValues = z.infer<typeof schema>
 
-/** Cents string ("12345") → reais number (123.45), or null when empty. */
-function centsToReais(cents: string): number | null {
-  if (!cents) return null
-  return Number(cents) / 100
+/** API decimal string ("3.4566666667") → masked pt-BR string ('' when null). */
+function priceToMask(value: string | null): string {
+  if (value === null) return ''
+  return maskDecimalPrice(formatDecimalPrice(value))
 }
 
 /** number | null → masked pt-BR string ('' when null). */
@@ -98,7 +96,7 @@ function toFormValues(product: Product): FormValues {
     controlsStock: product.controlsStock,
     minimumStock: numberToMask(product.minimumStock),
     quantityInStock: numberToMask(product.quantityInStock),
-    costPrice: reaisToCents(product.costPrice),
+    costPrice: priceToMask(product.costPrice),
     isActive: product.isActive,
   }
 }
@@ -107,14 +105,14 @@ function toPayload(values: FormValues, isEdit: boolean): CreateProductPayload {
   const controlsStock = values.controlsStock
   const base: CreateProductPayload = {
     description: values.description.trim(),
-    type: values.type as (typeof PRODUCT_TYPES)[number],
+    type: values.type as ProductType,
     productGroupId: values.productGroupId === NONE ? null : Number(values.productGroupId),
     productSubgroupId:
       values.productSubgroupId === NONE ? null : Number(values.productSubgroupId),
     unitOfMeasureId: values.unitOfMeasureId === NONE ? null : Number(values.unitOfMeasureId),
     controlsStock,
     minimumStock: controlsStock ? parseDecimal(values.minimumStock) : null,
-    costPrice: centsToReais(values.costPrice),
+    costPrice: parseDecimalPrice(values.costPrice),
     isActive: values.isActive,
   }
   // quantityInStock is only sent on create (immutable afterwards).
@@ -396,14 +394,13 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                 control={form.control}
                 name="costPrice"
                 render={({ field }) => (
-                  <MaskedInput
+                  <Input
                     id="costPrice"
-                    inputMode="numeric"
-                    placeholder="R$ 0,00"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    placeholder="0,00"
                     value={field.value}
-                    onChange={field.onChange}
-                    mask={maskMoney}
-                    maxDigits={12}
+                    onChange={(event) => field.onChange(maskDecimalPrice(event.target.value))}
                   />
                 )}
               />

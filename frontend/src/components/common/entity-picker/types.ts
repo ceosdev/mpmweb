@@ -18,6 +18,8 @@ export interface EntityOption {
    * (vínculo antigo). O componente marca esses com "(inativo)".
    */
   isActive: boolean
+  /** Linha crua do lookup, para a tela ler campos extras (ex.: custo do produto). */
+  data?: unknown
 }
 
 export interface EntitySearchResult {

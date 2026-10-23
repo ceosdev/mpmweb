@@ -34,6 +34,8 @@ interface EntityPickerBaseProps {
   placeholder?: string
   /** Mínimo de caracteres antes de buscar. Default 2. */
   minChars?: number
+  /** Chamado com a opção completa (incl. `data` crua) ao selecionar — além do `onChange` com o id. */
+  onSelectOption?: (option: EntityOption) => void
 }
 
 export type EntityPickerProps =
@@ -118,6 +120,7 @@ export function EntityPicker(props: EntityPickerProps) {
   function handleSelect(option: EntityOption) {
     setLabels((current) => ({ ...current, [option.id]: option }))
     setTerm('')
+    props.onSelectOption?.(option)
 
     if (props.multiple) {
       if (!props.value.includes(option.id)) props.onChange([...props.value, option.id])

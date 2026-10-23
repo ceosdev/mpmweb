@@ -2,6 +2,8 @@ import { HttpContext } from '@adonisjs/core/http'
 import productService from '#services/product_service'
 import type { ProductType } from '#models/product'
 import { createProductValidator, updateProductValidator } from '#validators/product_validators'
+import { lookupValidator } from '#validators/lookup_validators'
+import { parseLookupIds } from '#utils/lookup'
 
 function parseType(raw: unknown): ProductType | undefined {
   if (raw === 'consumable' || raw === 'fixed_asset') return raw
@@ -36,6 +38,16 @@ export default class ProductsController {
       perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
       sort: request.input('sort') || undefined,
       order,
+    })
+  }
+
+  /** EntityPicker lookup — see `ProductService.lookup`. */
+  async lookup({ tenant, request }: HttpContext) {
+    const payload = await request.validateUsing(lookupValidator)
+    return productService.lookup(tenant, {
+      q: payload.q,
+      ids: parseLookupIds(payload.ids),
+      limit: payload.limit,
     })
   }
 

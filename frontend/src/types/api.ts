@@ -244,8 +244,8 @@ export interface Product {
   controlsStock: boolean
   minimumStock: number | null
   quantityInStock: number | null
-  /** Cost price in reais. */
-  costPrice: number | null
+  /** Cost price as a decimal string (up to 10 fraction digits), e.g. "25.6000000000". */
+  costPrice: string | null
   isActive: boolean
   createdAt: string | null
 }
@@ -326,6 +326,17 @@ export interface SupplierLookup {
   isActive: boolean
 }
 
+export interface ProductLookup {
+  id: number
+  description: string
+  type: 'consumable' | 'fixed_asset'
+  controlsStock: boolean
+  unitOfMeasure: string | null
+  /** Decimal string; null when the user lacks the cost permission. */
+  costPrice: string | null
+  isActive: boolean
+}
+
 export interface CustomerLookup {
   id: number
   legalName: string
@@ -351,6 +362,8 @@ export interface Payable {
   supplierName: string | null
   /** Origem do título: a entrada de serviço que o gerou, ou `null` quando lançado à mão. */
   serviceEntryId: number | null
+  /** Origem do título: a entrada de mercadoria que o gerou, ou `null`. */
+  goodsEntryId: number | null
   documentNumber: string
   installment: number
   issueDate: string
@@ -538,6 +551,118 @@ export interface ServiceEntryListParams {
   issueTo?: string
   /** Múltipla escolha. Lista vazia = **todas** (o param nem é enviado). */
   statuses?: ServiceEntryStatus[]
+  page?: number
+  perPage?: number
+  sort?: string
+  order?: 'asc' | 'desc'
+}
+
+export type GoodsEntryStatus = 'open' | 'finalized' | 'cancelled'
+export type GoodsEntryStockEffect = 'stock' | 'none' | 'asset'
+
+export interface GoodsEntryItem {
+  id: number
+  productId: number
+  productDescription: string | null
+  productType: ProductType | null
+  unitOfMeasure: string | null
+  /** String decimal (4 casas) — nunca `Number()` no caminho de cálculo. */
+  quantity: string
+  /** String decimal (10 casas). */
+  unitPrice: string
+  discount: number
+  /** Derivado: quantity × unitPrice − discount (reais). */
+  lineTotal: number
+  /** Gravado na finalização; `null` enquanto a entrada está aberta. */
+  stockEffect: GoodsEntryStockEffect | null
+}
+
+export interface GoodsEntry {
+  id: number
+  documentTypeId: number
+  documentTypeName: string | null
+  supplierId: number
+  supplierName: string | null
+  paymentTypeId: number
+  paymentTypeName: string | null
+  documentNumber: string
+  series: string | null
+  subSeries: string | null
+  issueDate: string
+  operationDate: string
+  discount: number
+  icmsSt: number
+  ipi: number
+  freight: number
+  insurance: number
+  otherExpenses: number
+  installmentCount: number
+  firstDueDate: string
+  status: GoodsEntryStatus
+  finalizedAt: string | null
+  /** Σ dos produtos, já líquido dos descontos por item. */
+  itemsTotal: number
+  /** ICMS ST + IPI + frete + seguro + outras despesas. */
+  additions: number
+  /** itemsTotal − discount + additions: o que vira contas a pagar. */
+  netAmount: number
+  /** Presente só no `get` (detalhe), ausente na listagem. */
+  items?: GoodsEntryItem[]
+  createdAt: string | null
+}
+
+export interface GoodsEntryFinalizePreview {
+  itemsTotal: number
+  discount: number
+  additions: number
+  netAmount: number
+  installments: { installment: number; amount: number; dueDate: string }[]
+  effects: {
+    productId: number
+    description: string
+    effect: GoodsEntryStockEffect
+    /** String decimal (4 casas). */
+    quantity: string
+    assetsToCreate: number
+  }[]
+}
+
+export interface GoodsEntryItemPayload {
+  productId: number
+  quantity: string
+  unitPrice: string
+  discount?: number
+}
+
+export interface GoodsEntryPayload {
+  documentTypeId: number
+  documentNumber: string
+  series?: string
+  subSeries?: string
+  issueDate: string
+  supplierId: number
+  discount?: number
+  icmsSt?: number
+  ipi?: number
+  freight?: number
+  insurance?: number
+  otherExpenses?: number
+  paymentTypeId: number
+  installmentCount: number
+  firstDueDate: string
+  items: GoodsEntryItemPayload[]
+}
+
+export interface GoodsEntryListParams {
+  id?: number
+  documentNumber?: string
+  supplierId?: number
+  operationFrom?: string
+  operationTo?: string
+  issueFrom?: string
+  issueTo?: string
+  /** Múltipla escolha. Lista vazia = **todas** (o param nem é enviado). */
+  statuses?: GoodsEntryStatus[]
   page?: number
   perPage?: number
   sort?: string

@@ -112,6 +112,16 @@ const PayablesPage = lazy(() =>
     default: m.PayablesPage,
   }))
 )
+const GoodsEntriesPage = lazy(() =>
+  import('@/modules/goods-entries/goods-entries-page').then((m) => ({
+    default: m.GoodsEntriesPage,
+  })),
+)
+const GoodsEntryFormPage = lazy(() =>
+  import('@/modules/goods-entries/goods-entry-form-page').then((m) => ({
+    default: m.GoodsEntryFormPage,
+  })),
+)
 const ServiceEntriesPage = lazy(() =>
   import('@/modules/service-entries/service-entries-page').then((m) => ({
     default: m.ServiceEntriesPage,
@@ -291,6 +301,22 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="service_entries.view" />,
             children: [{ path: 'service-entries/:id', element: <ServiceEntryFormPage mode="view" /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_entries.view" />,
+            children: [{ path: 'goods-entries', element: <GoodsEntriesPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_entries.create" />,
+            children: [{ path: 'goods-entries/new', element: <GoodsEntryFormPage mode="create" /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_entries.edit" />,
+            children: [{ path: 'goods-entries/:id/edit', element: <GoodsEntryFormPage mode="edit" /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_entries.view" />,
+            children: [{ path: 'goods-entries/:id', element: <GoodsEntryFormPage mode="view" /> }],
           },
           {
             element: <PermissionRoute permission="expense_groups.view" />,

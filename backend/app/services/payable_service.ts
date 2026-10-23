@@ -81,6 +81,7 @@ export interface CreatePayableFromSourceDTO {
   amount: number
   notes?: string | null
   serviceEntryId?: number | null
+  goodsEntryId?: number | null
 }
 
 export class PayableService {
@@ -202,6 +203,7 @@ export class PayableService {
       companyId: tenant.company.id,
       supplierId: dto.supplierId,
       serviceEntryId: dto.serviceEntryId ?? null,
+      goodsEntryId: dto.goodsEntryId ?? null,
       documentNumber: dto.documentNumber,
       installment: dto.installment,
       issueDate: dto.issueDate,
@@ -267,6 +269,11 @@ export class PayableService {
     if (row.serviceEntryId) {
       throw new BusinessException(
         'Este título foi gerado por uma entrada de serviço. Cancele a entrada para removê-lo.'
+      )
+    }
+    if (row.goodsEntryId) {
+      throw new BusinessException(
+        'Este título foi gerado por uma entrada de mercadoria. Cancele a entrada para removê-lo.'
       )
     }
 
@@ -477,6 +484,7 @@ export class PayableService {
       supplierId: row.supplierId,
       supplierName: row.supplier?.name ?? null,
       serviceEntryId: row.serviceEntryId,
+      goodsEntryId: row.goodsEntryId,
       documentNumber: row.documentNumber,
       installment: row.installment,
       issueDate: row.issueDate.toISODate(),

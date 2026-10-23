@@ -46,6 +46,7 @@ const ReceivableSettlementsController = () =>
 const ExpenseGroupsController = () => import('#controllers/expense_groups_controller')
 const LdfParametersController = () => import('#controllers/ldf_parameters_controller')
 const ServiceEntriesController = () => import('#controllers/service_entries_controller')
+const GoodsEntriesController = () => import('#controllers/goods_entries_controller')
 
 /**
  * Health check.
@@ -308,6 +309,10 @@ router
     router
       .post('/products', [ProductsController, 'store'])
       .use(middleware.permission('products.create'))
+    // Lookup do EntityPicker — ver a nota em '/suppliers/lookup'. Sem gate de
+    // permissão (quem lança entrada não precisa de products.view); o custo só
+    // vem preenchido para quem pode vê-lo (ProductService.lookup).
+    router.get('/products/lookup', [ProductsController, 'lookup'])
     router
       .get('/products/:id', [ProductsController, 'show'])
       .use(middleware.permission('products.view'))
@@ -461,6 +466,32 @@ router
     router
       .post('/service-entries/:id/cancel', [ServiceEntriesController, 'cancel'])
       .use(middleware.permission('service_entries.cancel'))
+
+    // Entrada de mercadoria (módulo Movimentação).
+    router
+      .get('/goods-entries', [GoodsEntriesController, 'index'])
+      .use(middleware.permission('goods_entries.view'))
+    router
+      .post('/goods-entries', [GoodsEntriesController, 'store'])
+      .use(middleware.permission('goods_entries.create'))
+    router
+      .get('/goods-entries/:id', [GoodsEntriesController, 'show'])
+      .use(middleware.permission('goods_entries.view'))
+    router
+      .put('/goods-entries/:id', [GoodsEntriesController, 'update'])
+      .use(middleware.permission('goods_entries.edit'))
+    router
+      .delete('/goods-entries/:id', [GoodsEntriesController, 'destroy'])
+      .use(middleware.permission('goods_entries.delete'))
+    router
+      .get('/goods-entries/:id/finalize-preview', [GoodsEntriesController, 'finalizePreview'])
+      .use(middleware.permission('goods_entries.finalize'))
+    router
+      .post('/goods-entries/:id/finalize', [GoodsEntriesController, 'finalize'])
+      .use(middleware.permission('goods_entries.finalize'))
+    router
+      .post('/goods-entries/:id/cancel', [GoodsEntriesController, 'cancel'])
+      .use(middleware.permission('goods_entries.cancel'))
 
     // Grupos de despesa
     router

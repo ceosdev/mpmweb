@@ -48,6 +48,10 @@ export default class Payable extends BaseModel {
   @column({ columnName: 'service_entry_id' })
   declare serviceEntryId: number | null
 
+  /** Goods entry (entrada de mercadoria) that generated this title, if any. */
+  @column({ columnName: 'goods_entry_id' })
+  declare goodsEntryId: number | null
+
   @column({ columnName: 'document_number' })
   declare documentNumber: string
 

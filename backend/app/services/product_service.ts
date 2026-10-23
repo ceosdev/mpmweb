@@ -4,6 +4,7 @@ import productRepository from '#repositories/product_repository'
 import productGroupRepository from '#repositories/product_group_repository'
 import unitOfMeasureRepository from '#repositories/unit_of_measure_repository'
 import ProductSubgroup from '#models/product_subgroup'
+import { LOOKUP_DEFAULT_LIMIT, lookupCodeId, type LookupParams } from '#utils/lookup'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
@@ -41,7 +42,7 @@ export interface CreateProductDTO {
   controlsStock?: boolean
   minimumStock?: number | null
   quantityInStock?: number | null
-  costPrice?: number | null
+  costPrice?: string | null
   isActive?: boolean
 }
 
@@ -54,7 +55,7 @@ export interface UpdateProductDTO {
   controlsStock?: boolean
   minimumStock?: number | null
   // quantityInStock intentionally absent — immutable after create (strategy A).
-  costPrice?: number | null
+  costPrice?: string | null
   isActive?: boolean
 }
 
@@ -129,6 +130,52 @@ export class ProductService {
     return this.serialize(row)
   }
 
+  /**
+   * EntityPicker lookup (see `SupplierService.lookup`). `costPrice` is only
+   * filled for users who may see cost; others get `null`.
+   */
+  async lookup(tenant: TenantContext, params: LookupParams) {
+    const canSeeCost =
+      tenant.can('products.view') ||
+      tenant.can('goods_entries.create') ||
+      tenant.can('goods_entries.edit')
+
+    if (params.ids && params.ids.length > 0) {
+      const rows = await productRepository
+        .query(tenant.company.id)
+        .whereIn('id', params.ids)
+        .preload('unit')
+        .orderBy('description', 'asc')
+
+      return { data: rows.map((row) => this.serializeLookup(row, canSeeCost)), hasMore: false }
+    }
+
+    const term = params.q?.trim()
+    if (!term) {
+      throw new BusinessException('Informe um termo de busca ou uma lista de códigos.')
+    }
+
+    const limit = params.limit ?? LOOKUP_DEFAULT_LIMIT
+    const like = `%${term.toLowerCase()}%`
+    const codeId = lookupCodeId(term)
+
+    const rows = await productRepository
+      .query(tenant.company.id)
+      .where('is_active', true)
+      .where((sub) => {
+        sub.whereRaw('lower(description) like ?', [like])
+        if (codeId !== null) sub.orWhere('id', codeId)
+      })
+      .preload('unit')
+      .orderBy('description', 'asc')
+      .limit(limit + 1)
+
+    return {
+      data: rows.slice(0, limit).map((row) => this.serializeLookup(row, canSeeCost)),
+      hasMore: rows.length > limit,
+    }
+  }
+
   async create(tenant: TenantContext, dto: CreateProductDTO) {
     const groupId = dto.productGroupId ?? null
     const subgroupId = dto.productSubgroupId ?? null
@@ -153,8 +200,8 @@ export class ProductService {
       productSubgroupId: subgroupId,
       unitOfMeasureId: unitId,
       controlsStock,
-      minimumStock,
-      quantityInStock,
+      minimumStock: toDecimalString(minimumStock),
+      quantityInStock: toDecimalString(quantityInStock),
       costPrice: dto.costPrice ?? null,
       isActive: dto.isActive ?? true,
     })
@@ -175,7 +222,7 @@ export class ProductService {
     if (dto.costPrice !== undefined) row.costPrice = dto.costPrice ?? null
     if (dto.isActive !== undefined) row.isActive = dto.isActive
     if (dto.controlsStock !== undefined) row.controlsStock = dto.controlsStock
-    if (dto.minimumStock !== undefined) row.minimumStock = dto.minimumStock ?? null
+    if (dto.minimumStock !== undefined) row.minimumStock = toDecimalString(dto.minimumStock ?? null)
 
     // Re-validate the (possibly changed) relations against the tenant.
     await this.assertRelationsValid(
@@ -191,12 +238,14 @@ export class ProductService {
     // Stock governance. quantityInStock is never touched here (strategy A);
     // when stock control is turned off, both stock fields are cleared.
     const { minimumStock, quantityInStock } = this.normalizeStock(row.controlsStock, {
-      minimumStock: row.minimumStock,
-      quantityInStock: row.quantityInStock,
+      minimumStock: toNumberOrNull(row.minimumStock),
+      quantityInStock: toNumberOrNull(row.quantityInStock),
       isCreate: false,
     })
-    row.minimumStock = minimumStock
-    row.quantityInStock = quantityInStock
+    row.minimumStock = toDecimalString(minimumStock)
+    // Quantity is immutable here: only cleared (never rewritten) so the
+    // stored string is not reformatted.
+    if (quantityInStock === null) row.quantityInStock = null
 
     await row.save()
     await row.load('group')
@@ -270,6 +319,18 @@ export class ProductService {
     }
   }
 
+  private serializeLookup(row: Product, canSeeCost: boolean) {
+    return {
+      id: row.id,
+      description: row.description,
+      type: row.type,
+      controlsStock: row.controlsStock,
+      unitOfMeasure: row.unit?.description ?? null,
+      costPrice: canSeeCost ? row.costPrice : null,
+      isActive: row.isActive,
+    }
+  }
+
   private serialize(row: Product) {
     return {
       id: row.id,
@@ -281,13 +342,22 @@ export class ProductService {
       unitOfMeasureId: row.unitOfMeasureId,
       unitDescription: row.unit?.description ?? null,
       controlsStock: row.controlsStock,
-      minimumStock: row.minimumStock,
-      quantityInStock: row.quantityInStock,
+      minimumStock: toNumberOrNull(row.minimumStock),
+      quantityInStock: toNumberOrNull(row.quantityInStock),
       costPrice: row.costPrice,
       isActive: row.isActive,
       createdAt: row.createdAt?.toISO() ?? null,
     }
   }
+}
+
+/** Quantities have 4 decimals; toFixed avoids exponent notation. */
+function toDecimalString(value: number | null): string | null {
+  return value === null ? null : value.toFixed(4)
+}
+
+function toNumberOrNull(value: string | null): number | null {
+  return value === null ? null : Number(value)
 }
 
 function isForeignKeyViolation(error: unknown): boolean {

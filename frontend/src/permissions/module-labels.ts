@@ -36,6 +36,7 @@ export const MODULE_LABELS: Record<string, string> = {
   expense_groups: 'Grupos de despesa',
   ldf_parameters: 'Parametrizações de LDF',
   service_entries: 'Entradas de serviço',
+  goods_entries: 'Entradas de mercadoria',
 }
 
 export function moduleLabel(module: string): string {
