@@ -38,6 +38,7 @@ export const MODULE_LABELS: Record<string, string> = {
   ldf_parameters: 'Parametrizações de LDF',
   service_entries: 'Entradas de serviço',
   goods_entries: 'Entradas de mercadoria',
+  goods_exits: 'Saídas de mercadoria',
 }
 
 export function moduleLabel(module: string): string {

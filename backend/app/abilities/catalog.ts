@@ -180,6 +180,15 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'goods_entries.finalize', name: 'Finalizar entrada de mercadoria', module: 'goods_entries', action: 'finalize', description: 'Finalizar a entrada e gerar títulos a pagar, estoque e ativos.' },
   { slug: 'goods_entries.cancel', name: 'Cancelar entrada de mercadoria', module: 'goods_entries', action: 'cancel', description: 'Cancelar a entrada e desfazer títulos, estoque e ativos gerados.' },
 
+  // Saídas de mercadoria
+  { slug: 'goods_exits.view', name: 'Visualizar saídas de mercadoria', module: 'goods_exits', action: 'view', description: 'Listar e consultar as saídas de mercadoria da empresa.' },
+  { slug: 'goods_exits.create', name: 'Criar saída de mercadoria', module: 'goods_exits', action: 'create', description: 'Lançar novas saídas de mercadoria (normal ou de ferramentas).' },
+  { slug: 'goods_exits.edit', name: 'Editar saída de mercadoria', module: 'goods_exits', action: 'edit', description: 'Alterar saídas de mercadoria ainda abertas.' },
+  { slug: 'goods_exits.delete', name: 'Excluir saída de mercadoria', module: 'goods_exits', action: 'delete', description: 'Remover saídas de mercadoria ainda abertas.' },
+  { slug: 'goods_exits.finalize', name: 'Finalizar saída de mercadoria', module: 'goods_exits', action: 'finalize', description: 'Finalizar a saída normal e dar baixa no estoque dos produtos consumidos.' },
+  { slug: 'goods_exits.deliver', name: 'Entregar ferramentas', module: 'goods_exits', action: 'deliver', description: 'Entregar as ferramentas ao funcionário, baixando o estoque.' },
+  { slug: 'goods_exits.return', name: 'Devolver ferramentas', module: 'goods_exits', action: 'return', description: 'Registrar a devolução das ferramentas e repor o estoque.' },
+
   // Grupos de despesa
   { slug: 'expense_groups.view', name: 'Visualizar grupos de despesa', module: 'expense_groups', action: 'view', description: 'Listar e consultar grupos de despesa da empresa.' },
   { slug: 'expense_groups.create', name: 'Criar grupos de despesa', module: 'expense_groups', action: 'create', description: 'Cadastrar grupos de despesa.' },
