@@ -40,10 +40,10 @@ const NONE = 'none'
 
 const schema = z.object({
   description: z.string().trim().min(1, 'Descrição é obrigatória.').max(120),
-  /** Required: 'consumable' | 'fixed_asset'. */
+  /** Required: 'consumable' | 'fixed_asset' | 'tool'. */
   type: z
     .string()
-    .refine((v): boolean => v === 'consumable' || v === 'fixed_asset', 'Selecione o tipo.'),
+    .refine((v): boolean => v === 'consumable' || v === 'fixed_asset' || v === 'tool', 'Selecione o tipo.'),
   /** 'none' | id */
   productGroupId: z.string(),
   productSubgroupId: z.string(),
@@ -159,6 +159,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const selectedType = form.watch('type')
   // Fixed assets never control stock — the stock fields are locked off.
   const isFixedAsset = selectedType === 'fixed_asset'
+  // Tools always control stock — the switch is locked on.
+  const isTool = selectedType === 'tool'
 
   const groupsQuery = useQuery({
     queryKey: ['product-groups', companyId, 'options'],
@@ -278,6 +280,8 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                         form.setValue('minimumStock', '')
                         form.setValue('quantityInStock', '')
                       }
+                      // Tool → force stock control on.
+                      if (value === 'tool') form.setValue('controlsStock', true)
                     }}
                   >
                     <SelectTrigger id="type" className="w-full">
@@ -286,6 +290,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                     <SelectContent>
                       <SelectItem value="consumable">Uso e consumo</SelectItem>
                       <SelectItem value="fixed_asset">Ativo imobilizado</SelectItem>
+                      <SelectItem value="tool">Ferramenta</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -418,7 +423,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                     <Switch
                       id="controlsStock"
                       checked={field.value}
-                      disabled={isFixedAsset}
+                      disabled={isFixedAsset || isTool}
                       onCheckedChange={(checked) => {
                         field.onChange(checked)
                         if (!checked) {

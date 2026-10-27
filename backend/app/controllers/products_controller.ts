@@ -6,7 +6,7 @@ import { lookupValidator } from '#validators/lookup_validators'
 import { parseLookupIds } from '#utils/lookup'
 
 function parseType(raw: unknown): ProductType | undefined {
-  if (raw === 'consumable' || raw === 'fixed_asset') return raw
+  if (raw === 'consumable' || raw === 'fixed_asset' || raw === 'tool') return raw
   return undefined
 }
 

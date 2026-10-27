@@ -41,7 +41,7 @@ export function priceToMask(value: string | null): string {
 const itemSchema = z.object({
   productId: z.number().int().positive(),
   productDescription: z.string(),
-  productType: z.enum(['consumable', 'fixed_asset']).nullable(),
+  productType: z.enum(['consumable', 'fixed_asset', 'tool']).nullable(),
   unitOfMeasure: z.string(),
   quantity: z.string(),
   unitPrice: z.string(),

@@ -37,7 +37,7 @@ const AVAILABLE_ASSETS_SQL = `(select count(*)
      and product_assets.situation = 'available')`
 
 /**
- * A coluna Estoque da listagem: saldo para consumível, ativos disponíveis para
+ * A coluna Estoque da listagem: saldo para consumível/ferramenta, ativos disponíveis para
  * ativo imobilizado. Ordena pela **mesma** expressão que exibe.
  */
 const STOCK_SORT_SQL = `(case when products.type = 'fixed_asset'
@@ -214,8 +214,9 @@ export class ProductService {
 
     await this.assertRelationsValid(tenant, groupId, subgroupId, unitId)
 
-    // Fixed assets never control stock — enforced regardless of the payload.
-    const controlsStock = dto.type === 'fixed_asset' ? false : (dto.controlsStock ?? false)
+    // Fixed assets never control stock; tools always do — enforced regardless of the payload.
+    const controlsStock =
+      dto.type === 'fixed_asset' ? false : dto.type === 'tool' ? true : (dto.controlsStock ?? false)
     const { minimumStock, quantityInStock } = this.normalizeStock(controlsStock, {
       minimumStock: dto.minimumStock ?? null,
       // On create, a stock-controlled product with no quantity starts at 0.
@@ -262,8 +263,9 @@ export class ProductService {
       row.unitOfMeasureId
     )
 
-    // Fixed assets never control stock — enforced regardless of the payload.
+    // Fixed assets never control stock; tools always do — enforced regardless of the payload.
     if (row.type === 'fixed_asset') row.controlsStock = false
+    if (row.type === 'tool') row.controlsStock = true
 
     // Stock governance. quantityInStock is never touched here (strategy A);
     // when stock control is turned off, both stock fields are cleared.

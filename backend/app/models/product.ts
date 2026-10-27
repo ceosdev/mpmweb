@@ -6,7 +6,7 @@ import ProductGroup from '#models/product_group'
 import ProductSubgroup from '#models/product_subgroup'
 import UnitOfMeasure from '#models/unit_of_measure'
 
-export type ProductType = 'consumable' | 'fixed_asset'
+export type ProductType = 'consumable' | 'fixed_asset' | 'tool'
 
 /**
  * Product — per-company master catalog entry. Hard delete: removal is

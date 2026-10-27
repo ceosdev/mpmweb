@@ -35,7 +35,7 @@ const messages = new SimpleMessagesProvider({
 /** Custo: decimal(20,10) em texto — até 10 dígitos inteiros e 10 casas. */
 const COST_PRICE_REGEX = /^\d{1,10}(\.\d{1,10})?$/
 
-const PRODUCT_TYPES = ['consumable', 'fixed_asset'] as const
+const PRODUCT_TYPES = ['consumable', 'fixed_asset', 'tool'] as const
 
 export const createProductValidator = vine.compile(
   vine.object({

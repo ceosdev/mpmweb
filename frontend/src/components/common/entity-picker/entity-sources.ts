@@ -100,7 +100,7 @@ const productSource: EntitySource = {
 }
 
 function toProductOption(row: ProductLookup): EntityOption {
-  const kind = row.type === 'fixed_asset' ? 'Ativo' : 'Consumo'
+  const kind = row.type === 'fixed_asset' ? 'Ativo' : row.type === 'tool' ? 'Ferramenta' : 'Consumo'
   return {
     id: row.id,
     label: row.description,

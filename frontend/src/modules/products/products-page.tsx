@@ -51,6 +51,7 @@ const PER_PAGE = 20
 const TYPE_LABELS: Record<ProductType, string> = {
   consumable: 'Uso e consumo',
   fixed_asset: 'Ativo imobilizado',
+  tool: 'Ferramenta',
 }
 
 type TypeFilter = ProductType | 'all'
@@ -239,6 +240,7 @@ export function ProductsPage() {
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="consumable">Uso e consumo</SelectItem>
               <SelectItem value="fixed_asset">Ativo imobilizado</SelectItem>
+              <SelectItem value="tool">Ferramenta</SelectItem>
             </SelectContent>
           </Select>
         </div>

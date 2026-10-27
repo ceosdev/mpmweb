@@ -228,7 +228,7 @@ export interface Service {
   createdAt: string | null
 }
 
-export type ProductType = 'consumable' | 'fixed_asset'
+export type ProductType = 'consumable' | 'fixed_asset' | 'tool'
 
 export interface Product {
   id: number
@@ -363,7 +363,7 @@ export interface SupplierLookup {
 export interface ProductLookup {
   id: number
   description: string
-  type: 'consumable' | 'fixed_asset'
+  type: ProductType
   controlsStock: boolean
   unitOfMeasure: string | null
   /** Decimal string; null when the user lacks the cost permission. */
