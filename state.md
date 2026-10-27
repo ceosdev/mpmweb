@@ -1,6 +1,6 @@
 # Estado da aplicação — MPM Web
 
-**Snapshot**: 2026-10-23
+**Snapshot**: 2026-10-27
 **Para que serve**: registro do estado atual do projeto, lido por sessões
 futuras (Claude ou desenvolvedor) para se orientarem sem reler todo o
 código. Atualize este arquivo quando:
@@ -21,7 +21,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
   TanStack Query, React Hook Form + Zod, react-router-dom.
 - **Banco**: PostgreSQL local (sem Docker). Em prod: `DATABASE_URL`.
 
-## Esquema do banco (30 tabelas)
+## Esquema do banco (31 tabelas)
 
 | Tabela | Resumo |
 | --- | --- |
@@ -40,6 +40,7 @@ Para convenções e arquitetura, ver [`CLAUDE.md`](CLAUDE.md) (raiz),
 | `product_subgroups` | Subgrupos de produto, filhos de `product_groups`. **Hard delete**. FKs `company_id` e `product_group_id` ambas com `RESTRICT`. Multitenant. |
 | `suppliers` | Fornecedores por empresa. Campos: `tax_id` (CPF/CNPJ cru), `name`, `type` (`goods`/`service`), endereço, telefones, contato, `is_active`. **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade de `tax_id`. |
 | `customers` | Clientes por empresa (PF/PJ). Campos: `type` (`individual`/`company`), `legal_name`, `trade_name` (PJ), `tax_id` cru, endereço (com `address_number` e `address_complement`), telefones, `email`, `customer_since`, `contact_name`, `is_active`, `is_internal` (flag de cliente interno da oficina). **Hard delete**. FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade. |
+| `employees` | Funcionários por empresa (consumidor da futura Saída de Mercadoria). Campos: `name` (único obrigatório), `role_title` (função — não `role`, que é o perfil RBAC), `birth_date`, `tax_id` (CPF cru, `char(11)`, **opcional**), `id_number` (RG), `work_card` (CTPS), `pis`, `driver_license` (CNH), endereço (igual a `customers`), `phone`, `mobile`, `email`, `hired_at`, `terminated_at`, `is_active`. **CPF único por empresa** via índice parcial `employees_company_tax_id_uq` `(company_id, tax_id) WHERE tax_id IS NOT NULL` (vários sem CPF coexistem). `is_active` e `terminated_at` são **independentes**. **Hard delete**. FK `company_id` com `RESTRICT`. Índice `(company_id, name)`. |
 | `services` | Serviços por empresa. Campos: `service_group_id` (FK `service_groups`), `description`, `suggested_value` (`decimal(12,2)`, em reais, nullable), `type` (`internal`/`third_party`), `notes` (text), `is_active`. **Hard delete**. FKs `company_id` e `service_group_id` ambas com `RESTRICT`. `company_id` denormalizado. Multitenant. Sem unicidade. |
 | `products` | Produtos por empresa. Campos: `description`, `type` (`consumable`/`fixed_asset`, **NOT NULL**), `product_group_id`/`product_subgroup_id`/`unit_of_measure_id` (FKs **opcionais**), `controls_stock` (bool), `minimum_stock`/`quantity_in_stock` (`decimal(15,4)`, nullable — ampliados de `(12,3)` pela Entrada de mercadoria, valores existentes preservados), `cost_price` (`decimal(20,10)`, reais, nullable — ampliado de `(12,2)`; é o **custo médio vigente**, escrito pela finalização de [entrada de mercadoria](docs/spec/movimentacao/001-criar-tela-entrada-de-mercadoria.md) e ainda editável na tela de Produtos), `is_active`. Só `description` é obrigatório. **Hard delete** (409 em uso). Todas as FKs com `RESTRICT`. Multitenant. Sem unicidade. `controls_stock` governa os campos de estoque (off → ambos `null`); `quantity_in_stock` imutável após o create. |
 | `brands` | Marcas por empresa. Campos: `description`, `is_active`. **Hard delete** (409 em uso). FK `company_id` com `RESTRICT`. Multitenant. Sem unicidade. |
@@ -80,6 +81,7 @@ phone, email, logo_path, slug, is_active, created_at, updated_at, deleted_at`.
 - **Subgrupos de produto (CRUD aninhado)** — Filhos de `product_groups`, acesso por drill-down (`/product-groups/:groupId/subgroups`), não entra no menu. Permissões separadas `product_subgroups.*`. Mesma UX da simple-CRUD escopada por pai. Ver [spec 006](docs/spec/cadastros/006-criar-tela-subgrupo-de-produto.md).
 - **Fornecedores (CRUD)** — Cadastro mestre por empresa com 11 campos + status. Formulário em modal `max-w-2xl` em 3 seções (Identificação, Endereço, Contato). Validação de CPF/CNPJ com checksum no backend (`#utils/tax_id`) e mirror no frontend (`lib/tax-id.ts`). Listagem com filtros (nome, CPF/CNPJ, tipo, status), paginação, colunas ordenáveis. Hard delete. Ver [spec 010](docs/spec/cadastros/010-criar-tela-fornecedores.md).
 - **Clientes (CRUD)** — Cadastro mestre PF/PJ por empresa com 17 campos. Formulário em modal `max-w-3xl` em 4 seções (Identificação, Endereço, Contato, Dados do cliente). Validação cruzada tipo↔tax_id (PF=11 dígitos+CPF, PJ=14+CNPJ) com mensagens específicas. Label de "Razão social"/"Nome completo" e visibilidade de "Nome fantasia" reagem ao tipo. Filtros: nome (busca em razão social **e** nome fantasia), CPF/CNPJ, tipo, status (default *Ativos*). Inclui `customer_since` (default = hoje no create) e flag `is_internal`. Hard delete. Ver [spec 011](docs/spec/cadastros/011-criar-tela-clientes.md).
+- **Funcionários (CRUD)** — Cadastro mestre por empresa com os 20 campos do Delphi (`CAD_FUNCIONARIO_FUN`), pré-requisito da Saída de Mercadoria (consumidor = ativo ou funcionário). Formulário em modal `max-w-3xl` em 5 seções (Identificação, Documentos, Endereço, Contato, Contrato); só o nome é obrigatório. **CPF opcional e único por empresa**: o service procura duplicidade antes de gravar e o índice parcial pega a corrida (`23505` → o mesmo 422 *"Já existe um funcionário com este CPF."*); o CPF chega mascarado ou cru e o backend grava só os dígitos. Nascimento não pode ser futura ("hoje" no fuso da aplicação); demissão ≥ admissão, comparando o **valor final mesclado** (update só com `terminatedAt` confere com o `hired_at` gravado). Demissão **não** inativa. Campos opcionais aceitam `null` para **limpar na edição** (validator `.nullable().optional()`, payload do front manda `null` nos vazios) — diferente de Clientes, onde apagar um campo opcional na edição não grava. Filtros: código, nome, CPF, status (default *Ativos*). Ferramentas do funcionário do Delphi ficaram de fora (o controle passa à saída do tipo Ferramenta). Hard delete (409 em uso). Ver [spec 019](docs/spec/cadastros/019-criar-tela-funcionarios.md).
 - **Produtos (CRUD)** — Cadastro mestre por empresa. `description` e `type` obrigatórios; grupo/subgrupo/unidade são FKs opcionais. Subgrupo em **cascata** com o grupo (reusa `GET /product-groups/:groupId/subgroups`, que exige `product_subgroups.view` — decisão "C": roles com `products.*` precisam dessa permissão). `controls_stock` governa estoque mínimo/quantidade (off → ambos `null` e desabilitados no form). Tipo **ativo imobilizado** força `controls_stock=false` (toggle travado, campos de estoque desabilitados) — reforçado no backend. `quantity_in_stock` só no create (imutável no edit, estratégia A — validator de update sem o campo); com controle ligado e sem valor nasce `0`. Filtros: descrição, grupo, tipo, controla estoque, status (default *Ativos*) + checkbox **estoque baixo** (`controls_stock && minimum_stock != null && qty <= min`). Máscaras pt-BR: `maskQuantity`/`parseDecimal`/`formatQuantity` em `lib/masks.ts`; novo primitivo `ui/checkbox.tsx`. **Coluna Estoque de produto `fixed_asset`** = contagem de **ativos disponíveis** (`availableAssets` na API, subquery em `product_assets` com `situation = 'available'`; alocado/vendido não conta) — ativo não tem saldo próprio, a entrada de mercadoria cria um ativo por unidade. A ordenação da coluna usa a mesma expressão (saldo para consumível, disponíveis para ativo). Hard delete. Ver [spec 013](docs/spec/cadastros/013-criar-tela-produtos.md).
 - **Serviços (CRUD)** — Cadastro mestre por empresa, vinculado a um grupo de serviço (FK). Formulário em modal `max-w-2xl`: descrição, grupo (`Select` só com grupos ativos; no edit mantém o grupo atual mesmo se inativo), tipo (`internal`/`third_party`), valor sugerido (input de moeda BRL, opcional), observações (`textarea`), status. Valor armazenado em `decimal(12,2)` (reais); helpers `maskMoney`/`formatCurrency` em `lib/masks.ts`; novo primitivo `ui/textarea.tsx`. Filtros: descrição + tipo (sem filtro de status). Coluna "Grupo" exibida (não ordenável). Backend valida que o grupo pertence ao tenant (422 *"Grupo de serviço inválido."*). Hard delete (409 em uso). Ver [spec 012](docs/spec/cadastros/012-criar-tela-servicos.md).
 - **Marcas (CRUD)** — CRUD simples padrão. Ver rule [simple-crud-pattern](frontend/.agents/skills/mpmweb-ui-patterns/rules/simple-crud-pattern.md) e [spec 014](docs/spec/cadastros/014-criar-tela-marca.md).
@@ -118,6 +120,7 @@ Autenticadas + empresa ativa (cada uma com gate de permissão):
 - `GET|POST /product-groups/:groupId/subgroups`, `GET|PUT|DELETE /product-groups/:groupId/subgroups/:id`
 - `GET|POST /suppliers`, `GET|PUT|DELETE /suppliers/:id`
 - `GET|POST /customers`, `GET|PUT|DELETE /customers/:id`
+- `GET|POST /employees`, `GET|PUT|DELETE /employees/:id`
 - `GET|POST /services`, `GET|PUT|DELETE /services/:id`
 - `GET|POST /products`, `GET|PUT|DELETE /products/:id`
 - `GET|POST /products/:productId/assets`, `GET|PUT|DELETE /products/:productId/assets/:id`
@@ -152,7 +155,7 @@ Protegidas (em `AppLayout`): `/` (dashboard), `/users`, `/companies`,
 `/roles/:id/edit`, `/permissions`, `/payment-types`, `/document-types`,
 `/units-of-measure`, `/service-groups`, `/product-groups`,
 `/product-groups/:groupId/subgroups` *(drill-down — não está no menu)*,
-`/suppliers`, `/customers`, `/services`, `/products`,
+`/suppliers`, `/customers`, `/employees`, `/services`, `/products`,
 `/products/:productId/assets` *(drill-down — não está no menu)*, `/brands`,
 `/brands/:brandId/models` *(drill-down — não está no menu)*, `/payables`,
 `/receivables`, `/expense-groups`, `/ldf-parameters`, `/service-entries`,
@@ -219,6 +222,8 @@ no uso inicial.
 - Regras de UI do projeto: [`frontend/.agents/skills/mpmweb-ui-patterns/`](frontend/.agents/skills/mpmweb-ui-patterns/).
 
 ## Pendências para módulos futuros
+
+- **Saída de Mercadoria (grupo Mercadoria)** — análise iniciada em 2026-10-27 e pausada até existir o cadastro de Funcionários (entregue). Pode ser retomada. Achados do Delphi (`UFrmSaidaMercadoria`, `UFrmFinalizarSaida`, `clsSaidaMercadoria`; tabelas `RPS_REQUISICOES_REQ`/`RPS_REQUISICOES_ITENS_RQI`): saída **Normal** aberta → finalizada, baixando do estoque só a quantidade **consumida**; saída de **Ferramenta** aberta → entregue (baixa o requisitado) → devolvida (soma tudo de volta); consumidor = ativo ou funcionário. Em aberto: o tipo de produto **Ferramenta** (o web só tem `consumable`/`fixed_asset`), cancelamento depois de finalizar, e quais ativos podem ser consumidores.
 
 - **Devolução de material (estoque)** — ao especificar as telas de **saída
   avulsa** e **requisição** (grupo Mercadoria), incluir a **devolução**:
