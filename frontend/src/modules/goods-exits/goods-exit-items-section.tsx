@@ -63,6 +63,14 @@ export function GoodsExitItemsSection({ name, readOnly = false }: GoodsExitItems
     setQuantityError(null)
   }
 
+  // O produto do rascunho é de um tipo de saída: trocar o tipo o invalida.
+  // (Ajuste durante o render, padrão do React — evita setState em effect.)
+  const [draftExitType, setDraftExitType] = useState(exitType)
+  if (draftExitType !== exitType) {
+    setDraftExitType(exitType)
+    resetDraft()
+  }
+
   function validateQuantity(quantity: string | null): string | null {
     if (quantity === null || /^0*(\.0*)?$/.test(quantity)) return 'Informe a quantidade.'
     return null

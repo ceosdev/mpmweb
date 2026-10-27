@@ -113,6 +113,7 @@ export function GoodsExitFormPage({ mode }: GoodsExitFormPageProps) {
     if (next === 'tool' && form.getValues('consumerType') !== 'employee') {
       form.setValue('consumerType', 'employee')
       form.setValue('consumerId', 0)
+      form.clearErrors('consumerId')
     }
   }
 
