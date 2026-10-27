@@ -36,6 +36,8 @@ import {
 } from '@/components/data-table/sortable-header'
 import { MultiSelect, type MultiSelectOption } from '@/components/form/multi-select'
 import { GoodsExitStatusBadge } from '@/modules/goods-exits/goods-exit-status-badge'
+import { FinalizeGoodsExitDialog } from '@/modules/goods-exits/finalize-goods-exit-dialog'
+import { ToolExitActionDialog } from '@/modules/goods-exits/tool-exit-action-dialog'
 import { Button } from '@/components/ui/button'
 import { SearchButton } from '@/components/common/search-button'
 import {
@@ -117,10 +119,9 @@ export function GoodsExitsPage() {
   const [sort, setSort] = useState<SortState | null>(null)
 
   const [deleteId, setDeleteId] = useState<number | null>(null)
-  // Ganchos para a Task 9 (diálogos de finalizar / entregar / devolver).
-  const [, setFinalizeId] = useState<number | null>(null)
-  const [, setDeliverId] = useState<number | null>(null)
-  const [, setReturnId] = useState<number | null>(null)
+  const [finalizeId, setFinalizeId] = useState<number | null>(null)
+  const [deliverId, setDeliverId] = useState<number | null>(null)
+  const [returnId, setReturnId] = useState<number | null>(null)
 
   function toggleSort(column: string) {
     setSort((current) => nextSortState(current, column))
@@ -420,6 +421,21 @@ export function GoodsExitsPage() {
       </Card>
 
       {meta && <Pagination meta={meta} onChange={setPage} />}
+
+      <FinalizeGoodsExitDialog
+        exitId={finalizeId}
+        onOpenChange={(open) => !open && setFinalizeId(null)}
+      />
+      <ToolExitActionDialog
+        action="deliver"
+        exitId={deliverId}
+        onOpenChange={(open) => !open && setDeliverId(null)}
+      />
+      <ToolExitActionDialog
+        action="return"
+        exitId={returnId}
+        onOpenChange={(open) => !open && setReturnId(null)}
+      />
 
       <ConfirmDialog
         open={deleteId !== null}

@@ -10,23 +10,26 @@ import { getErrorMessage } from '@/lib/errors'
  * para um object URL. Os disparos automáticos (depois de finalizar/entregar/
  * devolver) abrem a aba no clique de confirmação e a passam em `tab`.
  * Em erro, fecha a aba e mostra o toast com a mensagem da API.
+ *
+ * `tab === null` significa que o `window.open` do clique foi bloqueado: avisa
+ * para liberar pop-ups (não tenta outro `window.open` depois de um `await`).
  */
 export async function openPdf(
   fetchPdf: () => Promise<Blob>,
   tab?: Window | null,
 ): Promise<void> {
-  const target = tab ?? window.open('', '_blank')
+  const target = tab === undefined ? window.open('', '_blank') : tab
+  if (!target) {
+    toast.error('Permita pop-ups para este site para abrir o protocolo.')
+    return
+  }
   try {
     const blob = await fetchPdf()
     const url = URL.createObjectURL(blob)
-    if (target && !target.closed) {
-      target.location.href = url
-    } else {
-      // Aba bloqueada ou fechada pelo usuário: última tentativa.
-      window.open(url, '_blank')
-    }
+    // Aba fechada pelo usuário enquanto o PDF baixava: nada a abrir.
+    if (!target.closed) target.location.href = url
   } catch (error) {
-    target?.close()
+    target.close()
     toast.error(getErrorMessage(await readBlobError(error)))
   }
 }

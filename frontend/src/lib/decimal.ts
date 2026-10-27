@@ -42,3 +42,9 @@ export function lineGrossCents(quantity: string, unitPrice: string): bigint {
   const product = toScaled(quantity, QTY_SCALE) * toScaled(unitPrice, PRICE_SCALE)
   return divRoundHalfUp(product, 10n ** BigInt(QTY_SCALE + PRICE_SCALE - 2))
 }
+
+/** Compares two quantity strings (4 places) exactly: negative, 0 or positive. */
+export function compareQuantity(a: string, b: string): number {
+  const diff = toScaled(a, QTY_SCALE) - toScaled(b, QTY_SCALE)
+  return diff < 0n ? -1 : diff > 0n ? 1 : 0
+}
