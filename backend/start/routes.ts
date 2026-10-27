@@ -48,6 +48,7 @@ const ExpenseGroupsController = () => import('#controllers/expense_groups_contro
 const LdfParametersController = () => import('#controllers/ldf_parameters_controller')
 const ServiceEntriesController = () => import('#controllers/service_entries_controller')
 const GoodsEntriesController = () => import('#controllers/goods_entries_controller')
+const GoodsExitsController = () => import('#controllers/goods_exits_controller')
 
 /**
  * Health check.
@@ -516,6 +517,23 @@ router
     router
       .post('/goods-entries/:id/cancel', [GoodsEntriesController, 'cancel'])
       .use(middleware.permission('goods_entries.cancel'))
+
+    // Saída de mercadoria (módulo Movimentação).
+    router
+      .get('/goods-exits', [GoodsExitsController, 'index'])
+      .use(middleware.permission('goods_exits.view'))
+    router
+      .post('/goods-exits', [GoodsExitsController, 'store'])
+      .use(middleware.permission('goods_exits.create'))
+    router
+      .get('/goods-exits/:id', [GoodsExitsController, 'show'])
+      .use(middleware.permission('goods_exits.view'))
+    router
+      .put('/goods-exits/:id', [GoodsExitsController, 'update'])
+      .use(middleware.permission('goods_exits.edit'))
+    router
+      .delete('/goods-exits/:id', [GoodsExitsController, 'destroy'])
+      .use(middleware.permission('goods_exits.delete'))
 
     // Grupos de despesa
     router
