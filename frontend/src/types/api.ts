@@ -718,3 +718,84 @@ export interface GoodsEntryListParams {
   sort?: string
   order?: 'asc' | 'desc'
 }
+
+export type GoodsExitStatus = 'open' | 'finalized' | 'delivered' | 'returned'
+export type GoodsExitType = 'normal' | 'tool'
+export type GoodsExitConsumerType = 'asset' | 'employee'
+
+export interface GoodsExitItem {
+  id: number
+  productId: number
+  productDescription: string | null
+  productType: ProductType | null
+  unitOfMeasure: string | null
+  /** String decimal (4 casas) — nunca `Number()` no caminho de cálculo. */
+  requestedQuantity: string
+  /** Gravada na finalização (saída normal); `null` até lá. */
+  consumedQuantity: string | null
+  /** String decimal (10 casas); `null` se o produto não tem custo. */
+  unitCost: string | null
+  /** Derivados em reais (2 casas). */
+  requestedValue: number
+  consumedValue: number
+}
+
+export interface GoodsExit {
+  id: number
+  exitType: GoodsExitType
+  consumerType: GoodsExitConsumerType
+  consumerLabel: 'Funcionário' | 'Ativo'
+  employeeId: number | null
+  productAssetId: number | null
+  consumerName: string | null
+  assetCode: string | null
+  operationDate: string
+  requestedByUserId: number
+  requestedByName: string | null
+  notes: string | null
+  status: GoodsExitStatus
+  finalizedAt: string | null
+  deliveredAt: string | null
+  returnedAt: string | null
+  requestedValue: number
+  consumedValue: number
+  /** Presente só no `get` (detalhe), ausente na listagem. */
+  items?: GoodsExitItem[]
+  createdAt: string | null
+}
+
+export interface GoodsExitFinalizePreview {
+  items: {
+    productId: number
+    productDescription: string
+    unitOfMeasure: string | null
+    /** Strings decimais (4 casas). */
+    stock: string
+    requestedQuantity: string
+    suggestedConsumed: string
+    unitCost: string | null
+  }[]
+}
+
+export interface GoodsExitPayload {
+  exitType: GoodsExitType
+  consumerType: GoodsExitConsumerType
+  productAssetId?: number
+  employeeId?: number
+  notes?: string
+  items: { productId: number; requestedQuantity: string }[]
+}
+
+export interface GoodsExitListParams {
+  id?: number
+  consumer?: string
+  exitType?: GoodsExitType
+  operationFrom?: string
+  operationTo?: string
+  /** Múltipla escolha. Lista vazia = **todas** (o param nem é enviado). */
+  statuses?: GoodsExitStatus[]
+  page?: number
+  perPage?: number
+  sort?: string
+  order?: 'asc' | 'desc'
+}

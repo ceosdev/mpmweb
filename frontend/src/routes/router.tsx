@@ -122,6 +122,16 @@ const GoodsEntriesPage = lazy(() =>
     default: m.GoodsEntriesPage,
   })),
 )
+const GoodsExitsPage = lazy(() =>
+  import('@/modules/goods-exits/goods-exits-page').then((m) => ({
+    default: m.GoodsExitsPage,
+  })),
+)
+const GoodsExitFormPage = lazy(() =>
+  import('@/modules/goods-exits/goods-exit-form-page').then((m) => ({
+    default: m.GoodsExitFormPage,
+  })),
+)
 const GoodsEntryFormPage = lazy(() =>
   import('@/modules/goods-entries/goods-entry-form-page').then((m) => ({
     default: m.GoodsEntryFormPage,
@@ -326,6 +336,22 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="goods_entries.view" />,
             children: [{ path: 'goods-entries/:id', element: <GoodsEntryFormPage mode="view" /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_exits.view" />,
+            children: [{ path: 'goods-exits', element: <GoodsExitsPage /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_exits.create" />,
+            children: [{ path: 'goods-exits/new', element: <GoodsExitFormPage mode="create" /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_exits.edit" />,
+            children: [{ path: 'goods-exits/:id/edit', element: <GoodsExitFormPage mode="edit" /> }],
+          },
+          {
+            element: <PermissionRoute permission="goods_exits.view" />,
+            children: [{ path: 'goods-exits/:id', element: <GoodsExitFormPage mode="view" /> }],
           },
           {
             element: <PermissionRoute permission="expense_groups.view" />,

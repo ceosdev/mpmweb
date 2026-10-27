@@ -13,6 +13,7 @@ import {
   Landmark,
   LayoutDashboard,
   Package,
+  PackageMinus,
   PackagePlus,
   Receipt,
   ReceiptText,
@@ -97,6 +98,7 @@ export const MENU: MenuEntry[] = [
     icon: ArrowLeftRight,
     children: [
       { label: 'Entrada de mercadoria', to: '/goods-entries', icon: PackagePlus, permission: 'goods_entries.view' },
+      { label: 'Saída de mercadoria', to: '/goods-exits', icon: PackageMinus, permission: 'goods_exits.view' },
     ],
   },
   {
