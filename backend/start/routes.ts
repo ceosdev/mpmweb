@@ -32,6 +32,7 @@ const ProductGroupsController = () => import('#controllers/product_groups_contro
 const ProductSubgroupsController = () => import('#controllers/product_subgroups_controller')
 const SuppliersController = () => import('#controllers/suppliers_controller')
 const CustomersController = () => import('#controllers/customers_controller')
+const EmployeesController = () => import('#controllers/employees_controller')
 const ServicesController = () => import('#controllers/services_controller')
 const ProductsController = () => import('#controllers/products_controller')
 const ProductAssetsController = () => import('#controllers/product_assets_controller')
@@ -284,6 +285,23 @@ router
     router
       .delete('/customers/:id', [CustomersController, 'destroy'])
       .use(middleware.permission('customers.delete'))
+
+    // Funcionários
+    router
+      .get('/employees', [EmployeesController, 'index'])
+      .use(middleware.permission('employees.view'))
+    router
+      .post('/employees', [EmployeesController, 'store'])
+      .use(middleware.permission('employees.create'))
+    router
+      .get('/employees/:id', [EmployeesController, 'show'])
+      .use(middleware.permission('employees.view'))
+    router
+      .put('/employees/:id', [EmployeesController, 'update'])
+      .use(middleware.permission('employees.edit'))
+    router
+      .delete('/employees/:id', [EmployeesController, 'destroy'])
+      .use(middleware.permission('employees.delete'))
 
     // Serviços
     router
