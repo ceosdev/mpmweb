@@ -91,6 +91,7 @@ export function FinalizeGoodsExitDialog({ exitId, onOpenChange }: FinalizeGoodsE
             items={previewQuery.data.items}
             onOpenChange={onOpenChange}
             onBusyChange={setBusy}
+            onRefresh={async () => (await previewQuery.refetch()).data?.items ?? null}
           />
         )}
       </DialogContent>
@@ -115,11 +116,13 @@ function FinalizeBody({
   items,
   onOpenChange,
   onBusyChange,
+  onRefresh,
 }: {
   exitId: number
   items: PreviewItem[]
   onOpenChange: (open: boolean) => void
   onBusyChange: (busy: boolean) => void
+  onRefresh: () => Promise<PreviewItem[] | null>
 }) {
   const { tenant } = useAuth()
   const companyId = tenant?.companyId
@@ -165,13 +168,23 @@ function FinalizeBody({
       tab?.close()
       const message = getErrorMessage(error)
       toast.error(message)
-      setServerError(message)
       setConfirmOpen(false)
+      // O estoque pode ter mudado (motivo comum da recusa): recarrega e re-semeia o consumo.
+      const fresh = await onRefresh()
+      if (fresh) {
+        setValues(
+          Object.fromEntries(
+            fresh.map((i) => [i.productId, formatDecimalString(i.suggestedConsumed)]),
+          ),
+        )
+      }
+      setServerError(message)
       setPendingBoth(false)
       return
     }
     toast.success('Saída de mercadoria finalizada.')
     queryClient.invalidateQueries({ queryKey: ['goods-exits', companyId] })
+    queryClient.invalidateQueries({ queryKey: ['goods-exit', companyId] })
     queryClient.invalidateQueries({ queryKey: ['products', companyId] })
     setPendingBoth(false)
     onOpenChange(false)
@@ -270,6 +283,7 @@ function FinalizeBody({
         title="Finalizar saída"
         description="Deseja realmente finalizar a saída de mercadoria?"
         confirmLabel="Sim"
+        confirmVariant="default"
         loading={pending}
         onConfirm={() => void handleConfirm()}
       />

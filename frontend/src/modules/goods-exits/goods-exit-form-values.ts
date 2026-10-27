@@ -38,7 +38,7 @@ export const schema = z
     consumerType: z.enum(['asset', 'employee']),
     /** Id do ativo ou do funcionário, conforme `consumerType`; 0 = não escolhido. */
     consumerId: z.number().int(),
-    notes: z.string().trim().max(2000, 'Deve ter no máximo 2000 caracteres.'),
+    notes: z.string().trim().max(5000, 'Deve ter no máximo 5000 caracteres.'),
     items: z.array(itemSchema),
   })
   .superRefine((values, ctx) => {

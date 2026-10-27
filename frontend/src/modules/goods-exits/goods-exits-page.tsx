@@ -167,6 +167,7 @@ export function GoodsExitsPage() {
     onSuccess: () => {
       toast.success('Saída removida.')
       queryClient.invalidateQueries({ queryKey: ['goods-exits', companyId] })
+      queryClient.invalidateQueries({ queryKey: ['goods-exit', companyId] })
       setDeleteId(null)
     },
     onError: (error) => toast.error(getErrorMessage(error)),

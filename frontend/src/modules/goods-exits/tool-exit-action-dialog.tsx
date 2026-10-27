@@ -71,6 +71,7 @@ export function ToolExitActionDialog({ action, exitId, onOpenChange }: ToolExitA
     setPending(false)
     toast.success(copy.success)
     queryClient.invalidateQueries({ queryKey: ['goods-exits', companyId] })
+    queryClient.invalidateQueries({ queryKey: ['goods-exit', companyId] })
     queryClient.invalidateQueries({ queryKey: ['products', companyId] })
     onOpenChange(false)
     void openPdf(() => goodsExitsApi.protocol(exitId), tab)
@@ -83,6 +84,7 @@ export function ToolExitActionDialog({ action, exitId, onOpenChange }: ToolExitA
       title={copy.title}
       description={`${copy.description}${list}`}
       confirmLabel={copy.confirmLabel}
+      confirmVariant="default"
       loading={pending}
       onConfirm={() => void handleConfirm()}
     />
