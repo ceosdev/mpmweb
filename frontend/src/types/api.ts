@@ -280,6 +280,35 @@ export interface Customer {
   createdAt: string | null
 }
 
+/** Funcionário da empresa. Datas date-only em ISO (YYYY-MM-DD). */
+export interface Employee {
+  id: number
+  name: string
+  /** Função/cargo — não confundir com o perfil de acesso (role). */
+  roleTitle: string | null
+  birthDate: string | null
+  /** CPF, só dígitos. Opcional, único por empresa. */
+  taxId: string | null
+  idNumber: string | null
+  workCard: string | null
+  pis: string | null
+  driverLicense: string | null
+  address: string | null
+  addressNumber: string | null
+  addressComplement: string | null
+  neighborhood: string | null
+  city: string | null
+  zipCode: string | null
+  phone: string | null
+  mobile: string | null
+  email: string | null
+  hiredAt: string | null
+  terminatedAt: string | null
+  isActive: boolean
+  createdAt: string | null
+  updatedAt: string | null
+}
+
 export interface Brand {
   id: number
   description: string
