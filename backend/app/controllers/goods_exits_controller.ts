@@ -1,7 +1,11 @@
 import { HttpContext } from '@adonisjs/core/http'
 import goodsExitService from '#services/goods_exit_service'
 import { GOODS_EXIT_STATUSES, type GoodsExitStatus } from '#models/goods_exit'
-import { createGoodsExitValidator, updateGoodsExitValidator } from '#validators/goods_exit_validators'
+import {
+  createGoodsExitValidator,
+  finalizeGoodsExitValidator,
+  updateGoodsExitValidator,
+} from '#validators/goods_exit_validators'
 
 const VALID_STATUSES: readonly string[] = GOODS_EXIT_STATUSES
 
@@ -57,5 +61,22 @@ export default class GoodsExitsController {
   async destroy({ tenant, params, response }: HttpContext) {
     await goodsExitService.destroy(tenant, Number(params.id))
     return response.noContent()
+  }
+
+  async finalizePreview({ tenant, params }: HttpContext) {
+    return goodsExitService.finalizePreview(tenant, Number(params.id))
+  }
+
+  async finalize({ tenant, request, params }: HttpContext) {
+    const payload = await request.validateUsing(finalizeGoodsExitValidator)
+    return goodsExitService.finalize(tenant, Number(params.id), payload.items)
+  }
+
+  async deliver({ tenant, params }: HttpContext) {
+    return goodsExitService.deliver(tenant, Number(params.id))
+  }
+
+  async returnTools({ tenant, params }: HttpContext) {
+    return goodsExitService.returnTools(tenant, Number(params.id))
   }
 }

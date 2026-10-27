@@ -14,6 +14,7 @@ import goodsExitRepository from '#repositories/goods_exit_repository'
 import employeeRepository from '#repositories/employee_repository'
 import productAssetRepository from '#repositories/product_asset_repository'
 import productRepository from '#repositories/product_repository'
+import { lockProducts, moveStock, stockScaled } from '#services/goods_exit_stock'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 import { todayIso } from '#utils/dates'
 import { PRICE_SCALE, QTY_SCALE, fromScaled, lineGrossCents, toScaled } from '#utils/decimal'
@@ -91,6 +92,12 @@ export interface CreateGoodsExitDTO {
 }
 
 export type UpdateGoodsExitDTO = CreateGoodsExitDTO
+
+export interface FinalizeItemDTO {
+  productId: number
+  /** Decimal string, up to 4 places; 0 is allowed. */
+  consumedQuantity: string
+}
 
 export class GoodsExitService {
   async list(tenant: TenantContext, params: ListParams) {
@@ -235,7 +242,211 @@ export class GoodsExitService {
     })
   }
 
+  // -------------------------------------------------------------- actions
+
+  /**
+   * What the "Finalizar saída" dialog shows: each item with the product's
+   * **current** stock and cost, and the consumed quantity pre-filled with
+   * `max(0, min(requested, stock))`. Read-only — `finalize` revalidates
+   * everything against the locked rows.
+   */
+  async finalizePreview(tenant: TenantContext, id: number) {
+    const row = await this.findOrFail(tenant, id)
+    this.assertOpen(row)
+    this.assertExitType(row, 'normal')
+
+    const items = await this.loadItems(tenant, row.id)
+    return {
+      items: items.map((item) => {
+        const stock = stockScaled(item.product)
+        const requested = toScaled(item.requestedQuantity, QTY_SCALE)
+        const suggested = requested < stock ? requested : stock
+        return {
+          productId: item.productId,
+          productDescription: item.product.description,
+          unitOfMeasure: item.product.unit?.description ?? null,
+          stock: fromScaled(stock, QTY_SCALE),
+          requestedQuantity: fromScaled(requested, QTY_SCALE),
+          suggestedConsumed: fromScaled(suggested > 0n ? suggested : 0n, QTY_SCALE),
+          unitCost:
+            item.product.costPrice === null
+              ? null
+              : fromScaled(toScaled(item.product.costPrice, PRICE_SCALE), PRICE_SCALE),
+        }
+      }),
+    }
+  }
+
+  /**
+   * Finalizes a normal exit (spec, *A transação*): locks the exit and the
+   * products (ascending id), revalidates every item against the locked
+   * balance, takes the consumed quantity out of stock, rewrites `unit_cost`
+   * with the current `cost_price` and stamps `finalized`. Any error → nothing
+   * persists.
+   */
+  async finalize(tenant: TenantContext, id: number, input: FinalizeItemDTO[]) {
+    await db.transaction(async (trx) => {
+      // 1.
+      const row = await this.lock(tenant, id, trx)
+      this.assertOpen(row)
+      this.assertExitType(row, 'normal')
+
+      const items = await this.loadItems(tenant, row.id, trx)
+      const consumedByProduct = this.matchFinalizeItems(items, input)
+
+      // 2.
+      const products = await lockProducts(
+        trx,
+        tenant.company.id,
+        items.map((item) => item.productId)
+      )
+
+      // 3. valida tudo antes de escrever.
+      const plans = items.map((item) => {
+        const product = products.get(item.productId)!
+        const consumed = consumedByProduct.get(item.productId)!
+        if (consumed > toScaled(item.requestedQuantity, QTY_SCALE)) {
+          throw new BusinessException(
+            `A quantidade de consumo de ${product.description} não pode ser superior à quantidade requisitada.`
+          )
+        }
+        if (consumed > stockScaled(product)) {
+          throw new BusinessException(
+            `A quantidade de consumo de ${product.description} não pode ser superior ao estoque atual.`
+          )
+        }
+        return { item, product, consumed }
+      })
+
+      // 4. em ordem crescente de produto (a mesma da trava).
+      plans.sort((a, b) => a.product.id - b.product.id)
+      for (const { item, product, consumed } of plans) {
+        if (consumed > 0n) await moveStock(trx, product.id, fromScaled(-consumed, QTY_SCALE))
+        item.consumedQuantity = fromScaled(consumed, QTY_SCALE)
+        item.unitCost = product.costPrice
+        item.useTransaction(trx)
+        await item.save()
+      }
+
+      // 5.
+      row.status = 'finalized'
+      row.finalizedAt = DateTime.now()
+      row.useTransaction(trx)
+      await row.save()
+    })
+
+    return this.show(tenant, id)
+  }
+
+  /**
+   * Delivers a tool exit: every item's requested quantity leaves the stock.
+   * Any item above the locked balance → 422 and nothing changes.
+   */
+  async deliver(tenant: TenantContext, id: number) {
+    await db.transaction(async (trx) => {
+      const row = await this.lock(tenant, id, trx)
+      this.assertOpen(row)
+      this.assertExitType(row, 'tool')
+
+      const items = await this.loadItems(tenant, row.id, trx)
+      const products = await lockProducts(
+        trx,
+        tenant.company.id,
+        items.map((item) => item.productId)
+      )
+
+      for (const item of items) {
+        const product = products.get(item.productId)!
+        if (toScaled(item.requestedQuantity, QTY_SCALE) > stockScaled(product)) {
+          throw new BusinessException(
+            `O produto ${product.description} não possui estoque suficiente. Altere a quantidade solicitada.`
+          )
+        }
+      }
+
+      for (const item of this.byProductId(items)) {
+        await moveStock(trx, item.productId, `-${item.requestedQuantity}`)
+      }
+
+      row.status = 'delivered'
+      row.deliveredAt = DateTime.now()
+      row.useTransaction(trx)
+      await row.save()
+    })
+
+    return this.show(tenant, id)
+  }
+
+  /**
+   * Returns a delivered tool exit: every item's requested quantity goes back
+   * to stock (no partial return). Never blocked by the product's current
+   * stock control — the sum runs over `coalesce(quantity_in_stock, 0)`.
+   */
+  async returnTools(tenant: TenantContext, id: number) {
+    await db.transaction(async (trx) => {
+      const row = await this.lock(tenant, id, trx)
+      if (row.status !== 'delivered') {
+        throw new BusinessException('Operação não permitida: a saída não está entregue.')
+      }
+      this.assertExitType(row, 'tool')
+
+      const items = await this.loadItems(tenant, row.id, trx)
+      await lockProducts(
+        trx,
+        tenant.company.id,
+        items.map((item) => item.productId)
+      )
+
+      for (const item of this.byProductId(items)) {
+        await moveStock(trx, item.productId, item.requestedQuantity)
+      }
+
+      row.status = 'returned'
+      row.returnedAt = DateTime.now()
+      row.useTransaction(trx)
+      await row.save()
+    })
+
+    return this.show(tenant, id)
+  }
+
   // -------------------------------------------------------------- helpers
+
+  private assertExitType(row: GoodsExit, expected: GoodsExitType) {
+    if (row.exitType !== expected) {
+      throw new BusinessException(
+        expected === 'normal'
+          ? 'Operação não permitida: a saída de ferramentas é entregue e devolvida, não finalizada.'
+          : 'Operação não permitida: apenas saídas de ferramentas são entregues ou devolvidas.'
+      )
+    }
+  }
+
+  /**
+   * The finalize body must carry **exactly** the exit's products, once each.
+   * Returns the consumed quantity (scaled) by product id.
+   */
+  private matchFinalizeItems(items: GoodsExitItem[], input: FinalizeItemDTO[]) {
+    const consumed = new Map<number, bigint>()
+    for (const entry of input) {
+      if (consumed.has(entry.productId)) {
+        throw new BusinessException('Cada produto da saída deve ser informado uma única vez.')
+      }
+      consumed.set(entry.productId, toScaled(entry.consumedQuantity, QTY_SCALE))
+    }
+
+    const exact =
+      consumed.size === items.length && items.every((item) => consumed.has(item.productId))
+    if (!exact) {
+      throw new BusinessException('Informe a quantidade consumida de todos os produtos da saída.')
+    }
+    return consumed
+  }
+
+  /** Items in ascending product id — the order the products were locked in. */
+  private byProductId(items: GoodsExitItem[]) {
+    return [...items].sort((a, b) => a.productId - b.productId)
+  }
 
   /** With `trx`, reads inside the caller's transaction. */
   async loadItems(tenant: TenantContext, exitId: number, trx?: TransactionClientContract) {

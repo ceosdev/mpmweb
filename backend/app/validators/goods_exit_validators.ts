@@ -33,6 +33,8 @@ const messages = new SimpleMessagesProvider({
   'items.*.productId.min': 'Selecione o produto.',
   'items.*.requestedQuantity.required': 'Informe a quantidade.',
   'items.*.requestedQuantity.regex': 'Quantidade inválida (até 4 casas decimais).',
+  'items.*.consumedQuantity.required': 'Informe a quantidade consumida.',
+  'items.*.consumedQuantity.regex': 'Quantidade consumida inválida (até 4 casas decimais).',
 })
 
 const itemSchema = vine.object({
@@ -54,3 +56,22 @@ createGoodsExitValidator.messagesProvider = messages
 
 export const updateGoodsExitValidator = vine.compile(vine.object(goodsExitFields))
 updateGoodsExitValidator.messagesProvider = messages
+
+/**
+ * Finalize body: `{ items: [{ productId, consumedQuantity }] }` with exactly
+ * the exit's products (checked in the service). `consumedQuantity` uses the
+ * same decimal-string regex as `requestedQuantity`; 0 is allowed.
+ */
+export const finalizeGoodsExitValidator = vine.compile(
+  vine.object({
+    items: vine
+      .array(
+        vine.object({
+          productId: vine.number().withoutDecimals().min(1),
+          consumedQuantity: vine.string().trim().regex(/^\d{1,11}(\.\d{1,4})?$/),
+        })
+      )
+      .minLength(1),
+  })
+)
+finalizeGoodsExitValidator.messagesProvider = messages

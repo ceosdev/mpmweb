@@ -534,6 +534,18 @@ router
     router
       .delete('/goods-exits/:id', [GoodsExitsController, 'destroy'])
       .use(middleware.permission('goods_exits.delete'))
+    router
+      .get('/goods-exits/:id/finalize-preview', [GoodsExitsController, 'finalizePreview'])
+      .use(middleware.permission('goods_exits.finalize'))
+    router
+      .post('/goods-exits/:id/finalize', [GoodsExitsController, 'finalize'])
+      .use(middleware.permission('goods_exits.finalize'))
+    router
+      .post('/goods-exits/:id/deliver', [GoodsExitsController, 'deliver'])
+      .use(middleware.permission('goods_exits.deliver'))
+    router
+      .post('/goods-exits/:id/return', [GoodsExitsController, 'returnTools'])
+      .use(middleware.permission('goods_exits.return'))
 
     // Grupos de despesa
     router
