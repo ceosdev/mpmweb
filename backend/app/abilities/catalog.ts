@@ -99,6 +99,10 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'customers.create', name: 'Criar clientes', module: 'customers', action: 'create', description: 'Cadastrar novos clientes.' },
   { slug: 'customers.edit', name: 'Editar clientes', module: 'customers', action: 'edit', description: 'Alterar clientes existentes.' },
   { slug: 'customers.delete', name: 'Excluir clientes', module: 'customers', action: 'delete', description: 'Remover clientes.' },
+  { slug: 'employees.view', name: 'Visualizar funcionários', module: 'employees', action: 'view', description: 'Listar e consultar funcionários da empresa.' },
+  { slug: 'employees.create', name: 'Criar funcionários', module: 'employees', action: 'create', description: 'Cadastrar novos funcionários.' },
+  { slug: 'employees.edit', name: 'Editar funcionários', module: 'employees', action: 'edit', description: 'Alterar funcionários existentes.' },
+  { slug: 'employees.delete', name: 'Excluir funcionários', module: 'employees', action: 'delete', description: 'Remover funcionários.' },
 
   // Serviços
   { slug: 'services.view', name: 'Visualizar serviços', module: 'services', action: 'view', description: 'Listar e consultar serviços da empresa.' },

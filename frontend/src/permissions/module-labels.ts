@@ -24,6 +24,7 @@ export const MODULE_LABELS: Record<string, string> = {
   product_subgroups: 'Subgrupos de produto',
   suppliers: 'Fornecedores',
   customers: 'Clientes',
+  employees: 'Funcionários',
   services: 'Serviços',
   products: 'Produtos',
   product_assets: 'Ativos do produto',
