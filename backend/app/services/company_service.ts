@@ -10,6 +10,7 @@ import Membership from '#models/membership'
 import type { TenantContext } from '#services/tenant_context'
 import companyRepository from '#repositories/company_repository'
 import { slugify } from '#utils/slug'
+import { LOGO_DISK, LOGO_KEY_PREFIX, LOGO_URL_PREFIX, logoKeyFromPath } from '#utils/company_logo'
 import { BusinessException, ForbiddenException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
@@ -31,11 +32,6 @@ const COMPANY_SORT_COLUMNS: Record<string, string> = {
   is_active: 'is_active',
   created_at: 'created_at',
 }
-
-const LOGO_DISK = 'fs'
-const LOGO_KEY_PREFIX = 'logos'
-/** URL prefix served by drive (`routeBasePath` in config/drive.ts). */
-const LOGO_URL_PREFIX = '/uploads'
 
 export interface CreateCompanyDTO {
   legalName: string
@@ -225,7 +221,7 @@ export class CompanyService {
 
     await file.moveToDisk(key, LOGO_DISK)
 
-    const previousKey = this.keyFromPath(company.logoPath)
+    const previousKey = logoKeyFromPath(company.logoPath)
     company.logoPath = `${LOGO_URL_PREFIX}/${key}`
     await company.save()
 
@@ -246,7 +242,7 @@ export class CompanyService {
       throw new NotFoundException('Empresa não encontrada.')
     }
 
-    const previousKey = this.keyFromPath(company.logoPath)
+    const previousKey = logoKeyFromPath(company.logoPath)
     company.logoPath = null
     await company.save()
 
@@ -309,15 +305,6 @@ export class CompanyService {
       counter += 1
     }
     return candidate
-  }
-
-  /** Extracts the drive key (`logos/abc.png`) from the stored path (`/uploads/logos/abc.png`). */
-  private keyFromPath(logoPath: string | null): string | null {
-    if (!logoPath) return null
-    if (logoPath.startsWith(`${LOGO_URL_PREFIX}/`)) {
-      return logoPath.slice(LOGO_URL_PREFIX.length + 1)
-    }
-    return logoPath
   }
 
   serialize(company: Company) {

@@ -529,6 +529,9 @@ router
       .get('/goods-exits/:id', [GoodsExitsController, 'show'])
       .use(middleware.permission('goods_exits.view'))
     router
+      .get('/goods-exits/:id/protocol', [GoodsExitsController, 'protocol'])
+      .use(middleware.permission('goods_exits.view'))
+    router
       .put('/goods-exits/:id', [GoodsExitsController, 'update'])
       .use(middleware.permission('goods_exits.edit'))
     router

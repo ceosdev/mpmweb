@@ -15,6 +15,8 @@ import employeeRepository from '#repositories/employee_repository'
 import productAssetRepository from '#repositories/product_asset_repository'
 import productRepository from '#repositories/product_repository'
 import { lockProducts, moveStock, stockScaled } from '#services/goods_exit_stock'
+import { buildGoodsExitProtocol } from '#services/pdf/goods_exit_protocol'
+import { renderPdf } from '#services/pdf/pdf_service'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 import { todayIso } from '#utils/dates'
 import { PRICE_SCALE, QTY_SCALE, fromScaled, lineGrossCents, toScaled } from '#utils/decimal'
@@ -162,6 +164,18 @@ export class GoodsExitService {
     await row.load('requestedBy')
     const items = await this.loadItems(tenant, row.id)
     return this.serialize(row, items)
+  }
+
+  /** Protocol PDF — only for exits that already left `open`. */
+  async protocol(tenant: TenantContext, id: number) {
+    const exit = await this.show(tenant, id)
+    if (exit.status === 'open') {
+      throw new BusinessException(
+        'Só é permitido imprimir o protocolo de saídas entregues, devolvidas ou finalizadas.'
+      )
+    }
+    const doc = await buildGoodsExitProtocol(exit, tenant.company)
+    return renderPdf(doc)
   }
 
   async create(tenant: TenantContext, dto: CreateGoodsExitDTO, userId: number) {

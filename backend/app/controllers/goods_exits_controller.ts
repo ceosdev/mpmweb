@@ -47,6 +47,14 @@ export default class GoodsExitsController {
     return goodsExitService.show(tenant, Number(params.id))
   }
 
+  async protocol({ tenant, params, response }: HttpContext) {
+    const id = Number(params.id)
+    const pdf = await goodsExitService.protocol(tenant, id)
+    response.header('content-type', 'application/pdf')
+    response.header('content-disposition', `inline; filename="saida-${id}.pdf"`)
+    return response.send(pdf)
+  }
+
   async store({ tenant, request, response, currentUser }: HttpContext) {
     const payload = await request.validateUsing(createGoodsExitValidator)
     const row = await goodsExitService.create(tenant, payload, currentUser.id)
