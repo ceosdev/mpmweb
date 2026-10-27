@@ -1,6 +1,20 @@
-import { customerLookupApi, productLookupApi, supplierLookupApi } from '@/services/lookup-api'
+import {
+  consumableStockProductLookupApi,
+  customerLookupApi,
+  employeeLookupApi,
+  productAssetLookupApi,
+  productLookupApi,
+  supplierLookupApi,
+  toolProductLookupApi,
+} from '@/services/lookup-api'
 import { maskTaxId } from '@/lib/masks'
-import type { CustomerLookup, ProductLookup, SupplierLookup } from '@/types/api'
+import type {
+  CustomerLookup,
+  EmployeeLookup,
+  ProductAssetLookup,
+  ProductLookup,
+  SupplierLookup,
+} from '@/types/api'
 import type { EntityOption, EntitySource } from './types'
 
 /**
@@ -110,10 +124,96 @@ function toProductOption(row: ProductLookup): EntityOption {
   }
 }
 
+const employeeSource: EntitySource = {
+  placeholder: 'Buscar funcionário por código ou nome...',
+  emptyMessage: 'Nenhum funcionário encontrado.',
+
+  async search(term, signal) {
+    const { data, hasMore } = await employeeLookupApi.search(term, signal)
+    return { options: data.map(toEmployeeOption), hasMore }
+  },
+
+  async fetchByIds(ids) {
+    const { data } = await employeeLookupApi.byIds(ids)
+    return data.map(toEmployeeOption)
+  },
+}
+
+function toEmployeeOption(row: EmployeeLookup): EntityOption {
+  return {
+    id: row.id,
+    label: row.name,
+    sublabel: `#${row.id} · ${row.roleTitle ?? '—'}`,
+    isActive: row.isActive,
+  }
+}
+
+const productAssetSource: EntitySource = {
+  placeholder: 'Buscar ativo por código, patrimônio ou descrição...',
+  emptyMessage: 'Nenhum ativo encontrado.',
+
+  async search(term, signal) {
+    const { data, hasMore } = await productAssetLookupApi.search(term, signal)
+    return { options: data.map(toProductAssetOption), hasMore }
+  },
+
+  async fetchByIds(ids) {
+    const { data } = await productAssetLookupApi.byIds(ids)
+    return data.map(toProductAssetOption)
+  },
+}
+
+function toProductAssetOption(row: ProductAssetLookup): EntityOption {
+  return {
+    id: row.id,
+    label: `${row.productDescription} – ${row.description}`,
+    sublabel: `#${row.id} · ${row.assetCode ?? 'Sem patrimônio'}`,
+    // Ativo vendido volta na hidratação; fica marcado como indisponível.
+    isActive: row.situation !== 'sold',
+    data: row,
+  }
+}
+
+/** Produtos de consumo com controle de estoque — itens da saída de consumo. */
+const consumableStockProductSource: EntitySource = {
+  placeholder: 'Buscar produto de consumo por código ou descrição...',
+  emptyMessage: 'Nenhum produto encontrado.',
+
+  async search(term, signal) {
+    const { data, hasMore } = await consumableStockProductLookupApi.search(term, signal)
+    return { options: data.map(toProductOption), hasMore }
+  },
+
+  async fetchByIds(ids) {
+    const { data } = await consumableStockProductLookupApi.byIds(ids)
+    return data.map(toProductOption)
+  },
+}
+
+/** Ferramentas com controle de estoque — itens da saída de ferramenta. */
+const toolProductSource: EntitySource = {
+  placeholder: 'Buscar ferramenta por código ou descrição...',
+  emptyMessage: 'Nenhuma ferramenta encontrada.',
+
+  async search(term, signal) {
+    const { data, hasMore } = await toolProductLookupApi.search(term, signal)
+    return { options: data.map(toProductOption), hasMore }
+  },
+
+  async fetchByIds(ids) {
+    const { data } = await toolProductLookupApi.byIds(ids)
+    return data.map(toProductOption)
+  },
+}
+
 export const ENTITY_SOURCES = {
   supplier: supplierSource,
   customer: customerSource,
   product: productSource,
+  employee: employeeSource,
+  productAsset: productAssetSource,
+  consumableStockProduct: consumableStockProductSource,
+  toolProduct: toolProductSource,
 } satisfies Record<string, EntitySource>
 
 export type EntitySourceKey = keyof typeof ENTITY_SOURCES

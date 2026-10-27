@@ -371,6 +371,22 @@ export interface ProductLookup {
   isActive: boolean
 }
 
+export interface EmployeeLookup {
+  id: number
+  name: string
+  roleTitle: string | null
+  isActive: boolean
+}
+
+export interface ProductAssetLookup {
+  id: number
+  description: string
+  assetCode: string | null
+  productId: number
+  productDescription: string
+  situation: 'available' | 'allocated' | 'sold'
+}
+
 export interface CustomerLookup {
   id: number
   legalName: string

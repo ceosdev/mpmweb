@@ -48,6 +48,9 @@ export default class ProductsController {
       q: payload.q,
       ids: parseLookupIds(payload.ids),
       limit: payload.limit,
+      // Filters for the goods-exit pickers; they only narrow the `q` search.
+      type: parseType(request.input('type')),
+      controlsStock: parseBool(request.input('controlsStock')),
     })
   }
 

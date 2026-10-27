@@ -1,5 +1,12 @@
 import { api } from '@/services/api-client'
-import type { CustomerLookup, LookupResponse, ProductLookup, SupplierLookup } from '@/types/api'
+import type {
+  CustomerLookup,
+  EmployeeLookup,
+  LookupResponse,
+  ProductAssetLookup,
+  ProductLookup,
+  SupplierLookup,
+} from '@/types/api'
 
 /**
  * Clientes HTTP dos endpoints de lookup, que alimentam o EntityPicker.
@@ -9,12 +16,15 @@ import type { CustomerLookup, LookupResponse, ProductLookup, SupplierLookup } fr
  * seleciona fornecedor precisa conseguir buscar mesmo sem acesso ao cadastro.
  * Ver `docs/spec/comum/001-componente-entity-picker.md`.
  */
-function lookupApi<T>(resource: string) {
+function lookupApi<T>(resource: string, extraParams?: Record<string, string>) {
   return {
-    /** Busca por termo (nome ou documento). Só registros ativos. */
+    /**
+     * Busca por termo (nome ou documento). Só registros ativos. `extraParams`
+     * (filtros fixos da fonte) valem **só aqui**, nunca na hidratação.
+     */
     search: (q: string, signal?: AbortSignal) =>
       api
-        .get<LookupResponse<T>>(`/${resource}/lookup`, { params: { q }, signal })
+        .get<LookupResponse<T>>(`/${resource}/lookup`, { params: { ...extraParams, q }, signal })
         .then((r) => r.data),
 
     /**
@@ -31,3 +41,13 @@ function lookupApi<T>(resource: string) {
 export const supplierLookupApi = lookupApi<SupplierLookup>('suppliers')
 export const customerLookupApi = lookupApi<CustomerLookup>('customers')
 export const productLookupApi = lookupApi<ProductLookup>('products')
+export const employeeLookupApi = lookupApi<EmployeeLookup>('employees')
+export const productAssetLookupApi = lookupApi<ProductAssetLookup>('product-assets')
+export const consumableStockProductLookupApi = lookupApi<ProductLookup>('products', {
+  type: 'consumable',
+  controlsStock: 'true',
+})
+export const toolProductLookupApi = lookupApi<ProductLookup>('products', {
+  type: 'tool',
+  controlsStock: 'true',
+})

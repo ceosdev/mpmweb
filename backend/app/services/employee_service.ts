@@ -5,6 +5,7 @@ import employeeRepository from '#repositories/employee_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 import { digitsOnly, isValidCpf } from '#utils/tax_id'
 import { todayIso } from '#utils/dates'
+import { LOOKUP_DEFAULT_LIMIT, lookupCodeId, type LookupParams } from '#utils/lookup'
 
 export interface ListParams {
   /** Busca exata pelo código (autoincremento). */
@@ -81,6 +82,50 @@ const TEXT_FIELDS = [
 const DATE_FIELDS = ['birthDate', 'hiredAt', 'terminatedAt'] as const
 
 export class EmployeeService {
+  /**
+   * Feeds the EntityPicker (see `CustomerService.lookup`).
+   * - `ids` — hydration; resolves ids **regardless of `is_active`**.
+   * - `q` — search by name or code; active employees only.
+   */
+  async lookup(tenant: TenantContext, params: LookupParams) {
+    if (params.ids && params.ids.length > 0) {
+      const rows = await employeeRepository
+        .query(tenant.company.id)
+        .whereIn('id', params.ids)
+        .orderBy('name', 'asc')
+
+      return { data: rows.map((row) => this.serializeLookup(row)), hasMore: false }
+    }
+
+    const term = params.q?.trim()
+    if (!term) {
+      throw new BusinessException('Informe um termo de busca ou uma lista de códigos.')
+    }
+
+    const limit = params.limit ?? LOOKUP_DEFAULT_LIMIT
+    const like = `%${term.toLowerCase()}%`
+    const codeId = lookupCodeId(term)
+
+    const rows = await employeeRepository
+      .query(tenant.company.id)
+      .where('is_active', true)
+      .where((sub) => {
+        sub.whereRaw('lower(name) like ?', [like])
+        if (codeId !== null) sub.orWhere('id', codeId)
+      })
+      .orderBy('name', 'asc')
+      .limit(limit + 1)
+
+    return {
+      data: rows.slice(0, limit).map((row) => this.serializeLookup(row)),
+      hasMore: rows.length > limit,
+    }
+  }
+
+  private serializeLookup(row: Employee) {
+    return { id: row.id, name: row.name, roleTitle: row.roleTitle, isActive: row.isActive }
+  }
+
   async list(tenant: TenantContext, params: ListParams) {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20

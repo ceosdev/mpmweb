@@ -287,6 +287,8 @@ router
       .use(middleware.permission('customers.delete'))
 
     // Funcionários
+    // Lookup do EntityPicker — ver a nota em '/suppliers/lookup'.
+    router.get('/employees/lookup', [EmployeesController, 'lookup'])
     router
       .get('/employees', [EmployeesController, 'index'])
       .use(middleware.permission('employees.view'))
@@ -340,6 +342,10 @@ router
     router
       .delete('/products/:id', [ProductsController, 'destroy'])
       .use(middleware.permission('products.delete'))
+
+    // Lookup de ativos para o EntityPicker: company-wide (fora do path de produto),
+    // sem gate de rota — ver a nota em '/suppliers/lookup'.
+    router.get('/product-assets/lookup', [ProductAssetsController, 'lookup'])
 
     // Ativos (filhos de products, escopados pelo path :productId — só produtos fixed_asset)
     router

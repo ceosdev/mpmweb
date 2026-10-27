@@ -1,4 +1,6 @@
 import { HttpContext } from '@adonisjs/core/http'
+import { lookupValidator } from '#validators/lookup_validators'
+import { parseLookupIds } from '#utils/lookup'
 import productAssetService from '#services/product_asset_service'
 import type { AssetSituation } from '#models/product_asset'
 import {
@@ -17,6 +19,16 @@ function parseSituation(raw: unknown): AssetSituation | undefined {
  * body. Only `fixed_asset` products may own assets (enforced in the service).
  */
 export default class ProductAssetsController {
+  /** Company-wide EntityPicker lookup — see `ProductAssetService.lookup`. */
+  async lookup({ tenant, request }: HttpContext) {
+    const payload = await request.validateUsing(lookupValidator)
+    return productAssetService.lookup(tenant, {
+      q: payload.q,
+      ids: parseLookupIds(payload.ids),
+      limit: payload.limit,
+    })
+  }
+
   async index({ tenant, request, params }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return productAssetService.list(tenant, Number(params.productId), {

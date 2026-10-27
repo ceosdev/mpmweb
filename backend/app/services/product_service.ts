@@ -8,6 +8,12 @@ import ProductSubgroup from '#models/product_subgroup'
 import { LOOKUP_DEFAULT_LIMIT, lookupCodeId, type LookupParams } from '#utils/lookup'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 
+/** Lookup params plus the product filters the goods-exit pickers use (apply to `q` only). */
+export interface ProductLookupParams extends LookupParams {
+  type?: ProductType
+  controlsStock?: boolean
+}
+
 export interface ListParams {
   /** Busca exata pelo código (autoincremento). Nunca editável, só pesquisável. */
   id?: number
@@ -165,11 +171,13 @@ export class ProductService {
    * EntityPicker lookup (see `SupplierService.lookup`). `costPrice` is only
    * filled for users who may see cost; others get `null`.
    */
-  async lookup(tenant: TenantContext, params: LookupParams) {
+  async lookup(tenant: TenantContext, params: ProductLookupParams) {
     const canSeeCost =
       tenant.can('products.view') ||
       tenant.can('goods_entries.create') ||
-      tenant.can('goods_entries.edit')
+      tenant.can('goods_entries.edit') ||
+      tenant.can('goods_exits.create') ||
+      tenant.can('goods_exits.edit')
 
     if (params.ids && params.ids.length > 0) {
       const rows = await productRepository
@@ -190,9 +198,11 @@ export class ProductService {
     const like = `%${term.toLowerCase()}%`
     const codeId = lookupCodeId(term)
 
-    const rows = await productRepository
-      .query(tenant.company.id)
-      .where('is_active', true)
+    const query = productRepository.query(tenant.company.id).where('is_active', true)
+    if (params.type) query.where('type', params.type)
+    if (params.controlsStock) query.where('controls_stock', true)
+
+    const rows = await query
       .where((sub) => {
         sub.whereRaw('lower(description) like ?', [like])
         if (codeId !== null) sub.orWhere('id', codeId)

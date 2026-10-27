@@ -1,4 +1,6 @@
 import { HttpContext } from '@adonisjs/core/http'
+import { lookupValidator } from '#validators/lookup_validators'
+import { parseLookupIds } from '#utils/lookup'
 import employeeService from '#services/employee_service'
 import {
   createEmployeeValidator,
@@ -11,6 +13,16 @@ function parseStatus(raw: unknown): 'all' | 'active' | 'inactive' | undefined {
 }
 
 export default class EmployeesController {
+  /** EntityPicker lookup — see `EmployeeService.lookup`. */
+  async lookup({ tenant, request }: HttpContext) {
+    const payload = await request.validateUsing(lookupValidator)
+    return employeeService.lookup(tenant, {
+      q: payload.q,
+      ids: parseLookupIds(payload.ids),
+      limit: payload.limit,
+    })
+  }
+
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return employeeService.list(tenant, {

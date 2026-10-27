@@ -8,6 +8,11 @@ export class ProductAssetRepository {
     return ProductAsset.query().where('company_id', companyId).where('product_id', productId)
   }
 
+  /** Company-wide query (no parent product) — used by the picker lookup. */
+  queryByCompany(companyId: number) {
+    return ProductAsset.query().where('company_id', companyId)
+  }
+
   findById(companyId: number, productId: number, id: number) {
     return this.query(companyId, productId).where('id', id).first()
   }

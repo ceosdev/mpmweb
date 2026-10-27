@@ -4,6 +4,7 @@ import productAssetRepository from '#repositories/product_asset_repository'
 import productRepository from '#repositories/product_repository'
 import brandRepository from '#repositories/brand_repository'
 import BrandModel from '#models/brand_model'
+import { LOOKUP_DEFAULT_LIMIT, lookupCodeId, type LookupParams } from '#utils/lookup'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
 
 export interface ListParams {
@@ -52,6 +53,67 @@ export interface UpdateProductAssetDTO {
 }
 
 export class ProductAssetService {
+  /**
+   * Company-wide EntityPicker lookup (not nested under a product).
+   * - `ids` — hydration; resolves ids **regardless of situation**.
+   * - `q` — search; excludes `sold`. Matches asset description, product
+   *   description, `asset_code` or code (exact id).
+   */
+  async lookup(tenant: TenantContext, params: LookupParams) {
+    if (params.ids && params.ids.length > 0) {
+      const rows = await productAssetRepository
+        .queryByCompany(tenant.company.id)
+        .whereIn('id', params.ids)
+        .preload('product')
+        .orderBy('description', 'asc')
+
+      return { data: rows.map((row) => this.serializeLookup(row)), hasMore: false }
+    }
+
+    const term = params.q?.trim()
+    if (!term) {
+      throw new BusinessException('Informe um termo de busca ou uma lista de códigos.')
+    }
+
+    const limit = params.limit ?? LOOKUP_DEFAULT_LIMIT
+    const like = `%${term.toLowerCase()}%`
+    const codeId = lookupCodeId(term)
+
+    const rows = await productAssetRepository
+      .queryByCompany(tenant.company.id)
+      .whereNot('situation', 'sold')
+      .where((sub) => {
+        sub
+          .whereRaw('lower(description) like ?', [like])
+          .orWhereRaw('lower(asset_code) like ?', [like])
+          .orWhereExists((q) => {
+            q.from('products')
+              .whereColumn('products.id', 'product_assets.product_id')
+              .whereRaw('lower(products.description) like ?', [like])
+          })
+        if (codeId !== null) sub.orWhere('id', codeId)
+      })
+      .preload('product')
+      .orderBy('description', 'asc')
+      .limit(limit + 1)
+
+    return {
+      data: rows.slice(0, limit).map((row) => this.serializeLookup(row)),
+      hasMore: rows.length > limit,
+    }
+  }
+
+  private serializeLookup(row: ProductAsset) {
+    return {
+      id: row.id,
+      description: row.description,
+      assetCode: row.assetCode,
+      productId: row.productId,
+      productDescription: row.product?.description ?? '',
+      situation: row.situation,
+    }
+  }
+
   /**
    * Ensures the parent product exists in the active tenant AND is a fixed asset.
    * - not found / cross-tenant → 404 neutral (does not leak existence).
