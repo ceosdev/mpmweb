@@ -117,12 +117,15 @@ Uma linha entre o `PageHeader` e o `Card` (regra `crud-search-and-filters`):
 
 | Filtro | Tipo          | Comportamento |
 | ------ | ------------- | ------------- |
-| Nome   | `Input`       | Debounce 350 ms; `lower(name) like %?%`. |
-| CPF    | `MaskedInput` | Debounce 350 ms; `tax_id like %?%` sobre os dígitos. Match parcial. |
+| Código | `Input`       | Igualdade exata no `id`. |
+| Nome   | `Input`       | `lower(name) like %?%`. |
+| CPF    | `MaskedInput` | `tax_id like %?%` sobre os dígitos. Match parcial. |
 | Status | `Select`      | *Todos*, *Ativos*, *Inativos*. Default *Ativos*. |
 
-- Mudar qualquer filtro volta `page` para 1.
-- Todos os filtros entram na `queryKey` e nos query params do GET.
+- Como nas demais listagens, os filtros só disparam a consulta no clique em
+  **"Pesquisar"** (`useSearchFilters`) e persistem ao abrir um registro e voltar.
+- Aplicar filtros volta `page` para 1.
+- Os filtros aplicados entram na `queryKey` e nos query params do GET.
 - "Limpar filtros" só aparece com filtro ativo e volta o status a *Ativos*.
 
 ### Regras de negócio
@@ -248,7 +251,7 @@ Uma linha entre o `PageHeader` e o `Card` (regra `crud-search-and-filters`):
     passar pela checagem, a violação `23505` de `employees_company_tax_id_uq`
     também vira o mesmo 422.
 
-- **Listagem**: `page`, `perPage`, `sort`, `name`, `taxId`, `status`
+- **Listagem**: `page`, `perPage`, `sort`, `order`, `id`, `name`, `taxId`, `status`
   (`active` | `inactive` | `all`, default `active`). Ordenação default
   `name asc`.
 
@@ -267,17 +270,16 @@ Uma linha entre o `PageHeader` e o `Card` (regra `crud-search-and-filters`):
 - **Página** `src/modules/employees/employees-page.tsx` com os blocos
   compartilhados: `PageHeader` (ícone `IdCard`), `Pagination`,
   `SortableHeader`, `EmptyState`, `ConfirmDialog`, `Can`, `Skeleton`, `Badge`,
-  `MaskedInput`. Filtros persistem ao abrir um registro e voltar, como nas
-  demais listagens.
+  `MaskedInput`, `useSearchFilters`.
 - **Formulário** `src/modules/employees/employee-form-dialog.tsx`: React Hook
   Form + Zod (espelha as regras do backend, incluindo CPF e demissão ≥
   admissão), modal `max-w-3xl`, 5 seções (ver "Fluxo feliz"), 2 colunas no
-  desktop e 1 no mobile. Erro 422 do backend no `taxId` aparece no próprio
-  campo.
+  desktop e 1 no mobile. Erros 422 do backend (CPF repetido, datas) aparecem
+  em toast, como nos demais formulários.
 - **API client**: `src/services/employees-api.ts`.
 - **Tipo `Employee`** em `src/types/api.ts`.
-- **QueryKey**: `['employees', companyId, debouncedName, debouncedTaxId, status, page, sort]`.
-- **Exibição**: CPF via `formatTaxId`, telefones via `formatPhone`, traço para
+- **QueryKey**: `['employees', companyId, listParams]` (filtros aplicados + página + ordenação), como em Clientes.
+- **Exibição**: CPF via `maskTaxId`, telefones via `maskPhone`, traço para
   vazios.
 
 ## Critérios de aceite
@@ -292,8 +294,9 @@ Uma linha entre o `PageHeader` e o `Card` (regra `crud-search-and-filters`):
       de despesa", para quem tem `employees.view`.
 - [ ] Listagem 20/página, default nome asc; Código, Nome, CPF, Função e Status
       ordenáveis.
-- [ ] Filtros: nome (`like`), CPF (dígitos parciais), status default *Ativos*;
-      "Limpar filtros" condicional volta a *Ativos*.
+- [ ] Filtros (no clique em "Pesquisar"): código (exato), nome (`like`), CPF
+      (dígitos parciais), status default *Ativos*; "Limpar filtros" condicional
+      volta a *Ativos*.
 - [ ] Salvar só com o Nome funciona; todos os demais campos aceitam vazio e
       gravam `null`.
 - [ ] CPF inválido → 422 *"CPF inválido."*
