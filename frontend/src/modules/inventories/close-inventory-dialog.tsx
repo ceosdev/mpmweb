@@ -117,9 +117,9 @@ function CloseContent({
             <Alert variant="destructive">
               <TriangleAlert />
               <AlertDescription>
-                {data.uncountedCount}{' '}
-                {data.uncountedCount === 1 ? 'produto não foi contado' : 'produtos não foram contados'} e
-                terão o estoque zerado.
+                {data.uncountedCount === 1
+                  ? '1 produto não foi contado e terá o estoque zerado.'
+                  : `${data.uncountedCount} produtos não foram contados e terão o estoque zerado.`}
               </AlertDescription>
             </Alert>
           )}

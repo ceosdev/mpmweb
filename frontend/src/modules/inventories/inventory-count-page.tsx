@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -174,6 +174,15 @@ export function InventoryCountPage() {
       setSearchParams(params, { replace: true })
     }
   }
+
+  // ?close=1 num inventário que não está aberto não faz nada: limpa o parâmetro.
+  const strayClose = !!inventory && !isOpen && searchParams.has('close')
+  useEffect(() => {
+    if (!strayClose) return
+    const params = new URLSearchParams(searchParams)
+    params.delete('close')
+    setSearchParams(params, { replace: true })
+  }, [strayClose, searchParams, setSearchParams])
 
   const items = useMemo(() => inventory?.items ?? [], [inventory])
   const counts = useMemo(() => {
