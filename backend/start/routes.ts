@@ -49,6 +49,7 @@ const LdfParametersController = () => import('#controllers/ldf_parameters_contro
 const ServiceEntriesController = () => import('#controllers/service_entries_controller')
 const GoodsEntriesController = () => import('#controllers/goods_entries_controller')
 const GoodsExitsController = () => import('#controllers/goods_exits_controller')
+const InventoriesController = () => import('#controllers/inventories_controller')
 
 /**
  * Health check.
@@ -549,6 +550,20 @@ router
     router
       .post('/goods-exits/:id/return', [GoodsExitsController, 'returnTools'])
       .use(middleware.permission('goods_exits.return'))
+
+    // Inventário de produtos (módulo Movimentação).
+    router
+      .get('/inventories', [InventoriesController, 'index'])
+      .use(middleware.permission('inventories.view'))
+    router
+      .post('/inventories', [InventoriesController, 'store'])
+      .use(middleware.permission('inventories.create'))
+    router
+      .get('/inventories/:id', [InventoriesController, 'show'])
+      .use(middleware.permission('inventories.view'))
+    router
+      .delete('/inventories/:id', [InventoriesController, 'destroy'])
+      .use(middleware.permission('inventories.delete'))
 
     // Grupos de despesa
     router
