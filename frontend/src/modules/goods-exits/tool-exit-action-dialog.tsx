@@ -5,7 +5,7 @@ import { goodsExitsApi } from '@/services/goods-exits-api'
 import { useAuth } from '@/providers/auth-provider'
 import { getErrorMessage } from '@/lib/errors'
 import { openPdf } from '@/lib/open-pdf'
-import { formatDecimalString } from '@/modules/goods-exits/quantity'
+import { formatDecimalString } from '@/lib/quantity'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 const COPY = {

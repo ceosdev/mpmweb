@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { formatDecimalString } from '@/modules/goods-exits/quantity'
+import { formatDecimalString } from '@/lib/quantity'
 import { Input } from '@/components/ui/input'
 import {
   Table,

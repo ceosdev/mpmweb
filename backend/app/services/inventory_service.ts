@@ -323,7 +323,7 @@ export class InventoryService {
                 p.description, gi.requested_quantity
            from goods_exits ge
            join goods_exit_items gi on gi.goods_exit_id = ge.id and gi.company_id = ge.company_id
-           join products p on p.id = gi.product_id
+           join products p on p.id = gi.product_id and p.company_id = ge.company_id
            left join employees e on e.id = ge.employee_id
           where ge.company_id = ? and ge.exit_type = 'tool' and ge.status = 'delivered'
             and gi.product_id in (select product_id from inventory_items

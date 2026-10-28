@@ -5,6 +5,7 @@ import {
   companyHeader,
   type TDocumentDefinitions,
   formatDatePtBr,
+  formatDateTimeZonedPtBr,
   formatQuantityPtBr,
 } from '#services/pdf/pdf_service'
 
@@ -105,7 +106,7 @@ export async function buildInventoryCountSheet(
     field('Aberto por', inventory.openedByName ?? '')
   )
   if (inventory.status === 'closed') {
-    if (inventory.closedAt) content.push(field('Data de fechamento', formatDatePtBr(inventory.closedAt)))
+    if (inventory.closedAt) content.push(field('Data de fechamento', formatDateTimeZonedPtBr(inventory.closedAt)))
     content.push(field('Fechado por', inventory.closedByName ?? ''))
   }
 

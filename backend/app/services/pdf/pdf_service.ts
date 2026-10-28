@@ -60,6 +60,12 @@ export function formatDatePtBr(iso: string): string {
   return `${day}/${month}/${year}`
 }
 
+/** UTC/offset ISO timestamp → `dd/MM/yyyy` in the application's timezone. */
+export function formatDateTimeZonedPtBr(iso: string): string {
+  const date = DateTime.fromISO(iso, { setZone: true }).setZone(APP_TIME_ZONE).toISODate()
+  return formatDatePtBr(date ?? iso)
+}
+
 /** Current date and time in the application's timezone, as `dd/MM/yyyy HH:mm`. */
 export function nowPtBr(): string {
   return DateTime.now().setZone(APP_TIME_ZONE).toFormat('dd/MM/yyyy HH:mm')

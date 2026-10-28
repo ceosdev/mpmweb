@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { inventoriesApi } from '@/services/inventories-api'
 import { useAuth } from '@/providers/auth-provider'
 import { getErrorMessage } from '@/lib/errors'
-import { formatDecimalString } from '@/modules/goods-exits/quantity'
+import { formatDecimalString } from '@/lib/quantity'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {

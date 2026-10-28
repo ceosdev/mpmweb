@@ -231,7 +231,7 @@ export function InventoriesPage() {
           <EmptyState
             icon={ClipboardList}
             title={
-              filters.isFiltered ? 'Nenhum inventário encontrado' : 'Nenhum inventário aberto ainda'
+              filters.isFiltered ? 'Nenhum inventário encontrado' : 'Nenhum inventário ainda'
             }
             description={
               filters.isFiltered
