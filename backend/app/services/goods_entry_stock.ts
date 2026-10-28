@@ -146,7 +146,7 @@ export class GoodsEntryStock {
   }
 
   /**
-   * Checks the three cancellation blockers of the spec **without changing
+   * Checks the four cancellation blockers of the spec **without changing
    * anything**. Locks the products (ascending id) and the generated assets, so
    * nothing moves between this check and `reverse`.
    */
@@ -163,6 +163,32 @@ export class GoodsEntryStock {
       .where('goods_entry_id', entry.id)
       .orderBy('id', 'asc')
       .forUpdate()
+
+    // Bloqueio: o estoque desta entrada já foi absorvido por um inventário
+    // fechado depois dela (só conta item de fato ajustado: stock_at_close).
+    const stockProductIds = [
+      ...new Set(items.filter((item) => item.stockEffect === 'stock').map((item) => item.productId)),
+    ]
+    if (stockProductIds.length > 0 && entry.finalizedAt) {
+      const rows = await trx
+        .from('inventory_items as ii')
+        .join('inventories as i', 'i.id', 'ii.inventory_id')
+        .where('i.company_id', tenant.company.id)
+        .where('i.status', 'closed')
+        .where('i.closed_at', '>', entry.finalizedAt.toJSDate())
+        .whereNotNull('ii.stock_at_close')
+        .whereIn('ii.product_id', stockProductIds)
+        .distinct('ii.product_id')
+      const inventoried = new Set<number>(rows.map((row: { product_id: number }) => row.product_id))
+      const first = items.find(
+        (item) => item.stockEffect === 'stock' && inventoried.has(item.productId)
+      )
+      if (first) {
+        throw new BusinessException(
+          `Não é possível cancelar: o produto ${products.get(first.productId)!.description} passou por inventário depois desta entrada, e o estoque não pode ser estornado.`
+        )
+      }
+    }
 
     for (const item of items) {
       const product = products.get(item.productId)!
