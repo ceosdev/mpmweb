@@ -562,6 +562,9 @@ router
       .get('/inventories/:id', [InventoriesController, 'show'])
       .use(middleware.permission('inventories.view'))
     router
+      .get('/inventories/:id/count-sheet', [InventoriesController, 'countSheet'])
+      .use(middleware.permission('inventories.view'))
+    router
       .delete('/inventories/:id', [InventoriesController, 'destroy'])
       .use(middleware.permission('inventories.delete'))
     router

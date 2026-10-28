@@ -22,6 +22,14 @@ export default class InventoriesController {
     return inventoryService.show(tenant, Number(params.id), { reveal })
   }
 
+  async countSheet({ tenant, params, request, response }: HttpContext) {
+    const id = Number(params.id)
+    const pdf = await inventoryService.countSheet(tenant, id, request.input('reveal') === '1')
+    response.header('content-type', 'application/pdf')
+    response.header('content-disposition', `inline; filename="inventario-${id}.pdf"`)
+    return response.send(pdf)
+  }
+
   async store({ tenant, request, response, currentUser }: HttpContext) {
     const payload = await request.validateUsing(openInventoryValidator)
     const row = await inventoryService.open(tenant, currentUser, payload)

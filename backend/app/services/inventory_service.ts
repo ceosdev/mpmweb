@@ -7,6 +7,8 @@ import InventoryProductGroup from '#models/inventory_product_group'
 import ProductGroup from '#models/product_group'
 import type User from '#models/user'
 import { lockProducts } from '#services/goods_exit_stock'
+import { buildInventoryCountSheet } from '#services/pdf/inventory_count_sheet'
+import { renderPdf } from '#services/pdf/pdf_service'
 import type { TenantContext } from '#services/tenant_context'
 import inventoryRepository from '#repositories/inventory_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
@@ -87,6 +89,17 @@ export class InventoryService {
         hasOpen,
       },
     }
+  }
+
+  /** Count sheet PDF. Closed inventories always print revealed. */
+  async countSheet(tenant: TenantContext, id: number, reveal: boolean) {
+    const inventory = await this.show(tenant, id, { reveal })
+    const doc = await buildInventoryCountSheet(
+      inventory,
+      tenant.company,
+      reveal || inventory.status === 'closed'
+    )
+    return renderPdf(doc)
   }
 
   /**
