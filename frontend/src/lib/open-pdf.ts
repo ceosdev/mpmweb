@@ -20,7 +20,7 @@ export async function openPdf(
 ): Promise<void> {
   const target = tab === undefined ? window.open('', '_blank') : tab
   if (!target) {
-    toast.error('Permita pop-ups para este site para abrir o protocolo.')
+    toast.error('Permita pop-ups para este site para abrir o PDF.')
     return
   }
   try {

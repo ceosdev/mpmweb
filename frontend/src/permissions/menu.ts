@@ -99,6 +99,7 @@ export const MENU: MenuEntry[] = [
     children: [
       { label: 'Entrada de mercadoria', to: '/goods-entries', icon: PackagePlus, permission: 'goods_entries.view' },
       { label: 'Saída de mercadoria', to: '/goods-exits', icon: PackageMinus, permission: 'goods_exits.view' },
+      { label: 'Inventário de produtos', to: '/inventories', icon: ClipboardList, permission: 'inventories.view' },
     ],
   },
   {

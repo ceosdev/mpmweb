@@ -799,3 +799,82 @@ export interface GoodsExitListParams {
   sort?: string
   order?: 'asc' | 'desc'
 }
+
+// --------------------------------------------------------------- Inventários
+
+export type InventoryStatus = 'open' | 'closed'
+/** Cega: `counted`/`uncounted`. Revelada (ou fechado): `match`/`divergent`/`uncounted`. */
+export type InventoryItemState = 'counted' | 'uncounted' | 'match' | 'divergent'
+
+export interface InventoryItem {
+  id: number
+  productId: number
+  productDescription: string
+  unitOfMeasure: string | null
+  productType: ProductType | null
+  /** String decimal (4 casas); `null` = não contado. */
+  countedQuantity: string | null
+  state: InventoryItemState
+  /** Só com `reveal` (ou inventário fechado) — ausentes na contagem cega. */
+  stockQuantity?: string
+  difference?: string | null
+  stockAtClose?: string | null
+}
+
+export interface Inventory {
+  id: number
+  openingDate: string
+  status: InventoryStatus
+  closedAt: string | null
+  openedByName: string | null
+  closedByName: string | null
+  /** Vazio = "Todos os grupos". */
+  groups: { id: number; description: string }[]
+  itemCount: number
+  countedCount: number
+  /** Só no `get`. */
+  hasTools?: boolean
+  items?: InventoryItem[]
+}
+
+export interface InventoryListMeta extends PaginationMeta {
+  hasOpen: boolean
+}
+
+export interface InventoryListParams {
+  openingFrom?: string
+  openingTo?: string
+  status?: InventoryStatus
+  page?: number
+  perPage?: number
+  sort?: string
+  order?: 'asc' | 'desc'
+}
+
+export interface InventoryOpenPayload {
+  openingDate: string
+  /** Vazio = todos os grupos. */
+  productGroupIds: number[]
+}
+
+export interface InventoryClosePreview {
+  itemCount: number
+  countedCount: number
+  uncountedCount: number
+  changingCount: number
+  moved: {
+    productId: number
+    productDescription: string
+    stockQuantity: string
+    currentStock: string
+    countedQuantity: string | null
+  }[]
+  notAdjusted: { productId: number; productDescription: string }[]
+  toolsOnLoan: {
+    goodsExitId: number
+    employeeName: string
+    productId: number
+    productDescription: string
+    quantity: string
+  }[]
+}

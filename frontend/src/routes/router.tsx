@@ -132,6 +132,16 @@ const GoodsExitFormPage = lazy(() =>
     default: m.GoodsExitFormPage,
   })),
 )
+const InventoriesPage = lazy(() =>
+  import('@/modules/inventories/inventories-page').then((m) => ({
+    default: m.InventoriesPage,
+  })),
+)
+const InventoryCountPage = lazy(() =>
+  import('@/modules/inventories/inventory-count-page').then((m) => ({
+    default: m.InventoryCountPage,
+  })),
+)
 const GoodsEntryFormPage = lazy(() =>
   import('@/modules/goods-entries/goods-entry-form-page').then((m) => ({
     default: m.GoodsEntryFormPage,
@@ -352,6 +362,13 @@ export const router = createBrowserRouter([
           {
             element: <PermissionRoute permission="goods_exits.view" />,
             children: [{ path: 'goods-exits/:id', element: <GoodsExitFormPage mode="view" /> }],
+          },
+          {
+            element: <PermissionRoute permission="inventories.view" />,
+            children: [
+              { path: 'inventories', element: <InventoriesPage /> },
+              { path: 'inventories/:id', element: <InventoryCountPage /> },
+            ],
           },
           {
             element: <PermissionRoute permission="expense_groups.view" />,
