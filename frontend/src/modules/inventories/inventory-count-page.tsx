@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   Info,
+  Lock,
   Printer,
   RotateCcw,
 } from 'lucide-react'
@@ -21,6 +22,7 @@ import { openPdf } from '@/lib/open-pdf'
 import type { Inventory, InventoryItem } from '@/types/api'
 import { PageHeader } from '@/components/page-header'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { CloseInventoryDialog } from '@/modules/inventories/close-inventory-dialog'
 import { InventoryStatusBadge } from '@/modules/inventories/inventory-status-badge'
 import {
   InventoryCountTable,
@@ -104,6 +106,8 @@ export function InventoryCountPage() {
   const [viewFilter, setViewFilter] = useState<ViewFilter>('all')
   const [rowStates, setRowStates] = useState<Record<number, RowState>>({})
   const [resetOpen, setResetOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [closeOpen, setCloseOpen] = useState(() => searchParams.get('close') === '1')
 
   const canCount = can('inventories.count')
 
@@ -161,6 +165,15 @@ export function InventoryCountPage() {
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   })
+
+  const handleCloseOpenChange = (next: boolean) => {
+    setCloseOpen(next)
+    if (!next && searchParams.has('close')) {
+      const params = new URLSearchParams(searchParams)
+      params.delete('close')
+      setSearchParams(params, { replace: true })
+    }
+  }
 
   const items = useMemo(() => inventory?.items ?? [], [inventory])
   const counts = useMemo(() => {
@@ -306,7 +319,14 @@ export function InventoryCountPage() {
               Imprimir contagem
             </Button>
           </Can>
-          {/* Task 9: "Fechar inventário" (inventories.close, só aberto) entra aqui. */}
+          {isOpen && (
+            <Can permission="inventories.close">
+              <Button variant="destructive" onClick={() => setCloseOpen(true)}>
+                <Lock className="size-4" />
+                Fechar inventário
+              </Button>
+            </Can>
+          )}
         </div>
       </div>
 
@@ -324,6 +344,12 @@ export function InventoryCountPage() {
           />
         )}
       </Card>
+
+      <CloseInventoryDialog
+        inventoryId={id}
+        open={closeOpen && isOpen && can('inventories.close')}
+        onOpenChange={handleCloseOpenChange}
+      />
 
       <ConfirmDialog
         open={resetOpen}
