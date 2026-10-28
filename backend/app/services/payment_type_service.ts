@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import PaymentType from '#models/payment_type'
 import type { TenantContext } from '#services/tenant_context'
 import paymentTypeRepository from '#repositories/payment_type_repository'
@@ -42,7 +43,7 @@ export class PaymentTypeService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = paymentTypeRepository

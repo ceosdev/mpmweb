@@ -1,3 +1,4 @@
+import { queryDate, queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import payableService, { type PayableStatusFilter } from '#services/payable_service'
 import { PAYABLE_STATUSES } from '#models/payable'
@@ -33,16 +34,16 @@ export default class PayablesController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return payableService.list(tenant, {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       documentNumber: request.input('documentNumber') || undefined,
-      supplierId: request.input('supplierId') ? Number(request.input('supplierId')) : undefined,
-      dueFrom: request.input('dueFrom') || undefined,
-      dueTo: request.input('dueTo') || undefined,
-      issueFrom: request.input('issueFrom') || undefined,
-      issueTo: request.input('issueTo') || undefined,
+      supplierId: queryInt(request, 'supplierId'),
+      dueFrom: queryDate(request, 'dueFrom'),
+      dueTo: queryDate(request, 'dueTo'),
+      issueFrom: queryDate(request, 'issueFrom'),
+      issueTo: queryDate(request, 'issueTo'),
       statuses: parseStatuses(request.input('status')),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

@@ -1,3 +1,4 @@
+import { queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import productService from '#services/product_service'
 import type { ProductType } from '#models/product'
@@ -25,17 +26,15 @@ export default class ProductsController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return productService.list(tenant, {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       description: request.input('description') || undefined,
-      productGroupId: request.input('productGroupId')
-        ? Number(request.input('productGroupId'))
-        : undefined,
+      productGroupId: queryInt(request, 'productGroupId'),
       type: parseType(request.input('type')),
       controlsStock: parseBool(request.input('controlsStock')),
       status: parseStatus(request.input('status')),
       lowStock: parseBool(request.input('lowStock')) ?? false,
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import Service, { type ServiceType } from '#models/service'
 import type { TenantContext } from '#services/tenant_context'
 import serviceRepository from '#repositories/service_repository'
@@ -48,7 +49,7 @@ export class ServiceService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = serviceRepository

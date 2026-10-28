@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import Product, { type ProductType } from '#models/product'
 import db from '@adonisjs/lucid/services/db'
 import type { TenantContext } from '#services/tenant_context'
@@ -91,7 +92,7 @@ export class ProductService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = productRepository

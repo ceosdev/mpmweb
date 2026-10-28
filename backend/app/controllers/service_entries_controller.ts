@@ -1,3 +1,4 @@
+import { queryDate, queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import serviceEntryService from '#services/service_entry_service'
 import { SERVICE_ENTRY_STATUSES, type ServiceEntryStatus } from '#models/service_entry'
@@ -31,16 +32,16 @@ export default class ServiceEntriesController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'asc' ? 'asc' : 'desc'
     return serviceEntryService.list(tenant, {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       documentNumber: request.input('documentNumber') || undefined,
-      supplierId: request.input('supplierId') ? Number(request.input('supplierId')) : undefined,
-      operationFrom: request.input('operationFrom') || undefined,
-      operationTo: request.input('operationTo') || undefined,
-      issueFrom: request.input('issueFrom') || undefined,
-      issueTo: request.input('issueTo') || undefined,
+      supplierId: queryInt(request, 'supplierId'),
+      operationFrom: queryDate(request, 'operationFrom'),
+      operationTo: queryDate(request, 'operationTo'),
+      issueFrom: queryDate(request, 'issueFrom'),
+      issueTo: queryDate(request, 'issueTo'),
       statuses: parseStatuses(request.input('status')),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

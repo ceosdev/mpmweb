@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 import User from '#models/user'
@@ -63,7 +64,7 @@ export class UserService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && USER_SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(USER_SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     // Always qualify columns with the table name — joining `users` for sort

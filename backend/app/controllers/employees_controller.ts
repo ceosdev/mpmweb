@@ -1,3 +1,4 @@
+import { queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import { lookupValidator } from '#validators/lookup_validators'
 import { parseLookupIds } from '#utils/lookup'
@@ -26,12 +27,12 @@ export default class EmployeesController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return employeeService.list(tenant, {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       name: request.input('name') || undefined,
       taxId: request.input('taxId') || undefined,
       status: parseStatus(request.input('status')),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

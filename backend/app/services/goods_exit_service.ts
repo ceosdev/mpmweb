@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
@@ -116,8 +117,8 @@ export class GoodsExitService {
       .select(db.raw(`${REQUESTED_VALUE_SQL} as requested_value`))
       .select(db.raw(`${CONSUMED_VALUE_SQL} as consumed_value`))
 
-    const sortExpression = params.sort && SORT_EXPRESSIONS[params.sort]
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortExpression = pickSort(SORT_EXPRESSIONS, params.sort)
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     if (sortExpression) {
       query
         .orderByRaw(`${sortExpression} ${direction === 'desc' ? 'desc' : 'asc'}`)

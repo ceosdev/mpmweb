@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import ExpenseGroup from '#models/expense_group'
 import type { TenantContext } from '#services/tenant_context'
 import expenseGroupRepository from '#repositories/expense_group_repository'
@@ -40,7 +41,7 @@ export class ExpenseGroupService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = expenseGroupRepository

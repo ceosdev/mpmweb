@@ -84,3 +84,10 @@ Definidas em `start/routes.ts`, todas sob `/api`:
 - Novas permissões: adicionar em `app/abilities/catalog.ts` e rodar o seed.
 - Novo módulo CRUD: criar migration → model → repository → service →
   validator → controller → rota com a permissão correspondente.
+- Listagens: ler a query string com `queryInt`, `queryPositiveInt` (página) e
+  `queryDate` (`#utils/query_params`), nunca `Number(request.input(...))` —
+  valor malformado vira 422, não 500. Ordenação resolvida por
+  `pickSort(SORT_COLUMNS, params.sort)` (`#utils/sort`), nunca
+  `SORT_COLUMNS[params.sort]` (que aceita `?sort=constructor`). Parâmetros de
+  rota com id são numéricos por matcher global em `start/routes.ts`: um id
+  novo com outro nome (`:fooId`) entra na lista `NUMERIC_PARAMS`.

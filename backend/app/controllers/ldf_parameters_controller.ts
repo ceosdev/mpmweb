@@ -1,3 +1,4 @@
+import { queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import ldfParameterService from '#services/ldf_parameter_service'
 import {
@@ -20,8 +21,8 @@ export default class LdfParametersController {
       code: parsePositiveInt(request.input('code')),
       description: request.input('description') || undefined,
       expenseGroupId: parsePositiveInt(request.input('expenseGroupId')),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

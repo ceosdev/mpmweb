@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
@@ -137,8 +138,8 @@ export class GoodsEntryService {
       .select('goods_entries.*')
       .select(db.raw(`${ITEMS_TOTAL_SQL} as items_total`))
 
-    const sortExpression = params.sort && SORT_EXPRESSIONS[params.sort]
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortExpression = pickSort(SORT_EXPRESSIONS, params.sort)
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     if (sortExpression) {
       // `direction` já veio normalizada para 'asc' | 'desc' acima — nada do
       // cliente entra crua na expressão. `id` desempata, para a paginação ser estável.

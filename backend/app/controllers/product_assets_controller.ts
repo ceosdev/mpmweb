@@ -1,3 +1,4 @@
+import { queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import { lookupValidator } from '#validators/lookup_validators'
 import { parseLookupIds } from '#utils/lookup'
@@ -32,12 +33,12 @@ export default class ProductAssetsController {
   async index({ tenant, request, params }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return productAssetService.list(tenant, Number(params.productId), {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       assetCode: request.input('assetCode') || undefined,
       description: request.input('description') || undefined,
       situation: parseSituation(request.input('situation')),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

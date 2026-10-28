@@ -1,3 +1,4 @@
+import { queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import supplierService from '#services/supplier_service'
 import type { SupplierType } from '#models/supplier'
@@ -22,13 +23,13 @@ export default class SuppliersController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return supplierService.list(tenant, {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       name: request.input('name') || undefined,
       taxId: request.input('taxId') || undefined,
       type: parseType(request.input('type')),
       status: parseStatus(request.input('status')),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

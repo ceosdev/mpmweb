@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import { DateTime } from 'luxon'
 import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
@@ -95,7 +96,7 @@ export class PayableService {
     if (params.sort === 'total') {
       query.orderByRaw(`${TOTAL_EXPRESSION} ${direction === 'desc' ? 'desc' : 'asc'}`)
     } else {
-      const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+      const sortColumn = pickSort(SORT_COLUMNS, params.sort)
       query.orderBy(sortColumn ?? 'due_date', sortColumn ? direction : 'asc')
     }
 

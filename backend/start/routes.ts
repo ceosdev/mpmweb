@@ -52,6 +52,24 @@ const GoodsExitsController = () => import('#controllers/goods_exits_controller')
 const InventoriesController = () => import('#controllers/inventories_controller')
 
 /**
+ * Every id in the URL is numeric. A non-numeric segment (`/brands/abc`) does
+ * not match the route and answers 404, instead of reaching Postgres as an
+ * invalid integer and failing with 500.
+ */
+const NUMERIC_PARAMS = [
+  'id',
+  'itemId',
+  'brandId',
+  'groupId',
+  'productId',
+  'payableId',
+  'receivableId',
+]
+for (const param of NUMERIC_PARAMS) {
+  router.where(param, router.matchers.number())
+}
+
+/**
  * Health check.
  */
 router.get('/', () => ({ name: 'mpmweb-api', status: 'ok' }))

@@ -1,3 +1,4 @@
+import { queryDate, queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import goodsExitService from '#services/goods_exit_service'
 import { GOODS_EXIT_STATUSES, type GoodsExitStatus } from '#models/goods_exit'
@@ -30,14 +31,14 @@ export default class GoodsExitsController {
     const order = request.input('order') === 'asc' ? 'asc' : 'desc'
     const exitType = request.input('exitType')
     return goodsExitService.list(tenant, {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       consumer: request.input('consumer') || undefined,
       exitType: exitType === 'normal' || exitType === 'tool' ? exitType : undefined,
-      operationFrom: request.input('operationFrom') || undefined,
-      operationTo: request.input('operationTo') || undefined,
+      operationFrom: queryDate(request, 'operationFrom'),
+      operationTo: queryDate(request, 'operationTo'),
       statuses: parseStatuses(request.input('status')),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

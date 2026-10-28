@@ -1,3 +1,4 @@
+import { queryInt, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import unitOfMeasureService from '#services/unit_of_measure_service'
 import {
@@ -9,10 +10,10 @@ export default class UnitsOfMeasureController {
   async index({ tenant, request }: HttpContext) {
     const order = request.input('order') === 'desc' ? 'desc' : 'asc'
     return unitOfMeasureService.list(tenant, {
-      id: request.input('id') ? Number(request.input('id')) : undefined,
+      id: queryInt(request, 'id'),
       search: request.input('search'),
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

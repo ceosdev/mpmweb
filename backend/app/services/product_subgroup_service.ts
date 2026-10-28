@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import ProductSubgroup from '#models/product_subgroup'
 import type { TenantContext } from '#services/tenant_context'
 import productSubgroupRepository from '#repositories/product_subgroup_repository'
@@ -49,7 +50,7 @@ export class ProductSubgroupService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = productSubgroupRepository

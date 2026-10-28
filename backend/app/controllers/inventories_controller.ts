@@ -1,3 +1,4 @@
+import { queryDate, queryPositiveInt } from '#utils/query_params'
 import { HttpContext } from '@adonisjs/core/http'
 import inventoryService from '#services/inventory_service'
 import { openInventoryValidator, updateItemValidator } from '#validators/inventory_validators'
@@ -7,11 +8,11 @@ export default class InventoriesController {
     const status = request.input('status')
     const order = request.input('order') === 'asc' ? 'asc' : 'desc'
     return inventoryService.list(tenant, {
-      openingFrom: request.input('openingFrom') || undefined,
-      openingTo: request.input('openingTo') || undefined,
+      openingFrom: queryDate(request, 'openingFrom'),
+      openingTo: queryDate(request, 'openingTo'),
       status: status === 'open' || status === 'closed' ? status : undefined,
-      page: request.input('page') ? Number(request.input('page')) : undefined,
-      perPage: request.input('perPage') ? Number(request.input('perPage')) : undefined,
+      page: queryPositiveInt(request, 'page'),
+      perPage: queryPositiveInt(request, 'perPage'),
       sort: request.input('sort') || undefined,
       order,
     })

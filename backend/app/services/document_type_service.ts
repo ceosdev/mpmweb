@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import DocumentType from '#models/document_type'
 import type { TenantContext } from '#services/tenant_context'
 import documentTypeRepository from '#repositories/document_type_repository'
@@ -35,7 +36,7 @@ export class DocumentTypeService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = documentTypeRepository

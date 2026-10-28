@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import ProductAsset, { type AssetSituation } from '#models/product_asset'
 import type { TenantContext } from '#services/tenant_context'
 import productAssetRepository from '#repositories/product_asset_repository'
@@ -134,7 +135,7 @@ export class ProductAssetService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = productAssetRepository

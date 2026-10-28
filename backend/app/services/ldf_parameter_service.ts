@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import LdfParameter from '#models/ldf_parameter'
 import type { TenantContext } from '#services/tenant_context'
 import ldfParameterRepository from '#repositories/ldf_parameter_repository'
@@ -44,7 +45,7 @@ export class LdfParameterService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = ldfParameterRepository

@@ -1,3 +1,4 @@
+import { pickSort } from '#utils/sort'
 import { DateTime } from 'luxon'
 import { MultipartFile } from '@adonisjs/core/bodyparser'
 import drive from '@adonisjs/drive/services/main'
@@ -77,7 +78,7 @@ export class CompanyService {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
 
-    const sortColumn = params.sort && COMPANY_SORT_COLUMNS[params.sort]
+    const sortColumn = pickSort(COMPANY_SORT_COLUMNS, params.sort)
     const sortDirection: 'asc' | 'desc' = params.order === 'desc' ? 'desc' : 'asc'
 
     const query = companyRepository
