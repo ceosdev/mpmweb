@@ -21,6 +21,9 @@ const messages = new SimpleMessagesProvider({
   'productGroupIds.distinct': 'Grupo de produto repetido.',
   'productGroupIds.*.number': 'Grupo de produto inválido.',
   'productGroupIds.*.min': 'Grupo de produto inválido.',
+  'countedQuantity.required': 'Informe a quantidade contada.',
+  'countedQuantity.regex': 'Quantidade inválida. Use até 4 casas decimais.',
+  'countedQuantity.string': 'Quantidade inválida. Use até 4 casas decimais.',
 })
 
 /** `YYYY-MM-DD` — the format `<input type="date">` submits. */
@@ -44,3 +47,14 @@ export const openInventoryValidator = vine.compile(
   })
 )
 openInventoryValidator.messagesProvider = messages
+
+/** Same shape as the other quantity fields: up to 11 integer + 4 decimal digits, never negative. */
+const QUANTITY_REGEX = /^\d{1,11}(\.\d{1,4})?$/
+
+/** `null` clears the count ("not counted"). */
+export const updateItemValidator = vine.compile(
+  vine.object({
+    countedQuantity: vine.string().trim().regex(QUANTITY_REGEX).nullable(),
+  })
+)
+updateItemValidator.messagesProvider = messages

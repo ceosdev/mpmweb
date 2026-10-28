@@ -1,6 +1,6 @@
 import { HttpContext } from '@adonisjs/core/http'
 import inventoryService from '#services/inventory_service'
-import { openInventoryValidator } from '#validators/inventory_validators'
+import { openInventoryValidator, updateItemValidator } from '#validators/inventory_validators'
 
 export default class InventoriesController {
   async index({ tenant, request }: HttpContext) {
@@ -30,6 +30,21 @@ export default class InventoriesController {
 
   async destroy({ tenant, params, response }: HttpContext) {
     await inventoryService.destroy(tenant, Number(params.id))
+    return response.noContent()
+  }
+
+  async updateItem({ tenant, params, request }: HttpContext) {
+    const { countedQuantity } = await request.validateUsing(updateItemValidator)
+    return inventoryService.updateItem(
+      tenant,
+      Number(params.id),
+      Number(params.itemId),
+      countedQuantity
+    )
+  }
+
+  async resetCount({ tenant, params, response }: HttpContext) {
+    await inventoryService.resetCount(tenant, Number(params.id))
     return response.noContent()
   }
 }

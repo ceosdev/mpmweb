@@ -200,7 +200,61 @@ export class InventoryService {
     })
   }
 
+  /**
+   * Records (or clears, with `null`) the counted quantity of one item. Runs
+   * under the inventory row lock, so a write never lands after a closing that
+   * started before it. Returns the **blind** item.
+   */
+  async updateItem(
+    tenant: TenantContext,
+    inventoryId: number,
+    itemId: number,
+    countedQuantity: string | null
+  ) {
+    const savedId = await db.transaction(async (trx) => {
+      const row = await this.lock(tenant, inventoryId, trx)
+      this.assertOpen(row)
+
+      const item = await InventoryItem.query({ client: trx })
+        .where('company_id', tenant.company.id)
+        .where('inventory_id', inventoryId)
+        .where('id', itemId)
+        .first()
+      if (!item) throw new NotFoundException('Item do inventário não encontrado.')
+
+      item.countedQuantity = countedQuantity
+      item.useTransaction(trx)
+      await item.save()
+      return item.id
+    })
+
+    const saved = await InventoryItem.query()
+      .where('company_id', tenant.company.id)
+      .where('id', savedId)
+      .preload('product', (query) => query.preload('unit'))
+      .firstOrFail()
+    return this.serializeItem(saved, false)
+  }
+
+  /** Every item goes back to "not counted". */
+  async resetCount(tenant: TenantContext, id: number) {
+    await db.transaction(async (trx) => {
+      const row = await this.lock(tenant, id, trx)
+      this.assertOpen(row)
+      await InventoryItem.query({ client: trx })
+        .where('company_id', tenant.company.id)
+        .where('inventory_id', id)
+        .update({ counted_quantity: null })
+    })
+  }
+
   // -------------------------------------------------------------- internals
+
+  private assertOpen(row: Inventory) {
+    if (row.status !== 'open') {
+      throw new BusinessException('Operação não permitida: o inventário não está aberto.')
+    }
+  }
 
   async findOrFail(tenant: TenantContext, id: number) {
     const row = await this.headerQuery(tenant).where('inventories.id', id).first()

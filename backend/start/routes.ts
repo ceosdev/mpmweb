@@ -564,6 +564,12 @@ router
     router
       .delete('/inventories/:id', [InventoriesController, 'destroy'])
       .use(middleware.permission('inventories.delete'))
+    router
+      .put('/inventories/:id/items/:itemId', [InventoriesController, 'updateItem'])
+      .use(middleware.permission('inventories.count'))
+    router
+      .post('/inventories/:id/reset-count', [InventoriesController, 'resetCount'])
+      .use(middleware.permission('inventories.count'))
 
     // Grupos de despesa
     router
