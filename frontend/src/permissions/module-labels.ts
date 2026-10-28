@@ -39,6 +39,7 @@ export const MODULE_LABELS: Record<string, string> = {
   service_entries: 'Entradas de serviço',
   goods_entries: 'Entradas de mercadoria',
   goods_exits: 'Saídas de mercadoria',
+  inventories: 'Inventários de produtos',
 }
 
 export function moduleLabel(module: string): string {

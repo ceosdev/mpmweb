@@ -189,6 +189,13 @@ export const PERMISSIONS: PermissionDefinition[] = [
   { slug: 'goods_exits.deliver', name: 'Entregar ferramentas', module: 'goods_exits', action: 'deliver', description: 'Entregar as ferramentas ao funcionário, baixando o estoque.' },
   { slug: 'goods_exits.return', name: 'Devolver ferramentas', module: 'goods_exits', action: 'return', description: 'Registrar a devolução das ferramentas e repor o estoque.' },
 
+  // Inventários de produtos
+  { slug: 'inventories.view', name: 'Visualizar inventários', module: 'inventories', action: 'view', description: 'Listar e consultar os inventários de produtos e imprimir a contagem.' },
+  { slug: 'inventories.create', name: 'Abrir inventário', module: 'inventories', action: 'create', description: 'Abrir um inventário e registrar a foto do estoque dos produtos.' },
+  { slug: 'inventories.delete', name: 'Excluir inventário', module: 'inventories', action: 'delete', description: 'Remover inventários ainda abertos, com toda a sua contagem.' },
+  { slug: 'inventories.count', name: 'Lançar contagem de inventário', module: 'inventories', action: 'count', description: 'Lançar e zerar as quantidades contadas de um inventário aberto.' },
+  { slug: 'inventories.close', name: 'Fechar inventário', module: 'inventories', action: 'close', description: 'Fechar o inventário e aplicar as quantidades contadas ao estoque.' },
+
   // Grupos de despesa
   { slug: 'expense_groups.view', name: 'Visualizar grupos de despesa', module: 'expense_groups', action: 'view', description: 'Listar e consultar grupos de despesa da empresa.' },
   { slug: 'expense_groups.create', name: 'Criar grupos de despesa', module: 'expense_groups', action: 'create', description: 'Cadastrar grupos de despesa.' },
