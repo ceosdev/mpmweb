@@ -6,6 +6,7 @@ import InventoryItem from '#models/inventory_item'
 import InventoryProductGroup from '#models/inventory_product_group'
 import ProductGroup from '#models/product_group'
 import type User from '#models/user'
+import { lockProducts } from '#services/goods_exit_stock'
 import type { TenantContext } from '#services/tenant_context'
 import inventoryRepository from '#repositories/inventory_repository'
 import { BusinessException, ConflictException, NotFoundException } from '#exceptions/app_exception'
@@ -246,6 +247,144 @@ export class InventoryService {
         .where('inventory_id', id)
         .update({ counted_quantity: null })
     })
+  }
+
+  /**
+   * Data for the closing dialog (spec, *Fechar inventário*): counters, products
+   * moved since the opening, products that stopped controlling stock and tools
+   * on loan. Read-only.
+   */
+  async closePreview(tenant: TenantContext, id: number) {
+    const row = await this.findOrFail(tenant, id)
+    this.assertOpen(row)
+    const companyId = tenant.company.id
+
+    const rows: Array<{
+      product_id: number
+      description: string
+      controls_stock: boolean
+      stock_quantity: string
+      counted_quantity: string | null
+      current_stock: string
+    }> = (
+      await db.rawQuery(
+        `select ii.product_id, p.description, p.controls_stock, ii.stock_quantity,
+                ii.counted_quantity, coalesce(p.quantity_in_stock, 0) as current_stock
+           from inventory_items ii
+           join products p on p.id = ii.product_id and p.company_id = ii.company_id
+          where ii.company_id = ? and ii.inventory_id = ?
+          order by p.description asc, ii.id asc`,
+        [companyId, id]
+      )
+    ).rows
+
+    const adjustable = rows.filter((item) => item.controls_stock)
+    const moved = adjustable
+      .filter(
+        (item) =>
+          toScaled(item.current_stock, QTY_SCALE) !== toScaled(item.stock_quantity, QTY_SCALE)
+      )
+      .map((item) => ({
+        productId: item.product_id,
+        productDescription: item.description,
+        stockQuantity: item.stock_quantity,
+        currentStock: item.current_stock,
+        countedQuantity: item.counted_quantity,
+      }))
+    const changingCount = adjustable.filter(
+      (item) =>
+        toScaled(item.counted_quantity ?? '0', QTY_SCALE) !==
+        toScaled(item.stock_quantity, QTY_SCALE)
+    ).length
+    const countedCount = rows.filter((item) => item.counted_quantity !== null).length
+
+    const loans: Array<{
+      goods_exit_id: number
+      employee_name: string | null
+      product_id: number
+      description: string
+      requested_quantity: string
+    }> = (
+      await db.rawQuery(
+        `select ge.id as goods_exit_id, e.name as employee_name, gi.product_id,
+                p.description, gi.requested_quantity
+           from goods_exits ge
+           join goods_exit_items gi on gi.goods_exit_id = ge.id and gi.company_id = ge.company_id
+           join products p on p.id = gi.product_id
+           left join employees e on e.id = ge.employee_id
+          where ge.company_id = ? and ge.exit_type = 'tool' and ge.status = 'delivered'
+            and gi.product_id in (select product_id from inventory_items
+                                   where company_id = ? and inventory_id = ?)
+          order by ge.id asc, p.description asc`,
+        [companyId, companyId, id]
+      )
+    ).rows
+
+    return {
+      itemCount: rows.length,
+      countedCount,
+      uncountedCount: rows.length - countedCount,
+      changingCount,
+      moved,
+      notAdjusted: rows
+        .filter((item) => !item.controls_stock)
+        .map((item) => ({ productId: item.product_id, productDescription: item.description })),
+      toolsOnLoan: loans.map((loan) => ({
+        goodsExitId: loan.goods_exit_id,
+        employeeName: loan.employee_name ?? '',
+        productId: loan.product_id,
+        productDescription: loan.description,
+        quantity: loan.requested_quantity,
+      })),
+    }
+  }
+
+  /**
+   * Closes the inventory (spec, *A transação* of *Fechar inventário*): locks the
+   * inventory, then the products in ascending id order, and writes the counted
+   * quantity as an **absolute** balance on every product that still controls
+   * stock. Cost is untouched.
+   */
+  async close(tenant: TenantContext, user: User, id: number) {
+    const companyId = tenant.company.id
+    await db.transaction(async (trx) => {
+      const row = await this.lock(tenant, id, trx)
+      this.assertOpen(row)
+
+      const items = await InventoryItem.query({ client: trx })
+        .where('company_id', companyId)
+        .where('inventory_id', id)
+        .orderBy('product_id', 'asc')
+      const products = await lockProducts(
+        trx,
+        companyId,
+        items.map((item) => item.productId)
+      )
+
+      const now = new Date()
+      for (const item of items) {
+        const product = products.get(item.productId)!
+        if (!product.controlsStock) continue
+
+        const counted = fromScaled(toScaled(item.countedQuantity ?? '0', QTY_SCALE), QTY_SCALE)
+        item.stockAtClose = fromScaled(toScaled(product.quantityInStock ?? '0', QTY_SCALE), QTY_SCALE)
+        item.useTransaction(trx)
+        await item.save()
+        await trx
+          .from('products')
+          .where('company_id', companyId)
+          .where('id', product.id)
+          .update({ quantity_in_stock: counted, updated_at: now })
+      }
+
+      row.status = 'closed'
+      row.closedAt = DateTime.fromJSDate(now)
+      row.closedByUserId = user.id
+      row.useTransaction(trx)
+      await row.save()
+    })
+
+    return this.serialize(await this.findOrFail(tenant, id))
   }
 
   // -------------------------------------------------------------- internals

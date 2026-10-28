@@ -570,6 +570,12 @@ router
     router
       .post('/inventories/:id/reset-count', [InventoriesController, 'resetCount'])
       .use(middleware.permission('inventories.count'))
+    router
+      .get('/inventories/:id/close-preview', [InventoriesController, 'closePreview'])
+      .use(middleware.permission('inventories.close'))
+    router
+      .post('/inventories/:id/close', [InventoriesController, 'close'])
+      .use(middleware.permission('inventories.close'))
 
     // Grupos de despesa
     router

@@ -47,4 +47,12 @@ export default class InventoriesController {
     await inventoryService.resetCount(tenant, Number(params.id))
     return response.noContent()
   }
+
+  async closePreview({ tenant, params }: HttpContext) {
+    return inventoryService.closePreview(tenant, Number(params.id))
+  }
+
+  async close({ tenant, params, currentUser }: HttpContext) {
+    return inventoryService.close(tenant, currentUser, Number(params.id))
+  }
 }
