@@ -49,8 +49,12 @@ export function InventoryCountTable({
   const inputs = useRef(new Map<number, HTMLInputElement>())
   // Texto em edição por item; ausente = mostra o valor do servidor.
   const [drafts, setDrafts] = useState<Record<number, string>>({})
-  // Último valor enviado por item: evita regravar no blur que o Enter provoca.
-  const submitted = useRef(new Map<number, string>())
+  // Último valor enviado por item (normalizado): base de comparação enquanto há
+  // gravação em voo, e evita regravar no blur que o Enter provoca.
+  const lastSent = useRef(new Map<number, string | null>())
+  // Cadeia de gravações por item: as de uma mesma linha vão em ordem, então o
+  // servidor termina com o último valor digitado.
+  const chains = useRef(new Map<number, Promise<unknown>>())
 
   const serverText = (item: InventoryItem) =>
     item.countedQuantity === null ? '' : formatDecimalString(item.countedQuantity)
@@ -72,19 +76,28 @@ export function InventoryCountTable({
       onRowError(item.id, parsed.error)
       return
     }
-    const key = parsed.value ?? ''
-    if (normalizeDecimal(parsed.value) === normalizeDecimal(item.countedQuantity)) {
+    const sent = normalizeDecimal(parsed.value)
+    const base = lastSent.current.has(item.id)
+      ? lastSent.current.get(item.id)!
+      : normalizeDecimal(item.countedQuantity)
+    if (sent === base) {
       onRowError(item.id, undefined)
-      clearDraft(item.id)
+      if (!lastSent.current.has(item.id)) clearDraft(item.id)
       return
     }
-    if (submitted.current.get(item.id) === key) return
-    submitted.current.set(item.id, key)
+    lastSent.current.set(item.id, sent)
     onRowError(item.id, undefined)
     // O rascunho sai quando a gravação dá certo (o valor do servidor assume);
     // em erro ele permanece para o usuário corrigir.
-    void onSave(item, parsed.value).then((ok) => {
-      if (!ok) submitted.current.delete(item.id)
+    const prev = chains.current.get(item.id) ?? Promise.resolve()
+    const run = prev.then(() => onSave(item, parsed.value))
+    chains.current.set(item.id, run)
+    void run.then((ok) => {
+      if (chains.current.get(item.id) === run) {
+        chains.current.delete(item.id)
+        lastSent.current.delete(item.id)
+      }
+      if (!ok && lastSent.current.has(item.id)) lastSent.current.delete(item.id)
       setDrafts((d) => {
         if (!ok || d[item.id] !== text) return d
         const rest = { ...d }
@@ -158,7 +171,6 @@ export function InventoryCountTable({
                           const text = e.target.value
                           setDrafts((d) => ({ ...d, [item.id]: text }))
                           if (st.error) onRowError(item.id, undefined)
-                          submitted.current.delete(item.id)
                         }}
                         onBlur={() => commit(item)}
                         onKeyDown={(e) => {
@@ -169,8 +181,7 @@ export function InventoryCountTable({
                           } else if (e.key === 'Escape') {
                             e.preventDefault()
                             clearDraft(item.id)
-                            submitted.current.delete(item.id)
-                            onRowError(item.id, undefined)
+                              onRowError(item.id, undefined)
                           }
                         }}
                       />

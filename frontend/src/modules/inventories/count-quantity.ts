@@ -13,10 +13,12 @@ export const INVALID_COUNT_MESSAGE =
 export function parseCount(text: string): ParsedCount {
   const t = text.trim()
   if (t === '') return { ok: true, value: null }
-  const normalized = t.replace(/\./g, '')
-  const m = /^(\d{1,11})(?:,(\d{1,4}))?$/.exec(normalized)
+  // Ponto só como agrupamento de milhar ("1.234,5"); "5.2" e "1.2.3" são recusados.
+  const m = /^(\d{1,3}(?:\.\d{3})+|\d{1,11})(?:,(\d{1,4}))?$/.exec(t)
   if (!m) return { ok: false, error: INVALID_COUNT_MESSAGE }
-  return { ok: true, value: m[2] ? `${m[1]}.${m[2]}` : m[1] }
+  const int = m[1].replace(/\./g, '')
+  if (int.length > 11) return { ok: false, error: INVALID_COUNT_MESSAGE }
+  return { ok: true, value: m[2] ? `${int}.${m[2]}` : int }
 }
 
 /** "5.2000" e "5.2" → "5.2"; "0.0000" → "0"; null → null. Para comparar valores. */
