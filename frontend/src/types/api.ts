@@ -324,6 +324,22 @@ export interface BrandModel {
   createdAt: string | null
 }
 
+export interface CustomerRegion {
+  id: number
+  customerId: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}
+
+export interface CustomerUnit {
+  id: number
+  customerRegionId: number
+  description: string
+  isActive: boolean
+  createdAt: string | null
+}
+
 export type AssetSituation = 'available' | 'allocated' | 'sold'
 
 export interface ProductAsset {

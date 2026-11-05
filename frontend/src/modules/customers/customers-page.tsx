@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Contact, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Contact, Network, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { customersApi, type CustomerListParams } from '@/services/customers-api'
 import { useAuth } from '@/providers/auth-provider'
@@ -70,6 +71,7 @@ function displayPhone(customer: Customer): string {
 }
 
 export function CustomersPage() {
+  const navigate = useNavigate()
   const { tenant } = useAuth()
   const queryClient = useQueryClient()
   const companyId = tenant?.companyId
@@ -310,6 +312,17 @@ export function CustomersPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
+                      <Can permission="customers.view">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigate(`/customers/${row.id}/regions`)}
+                          aria-label="Regionais"
+                          title="Regionais"
+                        >
+                          <Network className="size-4" />
+                        </Button>
+                      </Can>
                       <Can permission="customers.edit">
                         <Button
                           variant="ghost"
