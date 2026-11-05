@@ -33,6 +33,7 @@ const ProductSubgroupsController = () => import('#controllers/product_subgroups_
 const SuppliersController = () => import('#controllers/suppliers_controller')
 const CustomersController = () => import('#controllers/customers_controller')
 const CustomerRegionsController = () => import('#controllers/customer_regions_controller')
+const CustomerUnitsController = () => import('#controllers/customer_units_controller')
 const EmployeesController = () => import('#controllers/employees_controller')
 const ServicesController = () => import('#controllers/services_controller')
 const ProductsController = () => import('#controllers/products_controller')
@@ -325,6 +326,26 @@ router
       .use(middleware.permission('customers.edit'))
     router
       .delete('/customers/:customerId/regions/:id', [CustomerRegionsController, 'destroy'])
+      .use(middleware.permission('customers.edit'))
+
+    // Unidades (filhas de customer_regions, escopadas por :customerId + :regionId).
+    router
+      .get('/customers/:customerId/regions/:regionId/units', [CustomerUnitsController, 'index'])
+      .use(middleware.permission('customers.view'))
+    router
+      .post('/customers/:customerId/regions/:regionId/units', [CustomerUnitsController, 'store'])
+      .use(middleware.permission('customers.edit'))
+    router
+      .get('/customers/:customerId/regions/:regionId/units/:id', [CustomerUnitsController, 'show'])
+      .use(middleware.permission('customers.view'))
+    router
+      .put('/customers/:customerId/regions/:regionId/units/:id', [CustomerUnitsController, 'update'])
+      .use(middleware.permission('customers.edit'))
+    router
+      .delete('/customers/:customerId/regions/:regionId/units/:id', [
+        CustomerUnitsController,
+        'destroy',
+      ])
       .use(middleware.permission('customers.edit'))
 
     // Funcionários

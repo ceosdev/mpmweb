@@ -151,7 +151,9 @@ export class CustomerRegionService {
 }
 
 function isForeignKeyViolation(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && (error as { code?: string }).code === '23503'
+  return (
+    typeof error === 'object' && error !== null && (error as { code?: string }).code === '23503'
+  )
 }
 
 export default new CustomerRegionService()
