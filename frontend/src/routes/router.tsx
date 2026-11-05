@@ -112,6 +112,11 @@ const CustomerRegionsPage = lazy(() =>
     default: m.CustomerRegionsPage,
   }))
 )
+const CustomerUnitsPage = lazy(() =>
+  import('@/modules/customer-units/customer-units-page').then((m) => ({
+    default: m.CustomerUnitsPage,
+  }))
+)
 const BrandModelsPage = lazy(() =>
   import('@/modules/brand-models/brand-models-page').then((m) => ({
     default: m.BrandModelsPage,
@@ -285,6 +290,10 @@ export const router = createBrowserRouter([
               { path: 'customers', element: <CustomersPage /> },
               // Regionais e unidades: sem permissão própria, herdam customers.view.
               { path: 'customers/:customerId/regions', element: <CustomerRegionsPage /> },
+              {
+                path: 'customers/:customerId/regions/:regionId/units',
+                element: <CustomerUnitsPage />,
+              },
             ],
           },
           {
