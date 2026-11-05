@@ -32,6 +32,7 @@ const ProductGroupsController = () => import('#controllers/product_groups_contro
 const ProductSubgroupsController = () => import('#controllers/product_subgroups_controller')
 const SuppliersController = () => import('#controllers/suppliers_controller')
 const CustomersController = () => import('#controllers/customers_controller')
+const CustomerRegionsController = () => import('#controllers/customer_regions_controller')
 const EmployeesController = () => import('#controllers/employees_controller')
 const ServicesController = () => import('#controllers/services_controller')
 const ProductsController = () => import('#controllers/products_controller')
@@ -60,6 +61,8 @@ const NUMERIC_PARAMS = [
   'id',
   'itemId',
   'brandId',
+  'customerId',
+  'regionId',
   'groupId',
   'productId',
   'payableId',
@@ -305,6 +308,24 @@ router
     router
       .delete('/customers/:id', [CustomersController, 'destroy'])
       .use(middleware.permission('customers.delete'))
+
+    // Regionais (filhas de customers, escopadas pelo path :customerId).
+    // Sem permissão própria: ler exige customers.view, manter exige customers.edit.
+    router
+      .get('/customers/:customerId/regions', [CustomerRegionsController, 'index'])
+      .use(middleware.permission('customers.view'))
+    router
+      .post('/customers/:customerId/regions', [CustomerRegionsController, 'store'])
+      .use(middleware.permission('customers.edit'))
+    router
+      .get('/customers/:customerId/regions/:id', [CustomerRegionsController, 'show'])
+      .use(middleware.permission('customers.view'))
+    router
+      .put('/customers/:customerId/regions/:id', [CustomerRegionsController, 'update'])
+      .use(middleware.permission('customers.edit'))
+    router
+      .delete('/customers/:customerId/regions/:id', [CustomerRegionsController, 'destroy'])
+      .use(middleware.permission('customers.edit'))
 
     // Funcionários
     // Lookup do EntityPicker — ver a nota em '/suppliers/lookup'.
